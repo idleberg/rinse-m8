@@ -343,8 +343,16 @@
 						href="#schedule"
 						onclick={(event) => {
 							event.preventDefault();
-							view = 'schedule';
+							openView('schedule');
 						}}>schedule</a
+					>
+					or pick one from the
+					<a
+						href="#shows"
+						onclick={(event) => {
+							event.preventDefault();
+							openView('shows');
+						}}>shows</a
 					>
 					to see its episodes here
 				</p>
