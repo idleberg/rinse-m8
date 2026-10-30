@@ -1,0 +1,97 @@
+:root {
+	color-scheme: light dark;
+	--paper: light-dark(#f2efe8, #141414);
+	--ink: light-dark(#141414, #e9e5dc);
+	--muted: light-dark(#6b675f, #8f8a80);
+	--accent: light-dark(#d9381e, #ff5a3c);
+}
+
+/* Set from localStorage by the inline script in app.html, so the first paint is already right */
+:root[data-theme='light'] {
+	color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+}
+
+body {
+	margin: 0;
+	background: var(--paper);
+	color: var(--ink);
+	font: 14px/1.5 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+button,
+input {
+	color: inherit;
+	font: inherit;
+}
+
+button {
+	border: 1px solid currentColor;
+	padding: 0 0.5ch;
+	background: none;
+	text-transform: uppercase;
+	cursor: pointer;
+}
+
+button:disabled {
+	color: var(--muted);
+	cursor: default;
+}
+
+button[aria-pressed='true'] {
+	border-color: var(--ink);
+	background: var(--ink);
+	color: var(--paper);
+}
+
+button.icon {
+	display: inline-grid;
+	place-items: center;
+	width: 1.5em;
+	height: 1.5em;
+	padding: 0;
+}
+
+button.icon svg {
+	width: 1em;
+	height: 1em;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.5;
+}
+
+/* Still a native checkbox, drawn as `[ ]` / `[X]` */
+/* Exactly one line of text tall, so `[ ]` sits on the label's baseline */
+input[type='checkbox'] {
+	appearance: none;
+	display: inline-block;
+	width: 3ch;
+	height: 1lh;
+	margin: 0;
+	vertical-align: top;
+	cursor: pointer;
+}
+
+input[type='checkbox']::before {
+	content: '[ ]';
+	white-space: pre;
+}
+
+input[type='checkbox']:checked::before {
+	content: '[X]';
+}
+
+input[type='search'] {
+	border: none;
+	border-bottom: 1px solid currentColor;
+	padding: 0;
+	background: none;
+}
+
+:focus-visible {
+	outline: 1px solid var(--accent);
+	outline-offset: 2px;
+}

@@ -26,8 +26,8 @@
 		display: flex;
 		gap: 0.5rem;
 		align-items: center;
-		border-top: 1px solid #ddd;
+		border-top: 1px solid currentColor;
 		padding: 0.5rem 1rem;
-		background: #fff;
+		background: var(--paper);
 	}
 </style>

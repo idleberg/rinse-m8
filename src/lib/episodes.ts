@@ -35,9 +35,12 @@ export type DownloadQueue = {
 	failed: Episode | null;
 };
 
-/** `<Show> – <dd/mm>`. */
-export function episodeLabel(episode: Episode): string {
-	const [, month, day] = episode.date.split('-');
+/** `YYYY-MM-DD` as `YYYY/MM/DD`. */
+export function formatDate(date: string): string {
+	return date.replaceAll('-', '/');
+}
 
-	return `${episode.showTitle} – ${day}/${month}`;
+/** `<Show> – <YYYY/MM/DD>`. */
+export function episodeLabel(episode: Episode): string {
+	return `${episode.showTitle} – ${formatDate(episode.date)}`;
 }

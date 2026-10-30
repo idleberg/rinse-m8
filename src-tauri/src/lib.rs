@@ -292,9 +292,7 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
     }
 
     for episode in &unseen {
-        let date = chrono::NaiveDate::parse_from_str(&episode.date, "%Y-%m-%d")
-            .map_or(episode.date.clone(), |d| d.format("%d/%m").to_string());
-        let title = format!("New: {} – {date}", episode.show_title);
+        let title = format!("New: {} – {}", episode.show_title, episode.date.replace('-', "/"));
 
         if let Err(e) = app.notification().builder().title(title).show() {
             eprintln!("notification failed: {e}");

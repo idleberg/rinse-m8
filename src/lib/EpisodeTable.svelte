@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DownloadButton from './DownloadButton.svelte';
-	import type { DownloadQueue, Episode } from './episodes';
+	import SubscribeButton from './SubscribeButton.svelte';
+	import { type DownloadQueue, type Episode, formatDate } from './episodes';
 
 	let {
 		episodes,
@@ -27,11 +28,9 @@
 	<thead>
 		<tr>
 			<th>Date</th>
-			<th>Time</th>
 			<th>Station</th>
 			<th>Show</th>
 			<th>Title</th>
-			<th></th>
 			<th></th>
 			<th></th>
 		</tr>
@@ -39,8 +38,7 @@
 	<tbody>
 		{#each episodes as episode (episode.id)}
 			<tr>
-				<td>{episode.date}</td>
-				<td>{episode.time}</td>
+				<td>{formatDate(episode.date)}</td>
 				<td>{episode.station}</td>
 				<td><button class="link" onclick={() => onopenshow(episode)}>{episode.showTitle}</button></td>
 				<td>{episode.title}</td>
@@ -50,18 +48,16 @@
 					{/if}
 				</td>
 				<td>
-					{#if episode.mp3}
-						<DownloadButton {episode} {downloads} {ondownload} />
-					{/if}
-				</td>
-				<td>
-					<button
-						aria-pressed={subscribed.includes(episode.showSlug)}
-						disabled={subscribing.includes(episode.showSlug)}
-						onclick={() => ontogglesubscription(episode)}
-					>
-						{subscribed.includes(episode.showSlug) ? 'Unsubscribe' : 'Subscribe'}
-					</button>
+					<div class="actions">
+						{#if episode.mp3}
+							<DownloadButton {episode} {downloads} {ondownload} />
+						{/if}
+						<SubscribeButton
+							subscribed={subscribed.includes(episode.showSlug)}
+							disabled={subscribing.includes(episode.showSlug)}
+							onclick={() => ontogglesubscription(episode)}
+						/>
+					</div>
 				</td>
 			</tr>
 		{/each}
@@ -72,33 +68,41 @@
 	table {
 		width: 100%;
 		border-collapse: collapse;
+		text-transform: uppercase;
 	}
 
 	th,
 	td {
-		padding: 0.25rem 0.5rem;
+		padding: 0.25rem 1ch;
 		text-align: left;
 		white-space: nowrap;
 	}
 
-	tbody tr:nth-child(odd) {
-		background: #f4f4f4;
+	th {
+		border-bottom: 1px solid currentColor;
+		font-weight: 700;
+	}
+
+	/* A row of `-` characters: a 1ch-wide tile, mostly dash, repeated along the bottom edge */
+	td {
+		background: linear-gradient(to right, var(--muted) 60%, transparent 0) left bottom / 1ch 1px repeat-x;
 	}
 
 	.link {
 		border: none;
 		padding: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
+		text-align: left;
 		text-decoration: underline;
-		cursor: pointer;
+	}
+
+	.actions {
+		display: flex;
+		gap: 0.5ch;
+		justify-content: flex-end;
+		align-items: center;
 	}
 
 	.badge {
-		padding: 0 0.4rem;
-		border-radius: 0.25rem;
-		background: #ddd;
-		font-size: 0.8em;
+		color: var(--accent);
 	}
 </style>

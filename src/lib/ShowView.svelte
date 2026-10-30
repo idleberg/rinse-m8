@@ -1,6 +1,7 @@
 <script lang="ts">
 	import EpisodeFilters from './EpisodeFilters.svelte';
 	import EpisodeTable from './EpisodeTable.svelte';
+	import SubscribeButton from './SubscribeButton.svelte';
 	import { type DownloadQueue, type Episode, type Show, showOf } from './episodes';
 
 	let {
@@ -44,13 +45,11 @@
 <header>
 	<button onclick={onback}>Back</button>
 	<h1>{show.title}</h1>
-	<button
-		aria-pressed={subscribed.includes(show.slug)}
+	<SubscribeButton
+		subscribed={subscribed.includes(show.slug)}
 		disabled={subscribing.includes(show.slug)}
 		onclick={() => ontogglesubscription(show)}
-	>
-		{subscribed.includes(show.slug) ? 'Unsubscribe' : 'Subscribe'}
-	</button>
+	/>
 	{#if refreshing}
 		<span role="status">Refreshing…</span>
 	{/if}
@@ -79,5 +78,6 @@
 	h1 {
 		margin: 0;
 		font-size: 1.5rem;
+		text-transform: uppercase;
 	}
 </style>

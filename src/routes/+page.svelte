@@ -6,6 +6,7 @@
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
 	import ShowView from '../lib/ShowView.svelte';
+	import ThemeToggle from '../lib/ThemeToggle.svelte';
 	import { type DownloadQueue, type Episode, type Show, showOf, stations } from '../lib/episodes';
 
 	type Settings = {
@@ -140,6 +141,11 @@
 	});
 </script>
 
+<!-- ponytail: stand-in until the nav from 19 takes the toggle -->
+<header>
+	<ThemeToggle />
+</header>
+
 <main>
 	{#if error}
 		<p role="alert">{error}</p>
@@ -162,18 +168,16 @@
 			/>
 		{/key}
 	{:else}
-		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:search />
-
-		<fieldset aria-label="Settings">
+		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:search>
 			<label>
 				<input
 					type="checkbox"
 					bind:checked={settings.autoDownload}
 					onchange={() => saveAutoDownload().catch(showError)}
 				/>
-				auto-download new episodes of subscribed shows
+				auto-download
 			</label>
-		</fieldset>
+		</EpisodeFilters>
 
 		<h2>Subscribed</h2>
 		{#if subscribed.length}
@@ -206,18 +210,19 @@
 <DownloadStatus {downloads} ondismiss={() => invoke('dismiss_download_failure').catch(showError)} />
 
 <style>
-	main {
-		padding: 1rem;
-		font-family: system-ui, sans-serif;
+	header {
+		display: flex;
+		justify-content: flex-end;
+		border-bottom: 1px solid currentColor;
+		padding: 0.5rem 1rem;
 	}
 
-	fieldset {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem 1rem;
-		align-items: center;
-		margin: 0 0 1rem;
-		border: none;
-		padding: 0;
+	main {
+		padding: 1rem;
+	}
+
+	h2 {
+		font-size: 1rem;
+		text-transform: uppercase;
 	}
 </style>
