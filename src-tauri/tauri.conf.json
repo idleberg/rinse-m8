@@ -13,8 +13,8 @@
     "windows": [
       {
         "title": "Rinse M8",
-        "width": 960,
-        "height": 800,
+        "width": 980,
+        "height": 980,
         "dragDropEnabled": false
       }
     ],
