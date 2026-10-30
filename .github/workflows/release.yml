@@ -1,0 +1,111 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # Overrides the workflow-level `contents: write`, which this job does not need —
+    # `create-release` does the uploading. The other two are for build provenance.
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      matrix:
+        include:
+          - target: universal-apple-darwin
+            os: macos-latest
+            bundles: dmg
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            bundles: nsis
+          # 22.04 rather than latest: the AppImage links the runner's glibc, so
+          # the oldest supported runner gives the widest reach.
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+            bundles: deb,rpm,appimage
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up mise
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: ${{ matrix.target }}
+          workspaces: src-tauri
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      # Tauri names the bundles from tauri.conf.json, not the tag; a mismatch
+      # would publish v0.2.0 with files called 0.1.0.
+      - name: Check version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          CONF=$(node -p 'require("./src-tauri/tauri.conf.json").version')
+          if [[ "$VERSION" != "$CONF" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match tauri.conf.json version $CONF"
+            exit 1
+          fi
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+
+      # GitHub turns the space in "Rinse M8" into a dot on upload; dashes read better.
+      - name: Collect bundles
+        shell: bash
+        run: |
+          mkdir dist
+          for f in src-tauri/target/${{ matrix.target }}/release/bundle/*/*.{dmg,exe,deb,rpm,AppImage}; do
+            [[ -f "$f" ]] || continue
+            name=$(basename "$f")
+            cp "$f" "dist/${name// /-}"
+          done
+          ls dist
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rinse-m8-${{ matrix.target }}
+          path: dist/*
+
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: sha256sum Rinse-M8* > SHA256SUMS
+
+      - name: Create release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          files: |
+            Rinse-M8*
+            SHA256SUMS
