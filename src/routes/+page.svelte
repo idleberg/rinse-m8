@@ -8,7 +8,7 @@
 	import ShowSection from '../lib/ShowSection.svelte';
 	import ShowView from '../lib/ShowView.svelte';
 	import ThemeToggle from '../lib/ThemeToggle.svelte';
-	import { type DownloadQueue, type Episode, type Show, showOf, stations } from '../lib/episodes';
+	import { type DownloadQueue, type Episode, type Show, type ShowDetails, type ShowPage, showOf, stations } from '../lib/episodes';
 
 	type Settings = {
 		subscriptions: Show[];
@@ -91,18 +91,28 @@
 
 	let view = $state<'dashboard' | 'schedule'>('dashboard');
 	let openedShow = $state<Show | null>(null);
+
+	/** Of `openedShow`, once its fetch has returned. */
+	let showDetails = $state<ShowDetails | null>(null);
 	let refreshing = $state<string[]>([]);
 
 	/** Shows the cached episodes at once, then merges the show's fetched episodes in. */
 	async function openShow(show: Show) {
 		error = '';
 		openedShow = show;
+		showDetails = null;
 
 		refreshing.push(show.slug);
 
 		// ponytail: the reply replaces the whole list, so a poller update landing mid-fetch is undone until the next one
 		try {
-			setEpisodes(await invoke<Episode[]>('refresh_show', { slug: show.slug }));
+			const page = await invoke<ShowPage>('refresh_show', { slug: show.slug });
+
+			setEpisodes(page.episodes);
+
+			if (openedShow?.slug === show.slug) {
+				showDetails = page.details;
+			}
 		} finally {
 			refreshing = refreshing.filter((s) => s !== show.slug);
 		}
@@ -177,6 +187,7 @@
 		{#key openedShow.slug}
 			<ShowView
 				show={openedShow}
+				details={showDetails}
 				refreshing={refreshing.includes(openedShow.slug)}
 				{episodes}
 				{subscribed}

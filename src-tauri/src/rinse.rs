@@ -200,6 +200,24 @@ struct RawEpisode {
     parent_show: Vec<RawShow>,
 }
 
+/// The show response's `entry`, the show itself.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawEntry {
+    description: Option<String>,
+    featured_image: Vec<RawImage>,
+}
+
+#[derive(Deserialize)]
+struct RawImage {
+    filename: String,
+}
+
+#[derive(Deserialize)]
+struct RawShowResponse {
+    entry: RawEntry,
+}
+
 #[derive(Deserialize)]
 struct RawShow {
     id: String,
@@ -222,6 +240,45 @@ pub fn map_episodes(json: &str) -> serde_json::Result<Vec<Episode>> {
     let raw: RawResponse = serde_json::from_str(json)?;
 
     Ok(raw.episodes.into_iter().filter_map(map_episode).collect())
+}
+
+/// What Rinse says about a show besides its episodes, each field only when it provides one.
+#[derive(Debug, Default, PartialEq, Serialize)]
+pub struct ShowDetails {
+    pub image: Option<String>,
+    /// HTML, which must never be injected into the page as is.
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ShowPage {
+    pub details: ShowDetails,
+    pub episodes: Vec<Episode>,
+}
+
+/// Maps a raw show response. Details Rinse sends in an unexpected shape are left out, never failing the episodes.
+pub fn map_show(json: &str) -> serde_json::Result<ShowPage> {
+    let details = serde_json::from_str::<RawShowResponse>(json)
+        .map(|raw| ShowDetails {
+            image: raw.entry.featured_image.into_iter().next().map(|i| {
+                let mut url =
+                    reqwest::Url::parse("https://rinse-platform-assets.s3.amazonaws.com/images")
+                        .expect("valid base url");
+
+                url.path_segments_mut()
+                    .expect("base url has a path")
+                    .push(&i.filename);
+
+                url.into()
+            }),
+            description: raw.entry.description.filter(|d| !d.trim().is_empty()),
+        })
+        .unwrap_or_default();
+
+    Ok(ShowPage {
+        details,
+        episodes: map_episodes(json)?,
+    })
 }
 
 /// Skips episodes without a channel, show, time or parseable date, which can't be placed in the table.
@@ -277,21 +334,25 @@ pub async fn fetch_schedule() -> Result<Vec<Episode>, String> {
     Ok(episodes)
 }
 
-/// The show's ~30 most recent episodes.
-pub async fn fetch_show(slug: &str) -> Result<Vec<Episode>, String> {
-    fetch_episodes(&format!("https://www.rinse.fm/api/query/v1/shows/{slug}")).await
+/// The show's details and its ~30 most recent episodes.
+pub async fn fetch_show(slug: &str) -> Result<ShowPage, String> {
+    let json = fetch_text(&format!("https://www.rinse.fm/api/query/v1/shows/{slug}")).await?;
+
+    map_show(&json).map_err(|e| e.to_string())
 }
 
 async fn fetch_episodes(url: &str) -> Result<Vec<Episode>, String> {
-    let json = reqwest::get(url)
+    map_episodes(&fetch_text(url).await?).map_err(|e| e.to_string())
+}
+
+async fn fetch_text(url: &str) -> Result<String, String> {
+    reqwest::get(url)
         .await
         .and_then(|r| r.error_for_status())
         .map_err(|e| e.to_string())?
         .text()
         .await
-        .map_err(|e| e.to_string())?;
-
-    map_episodes(&json).map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())
 }
 
 /// Streams the episode's mp3 into a `.part` file in `folder` chunk by chunk and renames it to `.mp3` once it's whole,
@@ -496,6 +557,65 @@ mod tests {
 
     fn show_fixture() -> Vec<Episode> {
         map_episodes(include_str!("../tests/fixtures/show.json")).unwrap()
+    }
+
+    #[test]
+    fn maps_the_show_image_and_description() {
+        let show = map_show(include_str!("../tests/fixtures/show.json")).unwrap();
+
+        assert_eq!(
+            show.details.image.as_deref(),
+            Some("https://rinse-platform-assets.s3.amazonaws.com/images/Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg")
+        );
+        assert!(show
+            .details
+            .description
+            .unwrap()
+            .starts_with("<p>Founded by O.B.F Sound System"));
+        assert_eq!(show.episodes, show_fixture());
+    }
+
+    #[test]
+    fn a_show_without_image_or_description_has_neither() {
+        let mut json: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/show.json")).unwrap();
+
+        json["entry"]["featuredImage"] = serde_json::json!([]);
+        json["entry"]["description"] = serde_json::json!(null);
+
+        let show = map_show(&json.to_string()).unwrap();
+
+        assert_eq!(show.details, ShowDetails::default());
+    }
+
+    #[test]
+    fn malformed_show_details_still_map_the_episodes() {
+        let mut json: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/show.json")).unwrap();
+
+        json["entry"]["featuredImage"] = serde_json::json!(null);
+
+        let show = map_show(&json.to_string()).unwrap();
+
+        assert_eq!(show.details, ShowDetails::default());
+        assert_eq!(show.episodes, show_fixture());
+    }
+
+    #[test]
+    fn the_image_filename_is_percent_encoded() {
+        let mut json: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/show.json")).unwrap();
+
+        json["entry"]["featuredImage"][0]["filename"] = serde_json::json!("a b#?.jpg");
+
+        assert_eq!(
+            map_show(&json.to_string())
+                .unwrap()
+                .details
+                .image
+                .as_deref(),
+            Some("https://rinse-platform-assets.s3.amazonaws.com/images/a%20b%23%3F.jpg")
+        );
     }
 
     #[test]

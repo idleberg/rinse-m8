@@ -27,12 +27,15 @@ async fn get_episodes(app: tauri::AppHandle) -> Result<Vec<rinse::Episode>, Stri
     merge(&app, fetched)
 }
 
-/// Merges the show's recent episodes into the episode cache and returns the whole cache.
+/// Merges the show's recent episodes into the episode cache and returns the show's details with the whole cache.
 #[tauri::command]
-async fn refresh_show(app: tauri::AppHandle, slug: String) -> Result<Vec<rinse::Episode>, String> {
+async fn refresh_show(app: tauri::AppHandle, slug: String) -> Result<rinse::ShowPage, String> {
     let fetched = rinse::fetch_show(&slug).await?;
 
-    merge(&app, fetched)
+    Ok(rinse::ShowPage {
+        episodes: merge(&app, fetched.episodes)?,
+        ..fetched
+    })
 }
 
 /// Adds `episodes` to the cache, replacing any with the same id but keeping its schedule mark, and returns the whole cache.
@@ -191,7 +194,7 @@ async fn subscribe(
     slug: String,
     title: String,
 ) -> Result<rinse::Settings, String> {
-    let episodes = rinse::fetch_show(&slug).await?;
+    let episodes = rinse::fetch_show(&slug).await?.episodes;
     let cache = merge(&app, episodes.clone())?;
     let settings = update_settings(&app, |s| s.subscribe(&slug, &title, &episodes))?;
 
@@ -271,7 +274,7 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
 
     for subscription in &subscriptions {
         match rinse::fetch_show(&subscription.slug).await {
-            Ok(episodes) => fetched.extend(episodes),
+            Ok(show) => fetched.extend(show.episodes),
             Err(e) => eprintln!("fetching {} failed: {e}", subscription.slug),
         }
     }
@@ -292,7 +295,11 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
     }
 
     for episode in &unseen {
-        let title = format!("New: {} – {}", episode.show_title, episode.date.replace('-', "/"));
+        let title = format!(
+            "New: {} – {}",
+            episode.show_title,
+            episode.date.replace('-', "/")
+        );
 
         if let Err(e) = app.notification().builder().title(title).show() {
             eprintln!("notification failed: {e}");

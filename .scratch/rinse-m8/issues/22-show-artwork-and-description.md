@@ -4,11 +4,11 @@
 
 **Blocked by:** 19 (Views as tabs)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Opening a show fetches its image and description in the same request as its episodes
-- [ ] The show view's header shows the image and the description when present, and nothing broken when either is missing
-- [ ] The description is rendered as plain text paragraphs; no markup from Rinse is injected
-- [ ] Subscribing and the background poller keep working unchanged
-- [ ] Unit test: mapping the show fixture yields the expected image URL and a description
+- [x] Opening a show fetches its image and description in the same request as its episodes
+- [x] The show view's header shows the image and the description when present, and nothing broken when either is missing
+- [x] The description is rendered as plain text paragraphs; no markup from Rinse is injected
+- [x] Subscribing and the background poller keep working unchanged
+- [x] Unit test: mapping the show fixture yields the expected image URL and a description
 - [ ] Manual check: open a show with artwork; the image and description appear after the fetch

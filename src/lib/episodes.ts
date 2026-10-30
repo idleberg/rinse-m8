@@ -19,6 +19,34 @@ export type Episode = {
 
 export type Show = { slug: string; title: string };
 
+/** What Rinse says about a show besides its episodes. */
+export type ShowDetails = {
+	image: string | null;
+	/** HTML from Rinse; render it through `paragraphs`, never as markup. */
+	description: string | null;
+};
+
+/** A show's details with the episode cache, as `refresh_show` returns them. */
+export type ShowPage = { details: ShowDetails; episodes: Episode[] };
+
+/** The text of each block in `html`, line breaks kept as `\n`. Parsed into an inert document, so nothing in it runs or loads. */
+export function paragraphs(html: string): string[] {
+	const doc = new DOMParser().parseFromString(html, 'text/html');
+
+	for (const br of doc.querySelectorAll('br')) {
+		br.replaceWith('\n');
+	}
+
+	for (const block of doc.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, div')) {
+		block.append('\n\n');
+	}
+
+	return doc.body.textContent
+		.split(/\n\s*\n/)
+		.map((text) => text.trim())
+		.filter(Boolean);
+}
+
 export function showOf(episode: Episode): Show {
 	return { slug: episode.showSlug, title: episode.showTitle };
 }
