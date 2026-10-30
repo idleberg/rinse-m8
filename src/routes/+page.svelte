@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
+	import { open } from '@tauri-apps/plugin-dialog';
+	import { load } from '@tauri-apps/plugin-store';
 
 	type Episode = {
 		id: string;
@@ -41,6 +43,33 @@
 		);
 	});
 
+	let downloading = $state<string[]>([]);
+
+	async function download(episode: Episode) {
+		error = '';
+
+		const settings = await load('settings.json');
+
+		if (!(await settings.get<string>('downloadFolder'))) {
+			const folder = await open({ directory: true, title: 'Choose a download folder' });
+
+			if (!folder) {
+				return;
+			}
+
+			await settings.set('downloadFolder', folder);
+			await settings.save();
+		}
+
+		downloading.push(episode.id);
+
+		try {
+			await invoke('download', { episode });
+		} finally {
+			downloading = downloading.filter((id) => id !== episode.id);
+		}
+	}
+
 	invoke<Episode[]>('get_episodes')
 		.then((list) => {
 			episodes = list.sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
@@ -73,6 +102,7 @@
 				<th>Show</th>
 				<th>Title</th>
 				<th></th>
+				<th></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -86,6 +116,19 @@
 					<td>
 						{#if episode.rebroadcast}
 							<span class="badge">Rebroadcast</span>
+						{/if}
+					</td>
+					<td>
+						{#if episode.mp3}
+							<button
+								disabled={downloading.includes(episode.id)}
+								onclick={() =>
+									download(episode).catch((e) => {
+										error = String(e);
+									})}
+							>
+								{downloading.includes(episode.id) ? 'Downloading…' : 'Download'}
+							</button>
 						{/if}
 					</td>
 				</tr>

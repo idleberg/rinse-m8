@@ -1,6 +1,10 @@
 use chrono::DateTime;
 use chrono_tz::Europe::London;
+use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
+use std::path::Path;
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -114,6 +118,48 @@ pub async fn fetch_schedule() -> Result<Vec<Episode>, String> {
     map_schedule(&json).map_err(|e| e.to_string())
 }
 
+/// Streams the episode's mp3 into `folder` chunk by chunk.
+/// A failed transfer removes the partial file; a failed request leaves any earlier download alone.
+pub async fn download(episode: &Episode, folder: &Path) -> Result<(), String> {
+    let url = episode.mp3.as_deref().ok_or("episode has no mp3")?;
+    let path = folder.join(file_name(episode));
+
+    let mut stream = reqwest::get(url)
+        .await
+        .and_then(|r| r.error_for_status())
+        .map_err(|e| e.to_string())?
+        .bytes_stream();
+    let mut file = File::create(&path).await.map_err(|e| e.to_string())?;
+
+    let result = async {
+        while let Some(chunk) = stream.next().await {
+            file.write_all(&chunk.map_err(|e| e.to_string())?)
+                .await
+                .map_err(|e| e.to_string())?;
+        }
+
+        file.flush().await.map_err(|e| e.to_string())
+    }
+    .await;
+
+    if result.is_err() {
+        let _ = tokio::fs::remove_file(&path).await;
+    }
+
+    result
+}
+
+/// `<Show> - <YYYY-MM-DD>.mp3`, with characters that are unsafe in file names on any OS removed.
+pub fn file_name(episode: &Episode) -> String {
+    let show: String = episode
+        .show_title
+        .chars()
+        .filter(|c| !c.is_control() && !r#"/\:*?"<>|"#.contains(*c))
+        .collect();
+
+    format!("{} - {}.mp3", show.trim(), episode.date)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -188,5 +234,23 @@ mod tests {
             .unwrap();
 
         assert_eq!(e.time, "17:00");
+    }
+
+    #[test]
+    fn file_name_is_show_and_london_date() {
+        assert_eq!(
+            file_name(&episode("2315290")),
+            "Dubquake Records - 2026-10-25.mp3"
+        );
+    }
+
+    #[test]
+    fn file_name_strips_unsafe_characters() {
+        let e = Episode {
+            show_title: "A/B: C\\D*?\"<E>|".into(),
+            ..episode("2315290")
+        };
+
+        assert_eq!(file_name(&e), "AB CDE - 2026-10-25.mp3");
     }
 }
