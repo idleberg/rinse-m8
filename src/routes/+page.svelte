@@ -24,6 +24,7 @@
 		subscriptions: { slug: string; title: string }[];
 		seen: string[];
 		downloadFolder: string | null;
+		autoDownload: boolean;
 	};
 
 	const stations = ['Rinse FM', 'Rinse FR', 'Kool FM', 'SWU FM'];
@@ -37,7 +38,7 @@
 	let subscribedOnly = $state(false);
 	let search = $state('');
 
-	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null });
+	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null, autoDownload: false });
 	const subscribed = $derived(settings.subscriptions.map((s) => s.slug));
 
 	const visibleEpisodes = $derived.by(() => {
@@ -81,6 +82,18 @@
 
 	function setEpisodes(list: Episode[]) {
 		episodes = list.sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
+	}
+
+	/** Saves the checkbox, which is bound to `settings`, and unticks it again if saving fails. */
+	async function saveAutoDownload() {
+		error = '';
+
+		try {
+			await invoke('set_settings', { patch: { autoDownload: settings.autoDownload } });
+		} catch (e) {
+			settings.autoDownload = !settings.autoDownload;
+			throw e;
+		}
 	}
 
 	let refreshing = $state<string[]>([]);
@@ -144,6 +157,20 @@
 		<label><input type="checkbox" bind:checked={hideRebroadcasts} /> hide rebroadcasts</label>
 		<label><input type="checkbox" bind:checked={subscribedOnly} /> subscribed only</label>
 		<input type="search" bind:value={search} placeholder="Search title, show, genres" aria-label="Search" />
+	</fieldset>
+
+	<fieldset aria-label="Settings">
+		<label>
+			<input
+				type="checkbox"
+				bind:checked={settings.autoDownload}
+				onchange={() =>
+					saveAutoDownload().catch((e) => {
+						error = String(e);
+					})}
+			/>
+			auto-download new episodes of subscribed shows
+		</label>
 	</fieldset>
 
 	<table>

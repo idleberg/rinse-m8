@@ -36,6 +36,8 @@ pub struct Settings {
     /// Ids of episodes that must never trigger a notification.
     pub seen: BTreeSet<String>,
     pub download_folder: Option<PathBuf>,
+    /// Whether the poller also downloads each new episode into `download_folder`.
+    pub auto_download: bool,
 }
 
 /// A followed show.

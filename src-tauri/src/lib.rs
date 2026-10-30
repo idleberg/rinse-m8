@@ -152,7 +152,8 @@ async fn poll(app: tauri::AppHandle) {
     }
 }
 
-/// Fetches every subscribed show, notifies once per new episode and, if there was one, pushes the cache to the table.
+/// Fetches every subscribed show, notifies once per new episode and, if there was one, pushes the cache to the table
+/// and downloads the new episodes when auto-download is on and a folder is set.
 async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
     let subscriptions = load_settings(app, serde_json::Map::new())?.subscriptions;
     let mut fetched = Vec::new();
@@ -166,11 +167,16 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
 
     let cache = merge(app, fetched.clone())?;
     let mut unseen = Vec::new();
+    let mut folder = None;
 
     // Seen is saved before notifying, so a crash can drop a notification but never repeat one.
     update_settings(app, |settings| {
         unseen = rinse::new_episodes(&settings.subscriptions, &settings.seen, fetched);
         settings.seen.extend(unseen.iter().map(|e| e.id.clone()));
+        folder = settings
+            .download_folder
+            .clone()
+            .filter(|_| settings.auto_download);
     })?;
 
     if unseen.is_empty() {
@@ -189,7 +195,18 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
 
     // ponytail: the startup check can emit before the webview listens, so its rows show on the next tick
     app.emit("episodes-updated", cache)
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    // ponytail: a failed auto-download isn't retried, since the episode is already seen
+    if let Some(folder) = folder {
+        for episode in &unseen {
+            if let Err(e) = rinse::download(episode, &folder).await {
+                eprintln!("downloading {} failed: {e}", episode.id);
+            }
+        }
+    }
+
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
