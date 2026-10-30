@@ -4,13 +4,13 @@
 
 **Blocked by:** 11 (Split the page into components)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] The backend owns a single download queue that runs one download at a time, first in, first out
-- [ ] Clicking download adds the episode to the download queue; clicking an episode that's already queued or downloading does nothing
-- [ ] The background check adds auto-downloads to the same download queue instead of downloading them itself
-- [ ] The backend reports queue changes and download progress to the frontend
-- [ ] `DownloadButton` shows Queued / percent / Failed and is used in every `EpisodeTable`
-- [ ] `DownloadStatus` is a sticky footer that's hidden when idle and shows the current file, percent and queued count, or the last failure until it's dismissed or the next download starts
-- [ ] A failed download doesn't stop the download queue
+- [x] The backend owns a single download queue that runs one download at a time, first in, first out
+- [x] Clicking download adds the episode to the download queue; clicking an episode that's already queued or downloading does nothing
+- [x] The background check adds auto-downloads to the same download queue instead of downloading them itself
+- [x] The backend reports queue changes and download progress to the frontend
+- [x] `DownloadButton` shows Queued / percent / Failed and is used in every `EpisodeTable`
+- [x] `DownloadStatus` is a sticky footer that's hidden when idle and shows the current file, percent and queued count, or the last failure until it's dismissed or the next download starts
+- [x] A failed download doesn't stop the download queue
 - [ ] Manual check: click download on three episodes quickly; they download one after another, never at the same time, and the footer counts down

@@ -1,10 +1,11 @@
 <script lang="ts">
-	import type { Episode } from './episodes';
+	import DownloadButton from './DownloadButton.svelte';
+	import type { DownloadQueue, Episode } from './episodes';
 
 	let {
 		episodes,
 		subscribed,
-		downloading,
+		downloads,
 		subscribing,
 		ondownload,
 		onopenshow,
@@ -13,8 +14,7 @@
 		episodes: Episode[];
 		/** Show slugs. */
 		subscribed: string[];
-		/** Episode ids. */
-		downloading: string[];
+		downloads: DownloadQueue;
 		/** Show slugs. */
 		subscribing: string[];
 		ondownload: (episode: Episode) => void;
@@ -51,9 +51,7 @@
 				</td>
 				<td>
 					{#if episode.mp3}
-						<button disabled={downloading.includes(episode.id)} onclick={() => ondownload(episode)}>
-							{downloading.includes(episode.id) ? 'Downloading…' : 'Download'}
-						</button>
+						<DownloadButton {episode} {downloads} {ondownload} />
 					{/if}
 				</td>
 				<td>

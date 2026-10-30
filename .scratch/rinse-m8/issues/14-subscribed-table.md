@@ -4,12 +4,12 @@
 
 **Blocked by:** 11 (Split the page into components), 13 (Schedule table shows only schedule episodes)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] The subscribed table and the schedule table are both `EpisodeTable`s, stacked subscribed table first
-- [ ] One `EpisodeFilters` bar (stations, mp3 only, hide rebroadcasts, free text) filters both tables
-- [ ] The "subscribed only" filter is gone
-- [ ] With no subscriptions, a hint takes the subscribed table's place
-- [ ] `subscribe` merges the fetched show episodes into the cache and the frontend shows them right away
-- [ ] The subscribed table updates when the background check emits `episodes-updated`
+- [x] The subscribed table and the schedule table are both `EpisodeTable`s, stacked subscribed table first
+- [x] One `EpisodeFilters` bar (stations, mp3 only, hide rebroadcasts, free text) filters both tables
+- [x] The "subscribed only" filter is gone
+- [x] With no subscriptions, a hint takes the subscribed table's place
+- [x] `subscribe` merges the fetched show episodes into the cache and the frontend shows them right away
+- [x] The subscribed table updates when the background check emits `episodes-updated`
 - [ ] Manual check: subscribe to a show from the schedule table; its recent episodes appear in the subscribed table at once

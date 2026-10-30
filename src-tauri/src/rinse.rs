@@ -2,7 +2,7 @@ use chrono::DateTime;
 use chrono_tz::Europe::London;
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, VecDeque};
 use std::path::{Path, PathBuf};
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
@@ -99,6 +99,55 @@ pub fn new_episodes(
                 && subscriptions.iter().any(|s| s.slug == e.show_slug)
         })
         .collect()
+}
+
+/// The episodes waiting to be downloaded, worked strictly one at a time in arrival order.
+/// Sent to the frontend as is on every change.
+#[derive(Debug, Default, Serialize)]
+pub struct DownloadQueue {
+    pub current: Option<Episode>,
+    /// Of `current`, once the server has reported a size.
+    pub percent: Option<u8>,
+    pub waiting: VecDeque<Episode>,
+    /// The last download that failed, until the next one starts or it's dismissed.
+    pub failed: Option<Episode>,
+}
+
+impl DownloadQueue {
+    /// Adds the episode unless it's already waiting or downloading; returns whether it was added.
+    pub fn push(&mut self, episode: Episode) -> bool {
+        let mut queued = self.current.iter().chain(&self.waiting);
+
+        if queued.any(|e| e.id == episode.id) {
+            return false;
+        }
+
+        self.waiting.push_back(episode);
+
+        true
+    }
+
+    /// Starts the oldest waiting episode, unless one is still downloading.
+    pub fn next(&mut self) -> Option<Episode> {
+        if self.current.is_some() {
+            return None;
+        }
+
+        self.current = Some(self.waiting.pop_front()?);
+        self.percent = None;
+        self.failed = None;
+
+        self.current.clone()
+    }
+
+    /// Ends the current download, keeping it as the last failure unless it `succeeded`.
+    pub fn finish(&mut self, succeeded: bool) {
+        let current = self.current.take();
+
+        if !succeeded {
+            self.failed = current;
+        }
+    }
 }
 
 /// Schedule and show responses both carry an `episodes` list of the same shape.
@@ -216,24 +265,43 @@ async fn fetch_episodes(url: &str) -> Result<Vec<Episode>, String> {
     map_episodes(&json).map_err(|e| e.to_string())
 }
 
-/// Streams the episode's mp3 into `folder` chunk by chunk.
+/// Streams the episode's mp3 into `folder` chunk by chunk, calling `on_progress` whenever the percent changes,
+/// which it can only do when the server reports a size.
 /// A failed transfer removes the partial file; a failed request leaves any earlier download alone.
-pub async fn download(episode: &Episode, folder: &Path) -> Result<(), String> {
+pub async fn download(
+    episode: &Episode,
+    folder: &Path,
+    mut on_progress: impl FnMut(u8),
+) -> Result<(), String> {
     let url = episode.mp3.as_deref().ok_or("episode has no mp3")?;
     let path = folder.join(file_name(episode));
 
-    let mut stream = reqwest::get(url)
+    let response = reqwest::get(url)
         .await
         .and_then(|r| r.error_for_status())
-        .map_err(|e| e.to_string())?
-        .bytes_stream();
+        .map_err(|e| e.to_string())?;
+    let total = response.content_length().filter(|&n| n > 0);
+    let mut stream = response.bytes_stream();
     let mut file = File::create(&path).await.map_err(|e| e.to_string())?;
 
     let result = async {
+        let mut written = 0;
+        let mut percent = None;
+
         while let Some(chunk) = stream.next().await {
-            file.write_all(&chunk.map_err(|e| e.to_string())?)
-                .await
-                .map_err(|e| e.to_string())?;
+            let chunk = chunk.map_err(|e| e.to_string())?;
+
+            file.write_all(&chunk).await.map_err(|e| e.to_string())?;
+            written += chunk.len() as u64;
+
+            if let Some(total) = total {
+                let now = (written * 100 / total).min(100) as u8;
+
+                if percent != Some(now) {
+                    percent = Some(now);
+                    on_progress(now);
+                }
+            }
         }
 
         file.flush().await.map_err(|e| e.to_string())
@@ -460,6 +528,36 @@ mod tests {
         let e: Episode = serde_json::from_value(value).unwrap();
 
         assert!(e.scheduled);
+    }
+
+    #[test]
+    fn the_download_queue_runs_first_in_first_out_and_skips_duplicates() {
+        let mut queue = DownloadQueue::default();
+
+        assert!(queue.push(episode("2315290")));
+        assert!(queue.push(episode("2319482")));
+        assert!(!queue.push(episode("2315290")));
+        assert_eq!(queue.next().unwrap().id, "2315290");
+        assert!(!queue.push(episode("2315290")));
+        assert_eq!(queue.next(), None);
+
+        queue.finish(true);
+
+        assert_eq!(queue.next().unwrap().id, "2319482");
+    }
+
+    #[test]
+    fn a_failed_download_is_kept_until_the_next_one_starts() {
+        let mut queue = DownloadQueue::default();
+
+        queue.push(episode("2315290"));
+        queue.push(episode("2319482"));
+        queue.next();
+        queue.finish(false);
+
+        assert_eq!(queue.failed.as_ref().unwrap().id, "2315290");
+        assert_eq!(queue.next().unwrap().id, "2319482");
+        assert_eq!(queue.failed, None);
     }
 
     #[test]

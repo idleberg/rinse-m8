@@ -2,10 +2,11 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
 	import { open } from '@tauri-apps/plugin-dialog';
+	import DownloadStatus from '../lib/DownloadStatus.svelte';
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
 	import ShowView from '../lib/ShowView.svelte';
-	import { type Episode, type Show, showOf, stations } from '../lib/episodes';
+	import { type DownloadQueue, type Episode, type Show, showOf, stations } from '../lib/episodes';
 
 	type Settings = {
 		subscriptions: Show[];
@@ -41,8 +42,9 @@
 	const subscribedEpisodes = $derived(filteredEpisodes.filter((episode) => subscribed.includes(episode.showSlug)));
 	const scheduleEpisodes = $derived(filteredEpisodes.filter((episode) => episode.scheduled));
 
-	let downloading = $state<string[]>([]);
+	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failed: null });
 
+	/** Queues the episode, asking for a download folder first if none is set. */
 	async function download(episode: Episode) {
 		error = '';
 
@@ -57,13 +59,7 @@
 			settings.downloadFolder = folder;
 		}
 
-		downloading.push(episode.id);
-
-		try {
-			await invoke('download', { episode });
-		} finally {
-			downloading = downloading.filter((id) => id !== episode.id);
-		}
+		await invoke('download', { episode });
 	}
 
 	function setEpisodes(list: Episode[]) {
@@ -132,6 +128,11 @@
 
 	// The subscription poller sends the whole cache after each check
 	listen<Episode[]>('episodes-updated', (event) => setEpisodes(event.payload));
+
+	// ponytail: the queue is only sent on change, so a reloaded page shows it from the next event on
+	listen<DownloadQueue>('download-queue', (event) => {
+		downloads = event.payload;
+	});
 </script>
 
 <main>
@@ -147,7 +148,7 @@
 				refreshing={refreshing.includes(openedShow.slug)}
 				{episodes}
 				{subscribed}
-				{downloading}
+				{downloads}
 				{subscribing}
 				ondownload={(episode) => download(episode).catch(showError)}
 				onopenshow={(episode) => openShow(episode).catch(showError)}
@@ -174,7 +175,7 @@
 			<EpisodeTable
 				episodes={subscribedEpisodes}
 				{subscribed}
-				{downloading}
+				{downloads}
 				{subscribing}
 				ondownload={(episode) => download(episode).catch(showError)}
 				onopenshow={(episode) => openShow(episode).catch(showError)}
@@ -188,7 +189,7 @@
 		<EpisodeTable
 			episodes={scheduleEpisodes}
 			{subscribed}
-			{downloading}
+			{downloads}
 			{subscribing}
 			ondownload={(episode) => download(episode).catch(showError)}
 			onopenshow={(episode) => openShow(episode).catch(showError)}
@@ -196,6 +197,8 @@
 		/>
 	{/if}
 </main>
+
+<DownloadStatus {downloads} ondismiss={() => invoke('dismiss_download_failure').catch(showError)} />
 
 <style>
 	main {

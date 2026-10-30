@@ -1,14 +1,14 @@
 <script lang="ts">
 	import EpisodeFilters from './EpisodeFilters.svelte';
 	import EpisodeTable from './EpisodeTable.svelte';
-	import { type Episode, type Show, showOf } from './episodes';
+	import { type DownloadQueue, type Episode, type Show, showOf } from './episodes';
 
 	let {
 		show,
 		refreshing,
 		episodes,
 		subscribed,
-		downloading,
+		downloads,
 		subscribing,
 		ondownload,
 		onopenshow,
@@ -21,8 +21,7 @@
 		episodes: Episode[];
 		/** Show slugs. */
 		subscribed: string[];
-		/** Episode ids. */
-		downloading: string[];
+		downloads: DownloadQueue;
 		/** Show slugs. */
 		subscribing: string[];
 		ondownload: (episode: Episode) => void;
@@ -62,7 +61,7 @@
 <EpisodeTable
 	episodes={visibleEpisodes}
 	{subscribed}
-	{downloading}
+	{downloads}
 	{subscribing}
 	{ondownload}
 	{onopenshow}

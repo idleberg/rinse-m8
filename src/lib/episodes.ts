@@ -24,3 +24,20 @@ export function showOf(episode: Episode): Show {
 }
 
 export const stations = ['Rinse FM', 'Rinse FR', 'Kool FM', 'SWU FM'];
+
+/** The backend's download queue, as sent with every `download-queue` event. */
+export type DownloadQueue = {
+	current: Episode | null;
+	/** Of `current`, once the server has reported a size. */
+	percent: number | null;
+	waiting: Episode[];
+	/** The last download that failed, until the next one starts or it's dismissed. */
+	failed: Episode | null;
+};
+
+/** `<Show> – <dd/mm>`. */
+export function episodeLabel(episode: Episode): string {
+	const [, month, day] = episode.date.split('-');
+
+	return `${episode.showTitle} – ${day}/${month}`;
+}

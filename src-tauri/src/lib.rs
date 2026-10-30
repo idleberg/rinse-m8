@@ -2,12 +2,19 @@ mod rinse;
 
 use std::sync::Mutex;
 use std::time::Duration;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_store::StoreExt;
 
 /// Serialises settings read-modify-writes between commands and the poller.
 static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
+
+/// The download queue and the signal that wakes its worker.
+#[derive(Default)]
+struct Downloads {
+    queue: Mutex<rinse::DownloadQueue>,
+    wake: tokio::sync::Notify,
+}
 
 /// Merges a fresh schedule fetch into the episode cache and returns the whole cache.
 /// A failed fetch still returns the cache, so history survives being offline.
@@ -56,14 +63,62 @@ fn merge(
         .collect())
 }
 
-/// Streams the episode's mp3 into the download folder from settings, which the frontend sets first.
+/// Adds the episode to the download queue, unless it's already in it.
 #[tauri::command]
-async fn download(app: tauri::AppHandle, episode: rinse::Episode) -> Result<(), String> {
-    let folder = load_settings(&app, serde_json::Map::new())?
-        .download_folder
-        .ok_or("no download folder set")?;
+fn download(app: tauri::AppHandle, episode: rinse::Episode) {
+    if update_downloads(&app, |queue| queue.push(episode)) {
+        app.state::<Downloads>().wake.notify_one();
+    }
+}
 
-    rinse::download(&episode, &folder).await
+#[tauri::command]
+fn dismiss_download_failure(app: tauri::AppHandle) {
+    update_downloads(&app, |queue| queue.failed = None);
+}
+
+/// Applies `change` to the download queue and sends the result to the frontend.
+fn update_downloads<T>(
+    app: &tauri::AppHandle,
+    change: impl FnOnce(&mut rinse::DownloadQueue) -> T,
+) -> T {
+    let downloads = app.state::<Downloads>();
+    let mut queue = downloads.queue.lock().unwrap_or_else(|e| e.into_inner());
+    let result = change(&mut queue);
+
+    if let Err(e) = app.emit("download-queue", &*queue) {
+        eprintln!("download queue event failed: {e}");
+    }
+
+    result
+}
+
+/// Works through the download queue one episode at a time, for as long as the app runs.
+/// Each download goes into the folder that's set when it starts, which the frontend sets before queueing.
+async fn download_worker(app: tauri::AppHandle) {
+    loop {
+        let Some(episode) = update_downloads(&app, |queue| queue.next()) else {
+            app.state::<Downloads>().wake.notified().await;
+            continue;
+        };
+
+        let result = async {
+            let folder = load_settings(&app, serde_json::Map::new())?
+                .download_folder
+                .ok_or("no download folder set")?;
+
+            rinse::download(&episode, &folder, |percent| {
+                update_downloads(&app, |queue| queue.percent = Some(percent));
+            })
+            .await
+        }
+        .await;
+
+        if let Err(e) = &result {
+            eprintln!("downloading {} failed: {e}", episode.id);
+        }
+
+        update_downloads(&app, |queue| queue.finish(result.is_ok()));
+    }
 }
 
 #[tauri::command]
@@ -164,7 +219,7 @@ async fn poll(app: tauri::AppHandle) {
 }
 
 /// Fetches every subscribed show, notifies once per new episode and, if there was one, pushes the cache to the table
-/// and downloads the new episodes when auto-download is on and a folder is set.
+/// and queues the new episodes for download when auto-download is on and a folder is set.
 async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
     let subscriptions = load_settings(app, serde_json::Map::new())?.subscriptions;
     let mut fetched = Vec::new();
@@ -178,16 +233,13 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
 
     let cache = merge(app, fetched.clone())?;
     let mut unseen = Vec::new();
-    let mut folder = None;
+    let mut auto_download = false;
 
     // Seen is saved before notifying, so a crash can drop a notification but never repeat one.
     update_settings(app, |settings| {
         unseen = rinse::new_episodes(&settings.subscriptions, &settings.seen, fetched);
         settings.seen.extend(unseen.iter().map(|e| e.id.clone()));
-        folder = settings
-            .download_folder
-            .clone()
-            .filter(|_| settings.auto_download);
+        auto_download = settings.auto_download && settings.download_folder.is_some();
     })?;
 
     if unseen.is_empty() {
@@ -208,12 +260,11 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
     app.emit("episodes-updated", cache)
         .map_err(|e| e.to_string())?;
 
-    // ponytail: a failed auto-download isn't retried, since the episode is already seen
-    if let Some(folder) = folder {
-        for episode in &unseen {
-            if let Err(e) = rinse::download(episode, &folder).await {
-                eprintln!("downloading {} failed: {e}", episode.id);
-            }
+    // ponytail: the download queue lives in memory, so queued auto-downloads are lost on quit
+    // and a failed one isn't retried, since the episode is already seen
+    if auto_download {
+        for episode in unseen {
+            download(app.clone(), episode);
         }
     }
 
@@ -227,8 +278,10 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        .manage(Downloads::default())
         .setup(|app| {
             tauri::async_runtime::spawn(poll(app.handle().clone()));
+            tauri::async_runtime::spawn(download_worker(app.handle().clone()));
 
             Ok(())
         })
@@ -236,6 +289,7 @@ pub fn run() {
             get_episodes,
             refresh_show,
             download,
+            dismiss_download_failure,
             get_settings,
             set_settings,
             subscribe,
