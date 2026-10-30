@@ -7,20 +7,36 @@ use tauri_plugin_store::StoreExt;
 /// A failed fetch still returns the cache, so history survives being offline.
 #[tauri::command]
 async fn get_episodes(app: tauri::AppHandle) -> Result<Vec<rinse::Episode>, String> {
+    let fetched = rinse::fetch_schedule().await.unwrap_or_else(|e| {
+        eprintln!("schedule fetch failed: {e}");
+        Vec::new()
+    });
+
+    merge(&app, fetched)
+}
+
+/// Merges the show's recent episodes into the episode cache and returns the whole cache.
+#[tauri::command]
+async fn refresh_show(app: tauri::AppHandle, slug: String) -> Result<Vec<rinse::Episode>, String> {
+    let fetched = rinse::fetch_show(&slug).await?;
+
+    merge(&app, fetched)
+}
+
+/// Adds `episodes` to the cache, replacing any with the same id, and returns the whole cache.
+fn merge(
+    app: &tauri::AppHandle,
+    episodes: Vec<rinse::Episode>,
+) -> Result<Vec<rinse::Episode>, String> {
     // ponytail: unbounded cache keyed by id, prune by age if it grows large
     let cache = app.store("episodes.json").map_err(|e| e.to_string())?;
 
-    match rinse::fetch_schedule().await {
-        Ok(episodes) => {
-            for episode in episodes {
-                let value = serde_json::to_value(&episode).map_err(|e| e.to_string())?;
-                cache.set(episode.id, value);
-            }
-
-            cache.save().map_err(|e| e.to_string())?;
-        }
-        Err(e) => eprintln!("schedule fetch failed: {e}"),
+    for episode in episodes {
+        let value = serde_json::to_value(&episode).map_err(|e| e.to_string())?;
+        cache.set(episode.id, value);
     }
+
+    cache.save().map_err(|e| e.to_string())?;
 
     Ok(cache
         .values()
@@ -48,7 +64,11 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![get_episodes, download])
+        .invoke_handler(tauri::generate_handler![
+            get_episodes,
+            refresh_show,
+            download
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

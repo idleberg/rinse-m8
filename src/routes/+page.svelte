@@ -70,10 +70,26 @@
 		}
 	}
 
+	function setEpisodes(list: Episode[]) {
+		episodes = list.sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
+	}
+
+	let refreshing = $state<string[]>([]);
+
+	async function refreshShow(slug: string) {
+		error = '';
+
+		refreshing.push(slug);
+
+		try {
+			setEpisodes(await invoke<Episode[]>('refresh_show', { slug }));
+		} finally {
+			refreshing = refreshing.filter((s) => s !== slug);
+		}
+	}
+
 	invoke<Episode[]>('get_episodes')
-		.then((list) => {
-			episodes = list.sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
-		})
+		.then(setEpisodes)
 		.catch((e) => {
 			error = String(e);
 		});
@@ -103,6 +119,7 @@
 				<th>Title</th>
 				<th></th>
 				<th></th>
+				<th></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -130,6 +147,17 @@
 								{downloading.includes(episode.id) ? 'Downloading…' : 'Download'}
 							</button>
 						{/if}
+					</td>
+					<td>
+						<button
+							disabled={refreshing.includes(episode.showSlug)}
+							onclick={() =>
+								refreshShow(episode.showSlug).catch((e) => {
+									error = String(e);
+								})}
+						>
+							{refreshing.includes(episode.showSlug) ? 'Refreshing…' : 'Refresh show'}
+						</button>
 					</td>
 				</tr>
 			{/each}

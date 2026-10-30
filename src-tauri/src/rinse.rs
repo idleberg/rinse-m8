@@ -27,8 +27,9 @@ pub struct Episode {
     pub mp3: Option<String>,
 }
 
+/// Schedule and show responses both carry an `episodes` list of the same shape.
 #[derive(Deserialize)]
-struct RawSchedule {
+struct RawResponse {
     episodes: Vec<RawEpisode>,
 }
 
@@ -64,8 +65,9 @@ struct RawGenre {
     title: String,
 }
 
-pub fn map_schedule(json: &str) -> serde_json::Result<Vec<Episode>> {
-    let raw: RawSchedule = serde_json::from_str(json)?;
+/// Maps a raw schedule or show response.
+pub fn map_episodes(json: &str) -> serde_json::Result<Vec<Episode>> {
+    let raw: RawResponse = serde_json::from_str(json)?;
 
     Ok(raw.episodes.into_iter().filter_map(map_episode).collect())
 }
@@ -82,13 +84,19 @@ fn map_episode(raw: RawEpisode) -> Option<Episode> {
     .to_string();
 
     let show = raw.parent_show.into_iter().next()?;
-    let london = |s: &str| DateTime::parse_from_rfc3339(s).ok().map(|d| d.with_timezone(&London));
+    let london = |s: &str| {
+        DateTime::parse_from_rfc3339(s)
+            .ok()
+            .map(|d| d.with_timezone(&London))
+    };
 
     // episodeDate is London midnight in UTC. episodeTime is the London wall-clock time put on
     // today's date and converted with today's offset, so convert it back with that same offset:
     // the broadcast date's offset would shift BST episodes by an hour.
     let date = london(&raw.episode_date)?.format("%Y-%m-%d").to_string();
-    let time = london(raw.episode_time.as_deref()?)?.format("%H:%M").to_string();
+    let time = london(raw.episode_time.as_deref()?)?
+        .format("%H:%M")
+        .to_string();
 
     Some(Episode {
         id: raw.id,
@@ -107,7 +115,16 @@ fn map_episode(raw: RawEpisode) -> Option<Episode> {
 }
 
 pub async fn fetch_schedule() -> Result<Vec<Episode>, String> {
-    let json = reqwest::get("https://www.rinse.fm/api/query/v1/schedule")
+    fetch_episodes("https://www.rinse.fm/api/query/v1/schedule").await
+}
+
+/// The show's ~30 most recent episodes.
+pub async fn fetch_show(slug: &str) -> Result<Vec<Episode>, String> {
+    fetch_episodes(&format!("https://www.rinse.fm/api/query/v1/shows/{slug}")).await
+}
+
+async fn fetch_episodes(url: &str) -> Result<Vec<Episode>, String> {
+    let json = reqwest::get(url)
         .await
         .and_then(|r| r.error_for_status())
         .map_err(|e| e.to_string())?
@@ -115,7 +132,7 @@ pub async fn fetch_schedule() -> Result<Vec<Episode>, String> {
         .await
         .map_err(|e| e.to_string())?;
 
-    map_schedule(&json).map_err(|e| e.to_string())
+    map_episodes(&json).map_err(|e| e.to_string())
 }
 
 /// Streams the episode's mp3 into `folder` chunk by chunk.
@@ -165,7 +182,7 @@ mod tests {
     use super::*;
 
     fn fixture() -> Vec<Episode> {
-        map_schedule(include_str!("../tests/fixtures/schedule.json")).unwrap()
+        map_episodes(include_str!("../tests/fixtures/schedule.json")).unwrap()
     }
 
     fn episode(id: &str) -> Episode {
@@ -227,13 +244,31 @@ mod tests {
     fn time_is_formatted_in_london() {
         let json = include_str!("../tests/fixtures/schedule.json")
             .replace("2026-10-29T16:00:00+00:00", "2026-07-01T16:00:00+00:00");
-        let e = map_schedule(&json)
+        let e = map_episodes(&json)
             .unwrap()
             .into_iter()
             .find(|e| e.id == "2315290")
             .unwrap();
 
         assert_eq!(e.time, "17:00");
+    }
+
+    #[test]
+    fn maps_show_episodes_like_the_schedule() {
+        let episodes = map_episodes(include_str!("../tests/fixtures/show.json")).unwrap();
+        let ids: Vec<_> = episodes.iter().map(|e| e.id.as_str()).collect();
+
+        assert_eq!(ids, ["2315290", "2284193", "2241796", "2101661"]);
+        assert_eq!(episodes[0], episode("2315290"));
+        assert_eq!(episodes[1].mp3, None);
+        // episodeDate 2026-07-01T23:00Z is London midnight on 2 Jul (BST).
+        assert_eq!(episodes[1].date, "2026-07-02");
+        assert_eq!(
+            episodes[2].mp3.as_deref(),
+            Some("https://replay.rinse.fm/france/Dubquake220226(320).mp3")
+        );
+        assert_eq!(episodes[2].date, "2026-02-22");
+        assert_eq!(episodes[3].mp3, None);
     }
 
     #[test]

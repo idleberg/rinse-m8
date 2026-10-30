@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] The data module maps a raw show response to Episodes, using the same rules as the schedule
-- [ ] A small show-response fixture plus a `cargo test` check that its episodes map correctly
-- [ ] The `refresh_show(slug)` command fetches the show, merges it into the cache and returns the updated episodes
-- [ ] The row action triggers it and the table updates
+- [x] The data module maps a raw show response to Episodes, using the same rules as the schedule
+- [x] A small show-response fixture plus a `cargo test` check that its episodes map correctly
+- [x] The `refresh_show(slug)` command fetches the show, merges it into the cache and returns the updated episodes
+- [x] The row action triggers it and the table updates
