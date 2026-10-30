@@ -1,0 +1,34 @@
+amends "package://github.com/jdx/hk/releases/download/v2.5.0/hk@2.5.0#/Config.pkl"
+
+local linters = new Mapping<String, Step> {
+  ["format"] {
+    glob = List("src-tauri/**/*.rs")
+    exclusive = true
+    fix = "mise run format"
+  }
+  ["lint"] {
+    glob = List("src-tauri/**/*.rs")
+    exclusive = true
+    check = "mise run lint"
+  }
+  ["svelte-check"] {
+    glob = List("src/**/*.{ts,js,svelte}")
+    exclusive = true
+    check = "mise run check"
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps = linters
+  }
+  ["check"] {
+    steps = linters
+  }
+  ["fix"] {
+    fix = true
+    steps = linters
+  }
+}
