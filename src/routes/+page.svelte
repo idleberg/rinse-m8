@@ -2,23 +2,9 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
 	import { open } from '@tauri-apps/plugin-dialog';
-
-	type Episode = {
-		id: string;
-		title: string;
-		showId: string;
-		showSlug: string;
-		showTitle: string;
-		station: string;
-		/** London date, `YYYY-MM-DD`. */
-		date: string;
-		/** London time, `HH:MM`. */
-		time: string;
-		length: number;
-		rebroadcast: boolean;
-		genres: string[];
-		mp3: string | null;
-	};
+	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
+	import EpisodeTable from '../lib/EpisodeTable.svelte';
+	import { type Episode, stations } from '../lib/episodes';
 
 	type Settings = {
 		subscriptions: { slug: string; title: string }[];
@@ -26,8 +12,6 @@
 		downloadFolder: string | null;
 		autoDownload: boolean;
 	};
-
-	const stations = ['Rinse FM', 'Rinse FR', 'Kool FM', 'SWU FM'];
 
 	let episodes = $state<Episode[]>([]);
 	let error = $state('');
@@ -126,19 +110,19 @@
 		}
 	}
 
+	function showError(e: unknown) {
+		error = String(e);
+	}
+
 	invoke<Settings>('get_settings')
 		.then((loaded) => {
 			settings = loaded;
 		})
-		.catch((e) => {
-			error = String(e);
-		});
+		.catch(showError);
 
 	invoke<Episode[]>('get_episodes')
 		.then(setEpisodes)
-		.catch((e) => {
-			error = String(e);
-		});
+		.catch(showError);
 
 	// The subscription poller sends the whole cache after each check
 	listen<Episode[]>('episodes-updated', (event) => setEpisodes(event.payload));
@@ -149,97 +133,29 @@
 		<p role="alert">{error}</p>
 	{/if}
 
-	<fieldset aria-label="Filters">
-		{#each stations as station (station)}
-			<label><input type="checkbox" bind:group={shownStations} value={station} /> {station}</label>
-		{/each}
-		<label><input type="checkbox" bind:checked={mp3Only} /> mp3 available only</label>
-		<label><input type="checkbox" bind:checked={hideRebroadcasts} /> hide rebroadcasts</label>
-		<label><input type="checkbox" bind:checked={subscribedOnly} /> subscribed only</label>
-		<input type="search" bind:value={search} placeholder="Search title, show, genres" aria-label="Search" />
-	</fieldset>
+	<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:subscribedOnly bind:search />
 
 	<fieldset aria-label="Settings">
 		<label>
 			<input
 				type="checkbox"
 				bind:checked={settings.autoDownload}
-				onchange={() =>
-					saveAutoDownload().catch((e) => {
-						error = String(e);
-					})}
+				onchange={() => saveAutoDownload().catch(showError)}
 			/>
 			auto-download new episodes of subscribed shows
 		</label>
 	</fieldset>
 
-	<table>
-		<thead>
-			<tr>
-				<th>Date</th>
-				<th>Time</th>
-				<th>Station</th>
-				<th>Show</th>
-				<th>Title</th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each visibleEpisodes as episode (episode.id)}
-				<tr>
-					<td>{episode.date}</td>
-					<td>{episode.time}</td>
-					<td>{episode.station}</td>
-					<td>{episode.showTitle}</td>
-					<td>{episode.title}</td>
-					<td>
-						{#if episode.rebroadcast}
-							<span class="badge">Rebroadcast</span>
-						{/if}
-					</td>
-					<td>
-						{#if episode.mp3}
-							<button
-								disabled={downloading.includes(episode.id)}
-								onclick={() =>
-									download(episode).catch((e) => {
-										error = String(e);
-									})}
-							>
-								{downloading.includes(episode.id) ? 'Downloading…' : 'Download'}
-							</button>
-						{/if}
-					</td>
-					<td>
-						<button
-							disabled={refreshing.includes(episode.showSlug)}
-							onclick={() =>
-								refreshShow(episode.showSlug).catch((e) => {
-									error = String(e);
-								})}
-						>
-							{refreshing.includes(episode.showSlug) ? 'Refreshing…' : 'Refresh show'}
-						</button>
-					</td>
-					<td>
-						<button
-							aria-pressed={subscribed.includes(episode.showSlug)}
-							disabled={subscribing.includes(episode.showSlug)}
-							onclick={() =>
-								toggleSubscription(episode).catch((e) => {
-									error = String(e);
-								})}
-						>
-							{subscribed.includes(episode.showSlug) ? 'Unsubscribe' : 'Subscribe'}
-						</button>
-					</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
+	<EpisodeTable
+		episodes={visibleEpisodes}
+		{subscribed}
+		{downloading}
+		{refreshing}
+		{subscribing}
+		ondownload={(episode) => download(episode).catch(showError)}
+		onrefresh={(episode) => refreshShow(episode.showSlug).catch(showError)}
+		ontogglesubscription={(episode) => toggleSubscription(episode).catch(showError)}
+	/>
 </main>
 
 <style>
@@ -256,28 +172,5 @@
 		margin: 0 0 1rem;
 		border: none;
 		padding: 0;
-	}
-
-	table {
-		width: 100%;
-		border-collapse: collapse;
-	}
-
-	th,
-	td {
-		padding: 0.25rem 0.5rem;
-		text-align: left;
-		white-space: nowrap;
-	}
-
-	tbody tr:nth-child(odd) {
-		background: #f4f4f4;
-	}
-
-	.badge {
-		padding: 0 0.4rem;
-		border-radius: 0.25rem;
-		background: #ddd;
-		font-size: 0.8em;
 	}
 </style>
