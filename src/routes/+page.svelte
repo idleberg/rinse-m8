@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
+	import { listen } from '@tauri-apps/api/event';
 	import { open } from '@tauri-apps/plugin-dialog';
 
 	type Episode = {
@@ -125,6 +126,9 @@
 		.catch((e) => {
 			error = String(e);
 		});
+
+	// The subscription poller sends the whole cache after each check
+	listen<Episode[]>('episodes-updated', (event) => setEpisodes(event.payload));
 </script>
 
 <main>

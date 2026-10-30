@@ -68,6 +68,22 @@ impl Settings {
     }
 }
 
+/// The available episodes of subscribed shows that haven't been seen, i.e. the ones to notify about.
+pub fn new_episodes(
+    subscriptions: &[Subscription],
+    seen: &BTreeSet<String>,
+    episodes: Vec<Episode>,
+) -> Vec<Episode> {
+    episodes
+        .into_iter()
+        .filter(|e| {
+            e.mp3.is_some()
+                && !seen.contains(&e.id)
+                && subscriptions.iter().any(|s| s.slug == e.show_slug)
+        })
+        .collect()
+}
+
 /// Schedule and show responses both carry an `episodes` list of the same shape.
 #[derive(Deserialize)]
 struct RawResponse {
@@ -360,6 +376,39 @@ mod tests {
         settings.subscribe("dubquake-records", "Dubquake Records", &[]);
 
         assert_eq!(settings.subscriptions.len(), 1);
+    }
+
+    fn dubquake() -> Vec<Subscription> {
+        vec![Subscription {
+            slug: "dubquake-records".into(),
+            title: "Dubquake Records".into(),
+        }]
+    }
+
+    #[test]
+    fn new_episodes_returns_unseen_available_episodes_of_subscribed_shows() {
+        let ids: Vec<_> = new_episodes(&dubquake(), &BTreeSet::new(), show_fixture())
+            .into_iter()
+            .map(|e| e.id)
+            .collect();
+
+        assert_eq!(ids, ["2315290", "2241796"]);
+    }
+
+    #[test]
+    fn new_episodes_excludes_seen_unavailable_and_unsubscribed_episodes() {
+        // 2315290 is seen, 2284193 and 2101661 have no mp3, 2319482 is another show's.
+        let mut episodes = show_fixture();
+
+        episodes.push(episode("2319482"));
+
+        let seen = BTreeSet::from(["2315290".into()]);
+        let ids: Vec<_> = new_episodes(&dubquake(), &seen, episodes)
+            .into_iter()
+            .map(|e| e.id)
+            .collect();
+
+        assert_eq!(ids, ["2241796"]);
     }
 
     #[test]

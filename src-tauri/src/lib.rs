@@ -1,6 +1,13 @@
 mod rinse;
 
+use std::sync::Mutex;
+use std::time::Duration;
+use tauri::Emitter;
+use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_store::StoreExt;
+
+/// Serialises settings read-modify-writes between commands and the poller.
+static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
 
 /// Merges a fresh schedule fetch into the episode cache and returns the whole cache.
 /// A failed fetch still returns the cache, so history survives being offline.
@@ -65,6 +72,7 @@ fn set_settings(
     app: tauri::AppHandle,
     patch: serde_json::Map<String, serde_json::Value>,
 ) -> Result<(), String> {
+    let _lock = SETTINGS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let settings = load_settings(&app, patch)?;
 
     save_settings(&app, &settings)
@@ -116,17 +124,72 @@ fn save_settings(app: &tauri::AppHandle, settings: &rinse::Settings) -> Result<(
 }
 
 /// Applies `change` to the stored settings, saves them and returns the result.
-// ponytail: unlocked read-modify-write, wrap in a Mutex once the poller (07) writes seen ids concurrently
 fn update_settings(
     app: &tauri::AppHandle,
     change: impl FnOnce(&mut rinse::Settings),
 ) -> Result<rinse::Settings, String> {
+    let _lock = SETTINGS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let mut settings = load_settings(app, serde_json::Map::new())?;
 
     change(&mut settings);
     save_settings(app, &settings)?;
 
     Ok(settings)
+}
+
+/// Checks the subscriptions at startup and then every 15 minutes, for as long as the app runs.
+async fn poll(app: tauri::AppHandle) {
+    let mut interval = tokio::time::interval(Duration::from_secs(15 * 60));
+
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+
+    loop {
+        interval.tick().await;
+
+        if let Err(e) = check_subscriptions(&app).await {
+            eprintln!("subscription check failed: {e}");
+        }
+    }
+}
+
+/// Fetches every subscribed show, notifies once per new episode and, if there was one, pushes the cache to the table.
+async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
+    let subscriptions = load_settings(app, serde_json::Map::new())?.subscriptions;
+    let mut fetched = Vec::new();
+
+    for subscription in &subscriptions {
+        match rinse::fetch_show(&subscription.slug).await {
+            Ok(episodes) => fetched.extend(episodes),
+            Err(e) => eprintln!("fetching {} failed: {e}", subscription.slug),
+        }
+    }
+
+    let cache = merge(app, fetched.clone())?;
+    let mut unseen = Vec::new();
+
+    // Seen is saved before notifying, so a crash can drop a notification but never repeat one.
+    update_settings(app, |settings| {
+        unseen = rinse::new_episodes(&settings.subscriptions, &settings.seen, fetched);
+        settings.seen.extend(unseen.iter().map(|e| e.id.clone()));
+    })?;
+
+    if unseen.is_empty() {
+        return Ok(());
+    }
+
+    for episode in &unseen {
+        let date = chrono::NaiveDate::parse_from_str(&episode.date, "%Y-%m-%d")
+            .map_or(episode.date.clone(), |d| d.format("%d/%m").to_string());
+        let title = format!("New: {} – {date}", episode.show_title);
+
+        if let Err(e) = app.notification().builder().title(title).show() {
+            eprintln!("notification failed: {e}");
+        }
+    }
+
+    // ponytail: the startup check can emit before the webview listens, so its rows show on the next tick
+    app.emit("episodes-updated", cache)
+        .map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -136,6 +199,11 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            tauri::async_runtime::spawn(poll(app.handle().clone()));
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_episodes,
             refresh_show,

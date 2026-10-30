@@ -6,12 +6,12 @@
 
 **Status:** ready-for-agent
 
-- [ ] The data module has a pure new-episode check: given the subscriptions, the seen ids and the fetched episodes, it returns the available, unseen episodes of subscribed shows
-- [ ] `cargo test` covers the new-episode check:
-  - [ ] it returns an unseen, available episode of a subscribed show
-  - [ ] it excludes seen episodes, unavailable episodes and episodes of unsubscribed shows
-- [ ] A tokio task spawned at app setup runs once immediately and then every 15 minutes
-- [ ] For each new episode, the task sends one native notification and adds the id to seen; it never notifies twice for the same episode, even across restarts
-- [ ] It emits `episodes-updated` and the table reloads
-- [ ] The notification permission is in the default capability
+- [x] The data module has a pure new-episode check: given the subscriptions, the seen ids and the fetched episodes, it returns the available, unseen episodes of subscribed shows
+- [x] `cargo test` covers the new-episode check:
+  - [x] it returns an unseen, available episode of a subscribed show
+  - [x] it excludes seen episodes, unavailable episodes and episodes of unsubscribed shows
+- [x] A tokio task spawned at app setup runs once immediately and then every 15 minutes
+- [x] For each new episode, the task sends one native notification and adds the id to seen; it never notifies twice for the same episode, even across restarts
+- [x] It emits `episodes-updated` and the table reloads
+- [x] The notification permission is in the default capability
 - [ ] Manual check: remove a subscribed show's id from seen in the settings file, restart, and one notification fires
