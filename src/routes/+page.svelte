@@ -230,7 +230,17 @@
 					ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
 				/>
 			{:else}
-				<p>Subscribe to a show to see its episodes here</p>
+				<p>
+					Subscribe to a show from the
+					<a
+						href="#schedule"
+						onclick={(event) => {
+							event.preventDefault();
+							view = 'schedule';
+						}}>schedule</a
+					>
+					to see its episodes here
+				</p>
 			{/each}
 		{:else}
 			<EpisodeTable
