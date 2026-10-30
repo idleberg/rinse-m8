@@ -11,7 +11,7 @@ The schedule view's table of episodes that have appeared in Rinse's schedule, in
 _Avoid_: Timetable, main table
 
 **Dashboard**:
-The default view, with one section per subscribed show listing its newest episodes.
+The default view. It opens with a table of each subscribed show's newest episode, then has one section per subscribed show listing its newest episodes.
 _Avoid_: Subscribed table, for you, feed
 
 **Show directory**:

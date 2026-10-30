@@ -9,6 +9,7 @@
 		downloads,
 		subscribing,
 		ondownload,
+		onmark,
 		onopenshow,
 		ontogglesubscription,
 	}: {
@@ -21,6 +22,7 @@
 		/** Show slugs. */
 		subscribing: string[];
 		ondownload: (episode: Episode) => void;
+		onmark: (episode: Episode) => void;
 		onopenshow: (show: Show) => void;
 		ontogglesubscription: (show: Show) => void;
 	} = $props();
@@ -39,6 +41,7 @@
 			{downloads}
 			{subscribing}
 			{ondownload}
+			{onmark}
 			onopenshow={(episode) => onopenshow(showOf(episode))}
 			ontogglesubscription={(episode) => ontogglesubscription(showOf(episode))}
 		/>

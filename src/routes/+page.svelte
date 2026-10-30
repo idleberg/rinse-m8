@@ -66,6 +66,22 @@
 			),
 		})),
 	);
+
+	/** The newest filtered episode of each subscribed show, newest first. */
+	const latestEpisodes = $derived.by(() => {
+		const seen = new Set<string>();
+
+		// The latest is picked before the downloaded check, so an older episode doesn't stand in for it
+		return filteredEpisodes.filter((episode) => {
+			if (!subscribed.includes(episode.showSlug) || seen.has(episode.showSlug)) {
+				return false;
+			}
+
+			seen.add(episode.showSlug);
+
+			return showDownloaded || !downloads.downloaded.includes(episode.id);
+		});
+	});
 	const scheduleEpisodes = $derived(filteredEpisodes.filter((episode) => episode.scheduled));
 
 	/** Null until the first refresh finishes. */
@@ -325,6 +341,26 @@
 		</EpisodeFilters>
 
 		{#if view === 'dashboard'}
+			{#if settings.subscriptions.length}
+				<section class="latest">
+					<h2>Latest</h2>
+					{#if latestEpisodes.length}
+						<EpisodeTable
+							episodes={latestEpisodes}
+							{subscribed}
+							{downloads}
+							{subscribing}
+							ondownload={(episode) => download(episode).catch(showError)}
+							onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
+							onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
+							ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
+						/>
+					{:else}
+						<p>No episodes match the filters</p>
+					{/if}
+				</section>
+			{/if}
+
 			{#each showSections as section (section.show.slug)}
 				<ShowSection
 					show={section.show}
@@ -333,6 +369,7 @@
 					{downloads}
 					{subscribing}
 					ondownload={(episode) => download(episode).catch(showError)}
+					onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
 					onopenshow={(show) => openShow(show).catch(showError)}
 					ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
 				/>
@@ -399,6 +436,22 @@
 	nav div {
 		display: flex;
 		gap: 0.5rem;
+	}
+
+	/* Matches the show sections below it */
+	.latest {
+		margin: 0 0 2rem;
+	}
+
+	.latest h2 {
+		margin: 0 0 0.5rem;
+		font-size: 1.25rem;
+		text-transform: uppercase;
+	}
+
+	.latest p {
+		text-transform: uppercase;
+		color: var(--muted);
 	}
 
 	[role='alert'] {

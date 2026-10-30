@@ -18,6 +18,7 @@
 		downloads,
 		subscribing,
 		ondownload,
+		onmark,
 		onopenshow,
 		ontogglesubscription,
 	}: {
@@ -30,6 +31,8 @@
 		/** Show slugs. */
 		subscribing: string[];
 		ondownload: (episode: Episode) => void;
+		/** Adds a "Mark as downloaded" button next to each download button. */
+		onmark?: (episode: Episode) => void;
 		onopenshow: (episode: Episode) => void;
 		ontogglesubscription: (episode: Episode) => void;
 	} = $props();
@@ -78,7 +81,7 @@
 				<td>
 					<div class="actions">
 						{#if episode.mp3}
-							<DownloadButton {episode} {downloads} {ondownload} />
+							<DownloadButton {episode} {downloads} {ondownload} {onmark} />
 						{/if}
 						<SubscribeButton
 							subscribed={subscribed.includes(episode.showSlug)}

@@ -5,10 +5,13 @@
 		episode,
 		downloads,
 		ondownload,
+		onmark,
 	}: {
 		episode: Episode;
 		downloads: DownloadQueue;
 		ondownload: (episode: Episode) => void;
+		/** Adds a button that records the episode as downloaded without downloading it. */
+		onmark?: (episode: Episode) => void;
 	} = $props();
 
 	const downloading = $derived(downloads.current?.id === episode.id);
@@ -38,4 +41,17 @@
 			<path d={downloaded ? 'M3 8l3.5 3.5L13 4' : 'M8 2v11M3 8l5 5 5-5'} />
 		</svg>
 	</button>
+	{#if onmark}
+		<button
+			class="icon"
+			aria-label="Mark as downloaded"
+			title="Mark as downloaded"
+			disabled={downloaded}
+			onclick={() => onmark(episode)}
+		>
+			<svg viewBox="0 0 16 16" aria-hidden="true">
+				<path d="M4 4l8 8M12 4l-8 8" />
+			</svg>
+		</button>
+	{/if}
 {/if}
