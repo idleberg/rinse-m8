@@ -1,5 +1,10 @@
 :root {
 	color-scheme: light dark;
+}
+
+/* Declared again on .inverted, since WebKit resolves light-dark() where a custom property is declared, not where it's used */
+:root,
+.inverted {
 	--paper: light-dark(#f2efe8, #141414);
 	--ink: light-dark(#141414, #e9e5dc);
 	--muted: light-dark(#6b675f, #8f8a80);
@@ -15,28 +20,36 @@
 	color-scheme: dark;
 }
 
-/* Set while the Settings page is open, which shows the opposite theme */
-:root[data-inverted][data-theme='light'] {
+/* The Settings page's content shows the opposite theme */
+:root[data-theme='light'] .inverted {
 	color-scheme: dark;
 }
 
-:root[data-inverted][data-theme='dark'] {
+:root[data-theme='dark'] .inverted {
 	color-scheme: light;
 }
 
 @media (prefers-color-scheme: light) {
-	:root[data-inverted]:not([data-theme]) {
+	:root:not([data-theme]) .inverted {
 		color-scheme: dark;
 	}
 }
 
 @media (prefers-color-scheme: dark) {
-	:root[data-inverted]:not([data-theme]) {
+	:root:not([data-theme]) .inverted {
 		color-scheme: light;
 	}
 }
 
+.inverted {
+	background: var(--paper);
+	color: var(--ink);
+}
+
 body {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
 	margin: 0;
 	background: var(--paper);
 	color: var(--ink);
@@ -89,7 +102,7 @@ button.icon svg {
 	stroke-width: 1.5;
 }
 
-/* Still a native checkbox, drawn as `[ ]` / `[X]` */
+/* Still a native checkbox, drawn as `[ ]` / `[×]` */
 /* Exactly one line of text tall, so `[ ]` sits on the label's baseline */
 input[type='checkbox'] {
 	appearance: none;
@@ -107,7 +120,7 @@ input[type='checkbox']::before {
 }
 
 input[type='checkbox']:checked::before {
-	content: '[X]';
+	content: '[×]';
 }
 
 input[type='search'] {

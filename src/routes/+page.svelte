@@ -133,11 +133,6 @@
 	let view = $state<'dashboard' | 'schedule' | 'shows' | 'queue' | 'settings'>('dashboard');
 	let openedShow = $state<Show | null>(null);
 
-	// Settings swap light and dark, to stand apart from the other pages
-	$effect(() => {
-		document.documentElement.toggleAttribute('data-inverted', view === 'settings' && !openedShow);
-	});
-
 	/** Of `openedShow`, once its fetch has returned. */
 	let showDetails = $state<ShowDetails | null>(null);
 	let refreshing = $state<string[]>([]);
@@ -245,7 +240,8 @@
 	<ThemeToggle />
 </nav>
 
-<main>
+<!-- Settings swap light and dark, to stand apart from the other pages -->
+<main class:inverted={view === 'settings' && !openedShow}>
 	{#if error}
 		<p role="alert">{error}</p>
 	{/if}
@@ -364,6 +360,11 @@
 
 	main {
 		padding: 1rem;
+	}
+
+	/* Fills the window below the nav, so the swapped background doesn't stop short */
+	main.inverted {
+		flex: 1;
 	}
 
 	nav div {
