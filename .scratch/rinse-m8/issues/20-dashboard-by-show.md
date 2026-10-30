@@ -4,10 +4,10 @@
 
 **Blocked by:** 19 (Views as tabs)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Each subscribed show has its own section on the dashboard
-- [ ] Clicking a section heading opens that show's show view
-- [ ] Each section shows at most 5 episodes by default
-- [ ] "SHOW ALL (n)" expands a section to all its episodes and can collapse it again
-- [ ] A show with no episodes matching the filters still has a section, saying so
+- [x] Each subscribed show has its own section on the dashboard
+- [x] Clicking a section heading opens that show's show view
+- [x] Each section shows at most 5 episodes by default
+- [x] "SHOW ALL (n)" expands a section to all its episodes and can collapse it again
+- [x] A show with no episodes matching the filters still has a section, saying so

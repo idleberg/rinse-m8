@@ -5,6 +5,7 @@
 	import DownloadStatus from '../lib/DownloadStatus.svelte';
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
+	import ShowSection from '../lib/ShowSection.svelte';
 	import ShowView from '../lib/ShowView.svelte';
 	import ThemeToggle from '../lib/ThemeToggle.svelte';
 	import { type DownloadQueue, type Episode, type Show, showOf, stations } from '../lib/episodes';
@@ -40,7 +41,12 @@
 		);
 	});
 
-	const subscribedEpisodes = $derived(filteredEpisodes.filter((episode) => subscribed.includes(episode.showSlug)));
+	const showSections = $derived(
+		settings.subscriptions.map((show) => ({
+			show,
+			episodes: filteredEpisodes.filter((episode) => episode.showSlug === show.slug),
+		})),
+	);
 	const scheduleEpisodes = $derived(filteredEpisodes.filter((episode) => episode.scheduled));
 
 	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failed: null });
@@ -84,17 +90,17 @@
 	let refreshing = $state<string[]>([]);
 
 	/** Shows the cached episodes at once, then merges the show's fetched episodes in. */
-	async function openShow(episode: Episode) {
+	async function openShow(show: Show) {
 		error = '';
-		openedShow = showOf(episode);
+		openedShow = show;
 
-		refreshing.push(episode.showSlug);
+		refreshing.push(show.slug);
 
 		// ponytail: the reply replaces the whole list, so a poller update landing mid-fetch is undone until the next one
 		try {
-			setEpisodes(await invoke<Episode[]>('refresh_show', { slug: episode.showSlug }));
+			setEpisodes(await invoke<Episode[]>('refresh_show', { slug: show.slug }));
 		} finally {
-			refreshing = refreshing.filter((s) => s !== episode.showSlug);
+			refreshing = refreshing.filter((s) => s !== show.slug);
 		}
 	}
 
@@ -173,7 +179,7 @@
 				{downloads}
 				{subscribing}
 				ondownload={(episode) => download(episode).catch(showError)}
-				onopenshow={(episode) => openShow(episode).catch(showError)}
+				onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
 				ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
 				onback={() => (openedShow = null)}
 			/>
@@ -193,19 +199,20 @@
 		</EpisodeFilters>
 
 		{#if view === 'dashboard'}
-			{#if subscribed.length}
-				<EpisodeTable
-					episodes={subscribedEpisodes}
+			{#each showSections as section (section.show.slug)}
+				<ShowSection
+					show={section.show}
+					episodes={section.episodes}
 					{subscribed}
 					{downloads}
 					{subscribing}
 					ondownload={(episode) => download(episode).catch(showError)}
-					onopenshow={(episode) => openShow(episode).catch(showError)}
-					ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
+					onopenshow={(show) => openShow(show).catch(showError)}
+					ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
 				/>
 			{:else}
 				<p>Subscribe to a show to see its episodes here</p>
-			{/if}
+			{/each}
 		{:else}
 			<EpisodeTable
 				episodes={scheduleEpisodes}
@@ -213,7 +220,7 @@
 				{downloads}
 				{subscribing}
 				ondownload={(episode) => download(episode).catch(showError)}
-				onopenshow={(episode) => openShow(episode).catch(showError)}
+				onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
 				ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
 			/>
 		{/if}
