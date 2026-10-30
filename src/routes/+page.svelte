@@ -20,26 +20,26 @@
 	let shownStations = $state([...stations]);
 	let mp3Only = $state(true);
 	let hideRebroadcasts = $state(false);
-	let subscribedOnly = $state(false);
 	let search = $state('');
 
 	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null, autoDownload: false });
 	const subscribed = $derived(settings.subscriptions.map((s) => s.slug));
 
-	const visibleEpisodes = $derived.by(() => {
+	const filteredEpisodes = $derived.by(() => {
 		const query = search.trim().toLowerCase();
 
 		// Stations without a checkbox stay visible rather than unreachable
 		return episodes.filter(
 			(episode) =>
 				(!stations.includes(episode.station) || shownStations.includes(episode.station)) &&
-				episode.scheduled &&
 				(!mp3Only || episode.mp3) &&
 				(!hideRebroadcasts || !episode.rebroadcast) &&
-				(!subscribedOnly || subscribed.includes(episode.showSlug)) &&
 				[episode.title, episode.showTitle, ...episode.genres].some((text) => text.toLowerCase().includes(query)),
 		);
 	});
+
+	const subscribedEpisodes = $derived(filteredEpisodes.filter((episode) => subscribed.includes(episode.showSlug)));
+	const scheduleEpisodes = $derived(filteredEpisodes.filter((episode) => episode.scheduled));
 
 	let downloading = $state<string[]>([]);
 
@@ -156,7 +156,7 @@
 			/>
 		{/key}
 	{:else}
-		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:subscribedOnly bind:search />
+		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:search />
 
 		<fieldset aria-label="Settings">
 			<label>
@@ -169,8 +169,24 @@
 			</label>
 		</fieldset>
 
+		<h2>Subscribed</h2>
+		{#if subscribed.length}
+			<EpisodeTable
+				episodes={subscribedEpisodes}
+				{subscribed}
+				{downloading}
+				{subscribing}
+				ondownload={(episode) => download(episode).catch(showError)}
+				onopenshow={(episode) => openShow(episode).catch(showError)}
+				ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
+			/>
+		{:else}
+			<p>Subscribe to a show to see its episodes here</p>
+		{/if}
+
+		<h2>Schedule</h2>
 		<EpisodeTable
-			episodes={visibleEpisodes}
+			episodes={scheduleEpisodes}
 			{subscribed}
 			{downloading}
 			{subscribing}

@@ -83,7 +83,8 @@ fn set_settings(
     save_settings(&app, &settings)
 }
 
-/// Follows the show, fetching it first so its already available episodes are marked as seen.
+/// Follows the show, fetching it first so its already available episodes are marked as seen
+/// and pushed to the subscribed table.
 #[tauri::command]
 async fn subscribe(
     app: tauri::AppHandle,
@@ -91,8 +92,13 @@ async fn subscribe(
     title: String,
 ) -> Result<rinse::Settings, String> {
     let episodes = rinse::fetch_show(&slug).await?;
+    let cache = merge(&app, episodes.clone())?;
+    let settings = update_settings(&app, |s| s.subscribe(&slug, &title, &episodes))?;
 
-    update_settings(&app, |s| s.subscribe(&slug, &title, &episodes))
+    app.emit("episodes-updated", cache)
+        .map_err(|e| e.to_string())?;
+
+    Ok(settings)
 }
 
 #[tauri::command]

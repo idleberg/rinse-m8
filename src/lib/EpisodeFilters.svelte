@@ -6,13 +6,11 @@
 		shownStations = $bindable(),
 		mp3Only = $bindable(),
 		hideRebroadcasts = $bindable(),
-		subscribedOnly = $bindable(),
 		search = $bindable(),
 	}: {
 		shownStations?: string[];
 		mp3Only?: boolean;
 		hideRebroadcasts?: boolean;
-		subscribedOnly?: boolean;
 		search?: string;
 	} = $props();
 </script>
@@ -28,9 +26,6 @@
 	{/if}
 	{#if hideRebroadcasts !== undefined}
 		<label><input type="checkbox" bind:checked={hideRebroadcasts} /> hide rebroadcasts</label>
-	{/if}
-	{#if subscribedOnly !== undefined}
-		<label><input type="checkbox" bind:checked={subscribedOnly} /> subscribed only</label>
 	{/if}
 	{#if search !== undefined}
 		<input type="search" bind:value={search} placeholder="Search title, show, genres" aria-label="Search" />
