@@ -4,12 +4,12 @@
 
 **Blocked by:** 18 (Visual design)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A nav offers Dashboard and Schedule, marking the active view for assistive tech
-- [ ] The app opens on the dashboard, which shows the subscribed episodes and the auto-download setting
-- [ ] The schedule view shows the schedule table
-- [ ] Filters keep their values when switching between views
-- [ ] The show view keeps the nav visible, and clicking a tab leaves the show view
-- [ ] The theme toggle lives in the nav
-- [ ] GLOSSARY.md defines **Dashboard**, replacing the subscribed table term
+- [x] A nav offers Dashboard and Schedule, marking the active view for assistive tech
+- [x] The app opens on the dashboard, which shows the subscribed episodes and the auto-download setting
+- [x] The schedule view shows the schedule table
+- [x] Filters keep their values when switching between views
+- [x] The show view keeps the nav visible, and clicking a tab leaves the show view
+- [x] The theme toggle lives in the nav
+- [x] GLOSSARY.md defines **Dashboard**, replacing the subscribed table term

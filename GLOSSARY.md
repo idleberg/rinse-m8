@@ -7,12 +7,12 @@ A desktop app for browsing, downloading and listening to on-demand episodes from
 ### Browsing
 
 **Schedule table**:
-The main view's table of episodes that have appeared in Rinse's schedule, including ones that have since dropped out of its 7-day window.
+The schedule view's table of episodes that have appeared in Rinse's schedule, including ones that have since dropped out of its 7-day window.
 _Avoid_: Timetable, main table
 
-**Subscribed table**:
-The main view's table of episodes from all subscribed shows, newest first.
-_Avoid_: For you, feed
+**Dashboard**:
+The default view, listing episodes from all subscribed shows, newest first.
+_Avoid_: Subscribed table, for you, feed
 
 **Show view**:
 The screen for a single show, listing its known episodes.

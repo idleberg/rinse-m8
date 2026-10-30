@@ -41,7 +41,8 @@ button:disabled {
 	cursor: default;
 }
 
-button[aria-pressed='true'] {
+button[aria-pressed='true'],
+button[aria-current='page'] {
 	border-color: var(--ink);
 	background: var(--ink);
 	color: var(--paper);

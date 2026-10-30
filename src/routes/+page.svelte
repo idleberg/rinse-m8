@@ -79,6 +79,7 @@
 		}
 	}
 
+	let view = $state<'dashboard' | 'schedule'>('dashboard');
 	let openedShow = $state<Show | null>(null);
 	let refreshing = $state<string[]>([]);
 
@@ -141,10 +142,20 @@
 	});
 </script>
 
-<!-- ponytail: stand-in until the nav from 19 takes the toggle -->
-<header>
+<nav>
+	<div>
+		{#each [['dashboard', 'Dashboard'], ['schedule', 'Schedule']] as const as [value, label] (value)}
+			<button
+				aria-current={!openedShow && view === value ? 'page' : undefined}
+				onclick={() => {
+					view = value;
+					openedShow = null;
+				}}>{label}</button
+			>
+		{/each}
+	</div>
 	<ThemeToggle />
-</header>
+</nav>
 
 <main>
 	{#if error}
@@ -169,20 +180,35 @@
 		{/key}
 	{:else}
 		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:search>
-			<label>
-				<input
-					type="checkbox"
-					bind:checked={settings.autoDownload}
-					onchange={() => saveAutoDownload().catch(showError)}
-				/>
-				auto-download
-			</label>
+			{#if view === 'dashboard'}
+				<label>
+					<input
+						type="checkbox"
+						bind:checked={settings.autoDownload}
+						onchange={() => saveAutoDownload().catch(showError)}
+					/>
+					auto-download
+				</label>
+			{/if}
 		</EpisodeFilters>
 
-		<h2>Subscribed</h2>
-		{#if subscribed.length}
+		{#if view === 'dashboard'}
+			{#if subscribed.length}
+				<EpisodeTable
+					episodes={subscribedEpisodes}
+					{subscribed}
+					{downloads}
+					{subscribing}
+					ondownload={(episode) => download(episode).catch(showError)}
+					onopenshow={(episode) => openShow(episode).catch(showError)}
+					ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
+				/>
+			{:else}
+				<p>Subscribe to a show to see its episodes here</p>
+			{/if}
+		{:else}
 			<EpisodeTable
-				episodes={subscribedEpisodes}
+				episodes={scheduleEpisodes}
 				{subscribed}
 				{downloads}
 				{subscribing}
@@ -190,29 +216,18 @@
 				onopenshow={(episode) => openShow(episode).catch(showError)}
 				ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
 			/>
-		{:else}
-			<p>Subscribe to a show to see its episodes here</p>
 		{/if}
-
-		<h2>Schedule</h2>
-		<EpisodeTable
-			episodes={scheduleEpisodes}
-			{subscribed}
-			{downloads}
-			{subscribing}
-			ondownload={(episode) => download(episode).catch(showError)}
-			onopenshow={(episode) => openShow(episode).catch(showError)}
-			ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
-		/>
 	{/if}
 </main>
 
 <DownloadStatus {downloads} ondismiss={() => invoke('dismiss_download_failure').catch(showError)} />
 
 <style>
-	header {
+	nav {
 		display: flex;
-		justify-content: flex-end;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 0.5rem;
 		border-bottom: 1px solid currentColor;
 		padding: 0.5rem 1rem;
 	}
@@ -221,8 +236,8 @@
 		padding: 1rem;
 	}
 
-	h2 {
-		font-size: 1rem;
-		text-transform: uppercase;
+	nav div {
+		display: flex;
+		gap: 0.5rem;
 	}
 </style>
