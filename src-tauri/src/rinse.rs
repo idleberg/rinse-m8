@@ -2,7 +2,8 @@ use chrono::DateTime;
 use chrono_tz::Europe::London;
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::collections::BTreeSet;
+use std::path::{Path, PathBuf};
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
@@ -25,6 +26,46 @@ pub struct Episode {
     pub genres: Vec<String>,
     /// Set only when the episode has a downloadable mp3.
     pub mp3: Option<String>,
+}
+
+/// Everything kept in the settings store, one store key per field.
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Settings {
+    pub subscriptions: Vec<Subscription>,
+    /// Ids of episodes that must never trigger a notification.
+    pub seen: BTreeSet<String>,
+    pub download_folder: Option<PathBuf>,
+}
+
+/// A followed show.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Subscription {
+    pub slug: String,
+    pub title: String,
+}
+
+impl Settings {
+    /// Follows the show and marks its `episodes` that are already available as seen,
+    /// so subscribing never floods notifications.
+    pub fn subscribe(&mut self, slug: &str, title: &str, episodes: &[Episode]) {
+        self.unsubscribe(slug);
+        self.subscriptions.push(Subscription {
+            slug: slug.into(),
+            title: title.into(),
+        });
+        self.seen.extend(
+            episodes
+                .iter()
+                .filter(|e| e.mp3.is_some())
+                .map(|e| e.id.clone()),
+        );
+    }
+
+    /// Stops following the show. Its seen ids stay, so resubscribing never re-notifies them.
+    pub fn unsubscribe(&mut self, slug: &str) {
+        self.subscriptions.retain(|s| s.slug != slug);
+    }
 }
 
 /// Schedule and show responses both carry an `episodes` list of the same shape.
@@ -269,6 +310,56 @@ mod tests {
         );
         assert_eq!(episodes[2].date, "2026-02-22");
         assert_eq!(episodes[3].mp3, None);
+    }
+
+    fn show_fixture() -> Vec<Episode> {
+        map_episodes(include_str!("../tests/fixtures/show.json")).unwrap()
+    }
+
+    #[test]
+    fn subscribe_marks_only_available_episodes_as_seen() {
+        let mut settings = Settings::default();
+
+        settings.subscribe("dubquake-records", "Dubquake Records", &show_fixture());
+
+        assert_eq!(
+            settings.subscriptions,
+            [Subscription {
+                slug: "dubquake-records".into(),
+                title: "Dubquake Records".into(),
+            }]
+        );
+        assert_eq!(
+            settings.seen,
+            BTreeSet::from(["2315290".into(), "2241796".into()])
+        );
+    }
+
+    #[test]
+    fn unsubscribe_removes_only_that_show() {
+        let mut settings = Settings::default();
+
+        settings.subscribe("dubquake-records", "Dubquake Records", &[]);
+        settings.subscribe("other", "Other", &[]);
+        settings.unsubscribe("dubquake-records");
+
+        assert_eq!(
+            settings.subscriptions,
+            [Subscription {
+                slug: "other".into(),
+                title: "Other".into(),
+            }]
+        );
+    }
+
+    #[test]
+    fn subscribing_twice_keeps_one_subscription() {
+        let mut settings = Settings::default();
+
+        settings.subscribe("dubquake-records", "Dubquake Records", &[]);
+        settings.subscribe("dubquake-records", "Dubquake Records", &[]);
+
+        assert_eq!(settings.subscriptions.len(), 1);
     }
 
     #[test]

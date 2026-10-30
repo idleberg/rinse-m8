@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { open } from '@tauri-apps/plugin-dialog';
-	import { load } from '@tauri-apps/plugin-store';
 
 	type Episode = {
 		id: string;
@@ -20,6 +19,12 @@
 		mp3: string | null;
 	};
 
+	type Settings = {
+		subscriptions: { slug: string; title: string }[];
+		seen: string[];
+		downloadFolder: string | null;
+	};
+
 	const stations = ['Rinse FM', 'Rinse FR', 'Kool FM', 'SWU FM'];
 
 	let episodes = $state<Episode[]>([]);
@@ -28,7 +33,11 @@
 	let shownStations = $state([...stations]);
 	let mp3Only = $state(true);
 	let hideRebroadcasts = $state(false);
+	let subscribedOnly = $state(false);
 	let search = $state('');
+
+	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null });
+	const subscribed = $derived(settings.subscriptions.map((s) => s.slug));
 
 	const visibleEpisodes = $derived.by(() => {
 		const query = search.trim().toLowerCase();
@@ -39,6 +48,7 @@
 				(!stations.includes(episode.station) || shownStations.includes(episode.station)) &&
 				(!mp3Only || episode.mp3) &&
 				(!hideRebroadcasts || !episode.rebroadcast) &&
+				(!subscribedOnly || subscribed.includes(episode.showSlug)) &&
 				[episode.title, episode.showTitle, ...episode.genres].some((text) => text.toLowerCase().includes(query)),
 		);
 	});
@@ -48,17 +58,15 @@
 	async function download(episode: Episode) {
 		error = '';
 
-		const settings = await load('settings.json');
-
-		if (!(await settings.get<string>('downloadFolder'))) {
+		if (!settings.downloadFolder) {
 			const folder = await open({ directory: true, title: 'Choose a download folder' });
 
 			if (!folder) {
 				return;
 			}
 
-			await settings.set('downloadFolder', folder);
-			await settings.save();
+			await invoke('set_settings', { patch: { downloadFolder: folder } });
+			settings.downloadFolder = folder;
 		}
 
 		downloading.push(episode.id);
@@ -88,6 +96,30 @@
 		}
 	}
 
+	let subscribing = $state<string[]>([]);
+
+	async function toggleSubscription(episode: Episode) {
+		error = '';
+
+		subscribing.push(episode.showSlug);
+
+		try {
+			settings = subscribed.includes(episode.showSlug)
+				? await invoke<Settings>('unsubscribe', { slug: episode.showSlug })
+				: await invoke<Settings>('subscribe', { slug: episode.showSlug, title: episode.showTitle });
+		} finally {
+			subscribing = subscribing.filter((s) => s !== episode.showSlug);
+		}
+	}
+
+	invoke<Settings>('get_settings')
+		.then((loaded) => {
+			settings = loaded;
+		})
+		.catch((e) => {
+			error = String(e);
+		});
+
 	invoke<Episode[]>('get_episodes')
 		.then(setEpisodes)
 		.catch((e) => {
@@ -106,6 +138,7 @@
 		{/each}
 		<label><input type="checkbox" bind:checked={mp3Only} /> mp3 available only</label>
 		<label><input type="checkbox" bind:checked={hideRebroadcasts} /> hide rebroadcasts</label>
+		<label><input type="checkbox" bind:checked={subscribedOnly} /> subscribed only</label>
 		<input type="search" bind:value={search} placeholder="Search title, show, genres" aria-label="Search" />
 	</fieldset>
 
@@ -117,6 +150,7 @@
 				<th>Station</th>
 				<th>Show</th>
 				<th>Title</th>
+				<th></th>
 				<th></th>
 				<th></th>
 				<th></th>
@@ -157,6 +191,18 @@
 								})}
 						>
 							{refreshing.includes(episode.showSlug) ? 'Refreshing…' : 'Refresh show'}
+						</button>
+					</td>
+					<td>
+						<button
+							aria-pressed={subscribed.includes(episode.showSlug)}
+							disabled={subscribing.includes(episode.showSlug)}
+							onclick={() =>
+								toggleSubscription(episode).catch((e) => {
+									error = String(e);
+								})}
+						>
+							{subscribed.includes(episode.showSlug) ? 'Unsubscribe' : 'Subscribe'}
 						</button>
 					</td>
 				</tr>
