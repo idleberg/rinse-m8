@@ -1,10 +1,12 @@
 use chrono::DateTime;
 use chrono_tz::Europe::London;
 use futures_util::StreamExt;
+use reqwest::header::{CONTENT_RANGE, RANGE};
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, VecDeque};
 use std::path::{Path, PathBuf};
-use tokio::fs::File;
+use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -265,9 +267,9 @@ async fn fetch_episodes(url: &str) -> Result<Vec<Episode>, String> {
     map_episodes(&json).map_err(|e| e.to_string())
 }
 
-/// Streams the episode's mp3 into `folder` chunk by chunk, calling `on_progress` whenever the percent changes,
-/// which it can only do when the server reports a size.
-/// A failed transfer removes the partial file; a failed request leaves any earlier download alone.
+/// Streams the episode's mp3 into a `.part` file in `folder` chunk by chunk and renames it to `.mp3` once it's whole,
+/// calling `on_progress` whenever the percent changes, which it can only do when the server reports a size.
+/// An existing `.part` file is resumed from its size; a failed download keeps it for the next attempt.
 pub async fn download(
     episode: &Episode,
     folder: &Path,
@@ -275,44 +277,89 @@ pub async fn download(
 ) -> Result<(), String> {
     let url = episode.mp3.as_deref().ok_or("episode has no mp3")?;
     let path = folder.join(file_name(episode));
-
-    let response = reqwest::get(url)
+    let part = path.with_extension("mp3.part");
+    let mut offset = tokio::fs::metadata(&part)
         .await
-        .and_then(|r| r.error_for_status())
-        .map_err(|e| e.to_string())?;
-    let total = response.content_length().filter(|&n| n > 0);
-    let mut stream = response.bytes_stream();
-    let mut file = File::create(&path).await.map_err(|e| e.to_string())?;
+        .map(|m| m.len())
+        .unwrap_or(0);
+    let mut response = request(url, offset).await?;
 
-    let result = async {
-        let mut written = 0;
-        let mut percent = None;
+    if offset > 0 {
+        let content_range = response
+            .headers()
+            .get(CONTENT_RANGE)
+            .and_then(|v| v.to_str().ok());
 
-        while let Some(chunk) = stream.next().await {
-            let chunk = chunk.map_err(|e| e.to_string())?;
+        if !resumes(response.status(), content_range, offset) {
+            offset = 0;
 
-            file.write_all(&chunk).await.map_err(|e| e.to_string())?;
-            written += chunk.len() as u64;
-
-            if let Some(total) = total {
-                let now = (written * 100 / total).min(100) as u8;
-
-                if percent != Some(now) {
-                    percent = Some(now);
-                    on_progress(now);
-                }
+            // Only a 200 carries the whole file; a 416, an error or a 206 from elsewhere needs asking again for all of it.
+            if response.status() != StatusCode::OK {
+                response = request(url, 0).await?;
             }
         }
-
-        file.flush().await.map_err(|e| e.to_string())
-    }
-    .await;
-
-    if result.is_err() {
-        let _ = tokio::fs::remove_file(&path).await;
     }
 
-    result
+    let response = response.error_for_status().map_err(|e| e.to_string())?;
+    let total = response
+        .content_length()
+        .filter(|&n| n > 0)
+        .map(|n| offset + n);
+    let mut stream = response.bytes_stream();
+    let mut file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .append(offset > 0)
+        .truncate(offset == 0)
+        .open(&part)
+        .await
+        .map_err(|e| e.to_string())?;
+    let mut written = offset;
+    let mut percent = None;
+
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| e.to_string())?;
+
+        file.write_all(&chunk).await.map_err(|e| e.to_string())?;
+        written += chunk.len() as u64;
+
+        if let Some(total) = total {
+            let now = (written * 100 / total).min(100) as u8;
+
+            if percent != Some(now) {
+                percent = Some(now);
+                on_progress(now);
+            }
+        }
+    }
+
+    file.flush().await.map_err(|e| e.to_string())?;
+
+    if let Some(total) = total.filter(|&total| total != written) {
+        return Err(format!("got {written} of {total} bytes"));
+    }
+
+    tokio::fs::rename(&part, &path)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Requests the file from byte `offset` on, or all of it when that's zero.
+async fn request(url: &str, offset: u64) -> Result<reqwest::Response, String> {
+    let mut builder = reqwest::Client::new().get(url);
+
+    if offset > 0 {
+        builder = builder.header(RANGE, format!("bytes={offset}-"));
+    }
+
+    builder.send().await.map_err(|e| e.to_string())
+}
+
+/// Whether the answer to a range request from `offset` continues the partial file: anything but a `206`
+/// starting at that offset means starting over.
+fn resumes(status: StatusCode, content_range: Option<&str>, offset: u64) -> bool {
+    status == StatusCode::PARTIAL_CONTENT
+        && content_range.is_some_and(|r| r.starts_with(&format!("bytes {offset}-")))
 }
 
 /// `<Show> - <YYYY-MM-DD>.mp3`, with characters that are unsafe in file names on any OS removed.
@@ -558,6 +605,18 @@ mod tests {
         assert_eq!(queue.failed.as_ref().unwrap().id, "2315290");
         assert_eq!(queue.next().unwrap().id, "2319482");
         assert_eq!(queue.failed, None);
+    }
+
+    #[test]
+    fn a_resume_continues_only_on_206_from_the_requested_offset() {
+        let partial = StatusCode::PARTIAL_CONTENT;
+
+        assert!(resumes(partial, Some("bytes 1000-4999/5000"), 1000));
+        assert!(!resumes(StatusCode::OK, Some("bytes 1000-4999/5000"), 1000));
+        assert!(!resumes(StatusCode::OK, None, 1000));
+        assert!(!resumes(partial, Some("bytes 0-4999/5000"), 1000));
+        assert!(!resumes(partial, Some("bytes 10000-49999/50000"), 1000));
+        assert!(!resumes(partial, None, 1000));
     }
 
     #[test]
