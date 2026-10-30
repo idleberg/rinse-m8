@@ -237,6 +237,23 @@ fn set_settings(
     sync_tray(&app, settings.keep_running)
 }
 
+fn image_cache(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    app.path()
+        .app_cache_dir()
+        .map(|dir| dir.join("images"))
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_image_cache_size(app: tauri::AppHandle) -> Result<u64, String> {
+    Ok(rinse::image_cache_size(&image_cache(&app)?))
+}
+
+#[tauri::command]
+fn clear_image_cache(app: tauri::AppHandle) -> Result<(), String> {
+    rinse::clear_image_cache(&image_cache(&app)?)
+}
+
 /// Adds the menu bar or tray icon, whose presence makes closing the window hide it, or removes it again.
 fn sync_tray(app: &tauri::AppHandle, enable: bool) -> Result<(), String> {
     if !enable {
@@ -516,9 +533,9 @@ pub fn run() {
             let name = request.uri().path().trim_start_matches('/').to_owned();
 
             tauri::async_runtime::spawn(async move {
-                let image = match app.path().app_cache_dir() {
-                    Ok(dir) => rinse::cached_image(&name, &dir.join("images")).await,
-                    Err(e) => Err(e.to_string()),
+                let image = match image_cache(&app) {
+                    Ok(dir) => rinse::cached_image(&name, &dir).await,
+                    Err(e) => Err(e),
                 };
 
                 responder.respond(image.map_or_else(
@@ -583,6 +600,8 @@ pub fn run() {
             dismiss_download_failure,
             get_settings,
             set_settings,
+            get_image_cache_size,
+            clear_image_cache,
             subscribe,
             unsubscribe,
             get_show_directory

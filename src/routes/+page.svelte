@@ -175,9 +175,28 @@
 		}
 	}
 
+	let imageCacheSize = $state<number | null>(null);
+
 	function openView(value: typeof view) {
 		view = value;
 		openedShow = null;
+
+		// Show views fill the cache, so it's measured afresh each time
+		if (value === 'settings') {
+			invoke<number>('get_image_cache_size')
+				.then((size) => {
+					imageCacheSize = size;
+				})
+				.catch(showError);
+		}
+	}
+
+	/** Keeps the old size showing if clearing fails. */
+	async function clearImageCache() {
+		error = '';
+
+		await invoke('clear_image_cache');
+		imageCacheSize = 0;
 	}
 
 	async function dismissFailure() {
@@ -282,6 +301,8 @@
 			}}
 			onautodownloadchange={() => saveCheckbox('autoDownload').catch(showError)}
 			onkeeprunningchange={() => saveCheckbox('keepRunning').catch(showError)}
+			{imageCacheSize}
+			onclearimagecache={() => clearImageCache().catch(showError)}
 		/>
 	{:else if view === 'shows'}
 		<EpisodeFilters bind:shownStations bind:search />

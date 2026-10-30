@@ -4,9 +4,9 @@
 
 **Blocked by:** 30 (Settings view), 33 (Image cache)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Settings shows the image cache's size on disk, or that it's empty
-- [ ] A button clears the image cache, after which the size reads zero
-- [ ] A cleared image loads again the next time its show view opens
-- [ ] A failed clear keeps the old size showing and reports the error
+- [x] Settings shows the image cache's size on disk, or that it's empty
+- [x] A button clears the image cache, after which the size reads zero
+- [x] A cleared image loads again the next time its show view opens
+- [x] A failed clear keeps the old size showing and reports the error

@@ -3,19 +3,26 @@
 		downloadFolder,
 		autoDownload = $bindable(),
 		keepRunning = $bindable(),
+		imageCacheSize,
 		onchoosefolder,
 		onautodownloadchange,
 		onkeeprunningchange,
+		onclearimagecache,
 	}: {
 		downloadFolder: string | null;
 		autoDownload: boolean;
 		keepRunning: boolean;
+		/** In bytes, or null until it has loaded. */
+		imageCacheSize: number | null;
 		onchoosefolder: () => void;
 		/** Called after the bound checkbox has changed. */
 		onautodownloadchange: () => void;
 		/** Called after the bound checkbox has changed. */
 		onkeeprunningchange: () => void;
+		onclearimagecache: () => void;
 	} = $props();
+
+	const megabytes = new Intl.NumberFormat(undefined, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1, maximumSignificantDigits: 1, roundingPriority: 'morePrecision' });
 </script>
 
 <dl>
@@ -41,6 +48,15 @@
 			<input type="checkbox" bind:checked={keepRunning} onchange={onkeeprunningchange} />
 			keep running in menu bar
 		</label>
+	</dd>
+	<dt>Image cache</dt>
+	<dd>
+		{#if imageCacheSize}
+			{megabytes.format(imageCacheSize / 1e6)}
+		{:else if imageCacheSize === 0}
+			<span class="muted">Empty</span>
+		{/if}
+		<button onclick={onclearimagecache} disabled={!imageCacheSize}>Clear</button>
 	</dd>
 </dl>
 

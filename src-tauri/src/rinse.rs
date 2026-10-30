@@ -509,6 +509,24 @@ pub async fn cached_image(name: &str, cache: &Path) -> Result<Vec<u8>, String> {
     Ok(bytes.into())
 }
 
+/// The bytes the image cache takes up on disk, or 0 if it doesn't exist yet.
+pub fn image_cache_size(cache: &Path) -> u64 {
+    std::fs::read_dir(cache)
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| entry.ok()?.metadata().ok())
+        .map(|metadata| metadata.len())
+        .sum()
+}
+
+/// Deletes every cached image. An image downloading meanwhile fails to land and is fetched again next time.
+pub fn clear_image_cache(cache: &Path) -> Result<(), String> {
+    match std::fs::remove_dir_all(cache) {
+        Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e.to_string()),
+        _ => Ok(()),
+    }
+}
+
 async fn fetch_episodes(url: &str) -> Result<Vec<Episode>, String> {
     map_episodes(&fetch_text(url).await?).map_err(|e| e.to_string())
 }
@@ -808,6 +826,24 @@ mod tests {
         for name in ["", ".", "..", "../x.jpg", "a/b.jpg", "..\\x.jpg"] {
             assert!(tauri::async_runtime::block_on(cached_image(name, &cache)).is_err());
         }
+    }
+
+    #[test]
+    fn clearing_the_image_cache_empties_it() {
+        let cache = std::env::temp_dir().join(format!("rinse-images-{}", std::process::id()));
+
+        assert_eq!(image_cache_size(&cache), 0);
+
+        std::fs::create_dir_all(&cache).unwrap();
+        std::fs::write(cache.join("a.jpg"), [0; 3]).unwrap();
+        std::fs::write(cache.join("b.jpg"), [0; 4]).unwrap();
+
+        assert_eq!(image_cache_size(&cache), 7);
+
+        clear_image_cache(&cache).unwrap();
+
+        assert_eq!(image_cache_size(&cache), 0);
+        clear_image_cache(&cache).unwrap();
     }
 
     #[test]
