@@ -299,6 +299,14 @@ fn show_window(app: &tauri::AppHandle) {
         return;
     };
 
+    // Only a hidden window took the Dock icon along, and a needless show makes macOS ignore a hide in the next second
+    #[cfg(target_os = "macos")]
+    if !window.is_visible().unwrap_or(false) {
+        if let Err(e) = app.set_dock_visibility(true) {
+            eprintln!("showing the Dock icon failed: {e}");
+        }
+    }
+
     if let Err(e) = window
         .unminimize()
         .and_then(|()| window.show())
@@ -554,6 +562,12 @@ pub fn run() {
 
                     if let Err(e) = window.hide() {
                         eprintln!("hiding the window failed: {e}");
+                    }
+
+                    // Without the Dock icon the app lives only in the menu bar, and drops out of Cmd+Tab too
+                    #[cfg(target_os = "macos")]
+                    if let Err(e) = window.app_handle().set_dock_visibility(false) {
+                        eprintln!("hiding the Dock icon failed: {e}");
                     }
                 }
             }
