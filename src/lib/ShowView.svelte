@@ -69,9 +69,6 @@
 		disabled={subscribing.includes(show.slug)}
 		onclick={() => ontogglesubscription(show)}
 	/>
-	{#if refreshing}
-		<span role="status">Refreshing…</span>
-	{/if}
 </header>
 
 {#if details?.image || description.length}
@@ -96,6 +93,8 @@
 			{/if}
 		</div>
 	</section>
+{:else if refreshing}
+	<p role="status">Refreshing…</p>
 {/if}
 
 <EpisodeFilters bind:mp3Only bind:hideRebroadcasts />
@@ -128,6 +127,10 @@
 		display: flex;
 		gap: 1rem;
 		align-items: flex-start;
+		margin: 0 0 1rem;
+	}
+
+	[role='status'] {
 		margin: 0 0 1rem;
 	}
 
