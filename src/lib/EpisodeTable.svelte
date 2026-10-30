@@ -5,10 +5,9 @@
 		episodes,
 		subscribed,
 		downloading,
-		refreshing,
 		subscribing,
 		ondownload,
-		onrefresh,
+		onopenshow,
 		ontogglesubscription,
 	}: {
 		episodes: Episode[];
@@ -17,11 +16,9 @@
 		/** Episode ids. */
 		downloading: string[];
 		/** Show slugs. */
-		refreshing: string[];
-		/** Show slugs. */
 		subscribing: string[];
 		ondownload: (episode: Episode) => void;
-		onrefresh: (episode: Episode) => void;
+		onopenshow: (episode: Episode) => void;
 		ontogglesubscription: (episode: Episode) => void;
 	} = $props();
 </script>
@@ -37,7 +34,6 @@
 			<th></th>
 			<th></th>
 			<th></th>
-			<th></th>
 		</tr>
 	</thead>
 	<tbody>
@@ -46,7 +42,7 @@
 				<td>{episode.date}</td>
 				<td>{episode.time}</td>
 				<td>{episode.station}</td>
-				<td>{episode.showTitle}</td>
+				<td><button class="link" onclick={() => onopenshow(episode)}>{episode.showTitle}</button></td>
 				<td>{episode.title}</td>
 				<td>
 					{#if episode.rebroadcast}
@@ -59,11 +55,6 @@
 							{downloading.includes(episode.id) ? 'Downloading…' : 'Download'}
 						</button>
 					{/if}
-				</td>
-				<td>
-					<button disabled={refreshing.includes(episode.showSlug)} onclick={() => onrefresh(episode)}>
-						{refreshing.includes(episode.showSlug) ? 'Refreshing…' : 'Refresh show'}
-					</button>
 				</td>
 				<td>
 					<button
@@ -94,6 +85,16 @@
 
 	tbody tr:nth-child(odd) {
 		background: #f4f4f4;
+	}
+
+	.link {
+		border: none;
+		padding: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-decoration: underline;
+		cursor: pointer;
 	}
 
 	.badge {

@@ -15,4 +15,10 @@ export type Episode = {
 	mp3: string | null;
 };
 
+export type Show = { slug: string; title: string };
+
+export function showOf(episode: Episode): Show {
+	return { slug: episode.showSlug, title: episode.showTitle };
+}
+
 export const stations = ['Rinse FM', 'Rinse FR', 'Kool FM', 'SWU FM'];

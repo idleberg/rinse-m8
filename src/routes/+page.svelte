@@ -4,10 +4,11 @@
 	import { open } from '@tauri-apps/plugin-dialog';
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
-	import { type Episode, stations } from '../lib/episodes';
+	import ShowView from '../lib/ShowView.svelte';
+	import { type Episode, type Show, showOf, stations } from '../lib/episodes';
 
 	type Settings = {
-		subscriptions: { slug: string; title: string }[];
+		subscriptions: Show[];
 		seen: string[];
 		downloadFolder: string | null;
 		autoDownload: boolean;
@@ -80,33 +81,37 @@
 		}
 	}
 
+	let openedShow = $state<Show | null>(null);
 	let refreshing = $state<string[]>([]);
 
-	async function refreshShow(slug: string) {
+	/** Shows the cached episodes at once, then merges the show's fetched episodes in. */
+	async function openShow(episode: Episode) {
 		error = '';
+		openedShow = showOf(episode);
 
-		refreshing.push(slug);
+		refreshing.push(episode.showSlug);
 
+		// ponytail: the reply replaces the whole list, so a poller update landing mid-fetch is undone until the next one
 		try {
-			setEpisodes(await invoke<Episode[]>('refresh_show', { slug }));
+			setEpisodes(await invoke<Episode[]>('refresh_show', { slug: episode.showSlug }));
 		} finally {
-			refreshing = refreshing.filter((s) => s !== slug);
+			refreshing = refreshing.filter((s) => s !== episode.showSlug);
 		}
 	}
 
 	let subscribing = $state<string[]>([]);
 
-	async function toggleSubscription(episode: Episode) {
+	async function toggleSubscription(show: Show) {
 		error = '';
 
-		subscribing.push(episode.showSlug);
+		subscribing.push(show.slug);
 
 		try {
-			settings = subscribed.includes(episode.showSlug)
-				? await invoke<Settings>('unsubscribe', { slug: episode.showSlug })
-				: await invoke<Settings>('subscribe', { slug: episode.showSlug, title: episode.showTitle });
+			settings = subscribed.includes(show.slug)
+				? await invoke<Settings>('unsubscribe', { slug: show.slug })
+				: await invoke<Settings>('subscribe', { slug: show.slug, title: show.title });
 		} finally {
-			subscribing = subscribing.filter((s) => s !== episode.showSlug);
+			subscribing = subscribing.filter((s) => s !== show.slug);
 		}
 	}
 
@@ -133,29 +138,46 @@
 		<p role="alert">{error}</p>
 	{/if}
 
-	<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:subscribedOnly bind:search />
-
-	<fieldset aria-label="Settings">
-		<label>
-			<input
-				type="checkbox"
-				bind:checked={settings.autoDownload}
-				onchange={() => saveAutoDownload().catch(showError)}
+	{#if openedShow}
+		<!-- Keyed so opening another show from its table starts with fresh filters -->
+		{#key openedShow.slug}
+			<ShowView
+				show={openedShow}
+				refreshing={refreshing.includes(openedShow.slug)}
+				{episodes}
+				{subscribed}
+				{downloading}
+				{subscribing}
+				ondownload={(episode) => download(episode).catch(showError)}
+				onopenshow={(episode) => openShow(episode).catch(showError)}
+				ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
+				onback={() => (openedShow = null)}
 			/>
-			auto-download new episodes of subscribed shows
-		</label>
-	</fieldset>
+		{/key}
+	{:else}
+		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:subscribedOnly bind:search />
 
-	<EpisodeTable
-		episodes={visibleEpisodes}
-		{subscribed}
-		{downloading}
-		{refreshing}
-		{subscribing}
-		ondownload={(episode) => download(episode).catch(showError)}
-		onrefresh={(episode) => refreshShow(episode.showSlug).catch(showError)}
-		ontogglesubscription={(episode) => toggleSubscription(episode).catch(showError)}
-	/>
+		<fieldset aria-label="Settings">
+			<label>
+				<input
+					type="checkbox"
+					bind:checked={settings.autoDownload}
+					onchange={() => saveAutoDownload().catch(showError)}
+				/>
+				auto-download new episodes of subscribed shows
+			</label>
+		</fieldset>
+
+		<EpisodeTable
+			episodes={visibleEpisodes}
+			{subscribed}
+			{downloading}
+			{subscribing}
+			ondownload={(episode) => download(episode).catch(showError)}
+			onopenshow={(episode) => openShow(episode).catch(showError)}
+			ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
+		/>
+	{/if}
 </main>
 
 <style>
