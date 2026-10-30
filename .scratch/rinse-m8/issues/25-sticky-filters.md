@@ -4,11 +4,11 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The filter checkboxes stay visible at the top while scrolling the dashboard, the schedule view and the show view
-- [ ] The search input scrolls away with the page
-- [ ] The dashboard and schedule filters keep their values after a restart
-- [ ] The search input starts empty after a restart
-- [ ] Without remembered values, the filters start with today's defaults
+- [x] The filter checkboxes stay visible at the top while scrolling the dashboard, the schedule view and the show view
+- [x] The search input scrolls away with the page
+- [x] The dashboard and schedule filters keep their values after a restart
+- [x] The search input starts empty after a restart
+- [x] Without remembered values, the filters start with today's defaults
 - [ ] Manual check: untick a station, scroll the schedule and see the checkboxes stay put, restart and find the station still unticked

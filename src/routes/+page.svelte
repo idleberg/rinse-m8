@@ -21,11 +21,22 @@
 	let episodes = $state<Episode[]>([]);
 	let error = $state('');
 
-	let shownStations = $state([...stations]);
-	let mp3Only = $state(true);
-	let hideRebroadcasts = $state(false);
+	// The checkboxes are remembered across restarts, the search isn't
+	let savedFilters: { shownStations?: string[]; mp3Only?: boolean; hideRebroadcasts?: boolean } = {};
+
+	try {
+		savedFilters = JSON.parse(localStorage.getItem('filters') ?? '{}');
+	} catch {}
+
+	let shownStations = $state(savedFilters.shownStations ?? [...stations]);
+	let mp3Only = $state(savedFilters.mp3Only ?? true);
+	let hideRebroadcasts = $state(savedFilters.hideRebroadcasts ?? false);
 	let search = $state('');
 	let showDownloaded = $state(false);
+
+	$effect(() => {
+		localStorage.setItem('filters', JSON.stringify({ shownStations, mp3Only, hideRebroadcasts }));
+	});
 
 	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null, autoDownload: false });
 	const subscribed = $derived(settings.subscriptions.map((s) => s.slug));

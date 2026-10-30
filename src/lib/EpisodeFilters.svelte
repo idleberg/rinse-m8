@@ -19,6 +19,11 @@
 	} = $props();
 </script>
 
+<!-- Outside the fieldset, so it scrolls away while the checkboxes stay pinned -->
+{#if search !== undefined}
+	<input type="search" bind:value={search} placeholder="Search title, show, genres" aria-label="Search" />
+{/if}
+
 <fieldset aria-label="Filters">
 	{#if shownStations !== undefined}
 		<div class="row">
@@ -26,9 +31,6 @@
 				<label><input type="checkbox" bind:group={shownStations} value={station} /> {station}</label>
 			{/each}
 		</div>
-	{/if}
-	{#if search !== undefined}
-		<input type="search" bind:value={search} placeholder="Search title, show, genres" aria-label="Search" />
 	{/if}
 	{#if mp3Only !== undefined || hideRebroadcasts !== undefined || children}
 		<div class="row">
@@ -44,12 +46,16 @@
 </fieldset>
 
 <style>
+	/* Pinned to the top of the window while the episodes scroll under it */
 	fieldset {
+		position: sticky;
+		top: 0;
 		display: grid;
 		gap: 0.5rem;
-		margin: 0 0 1rem;
+		margin: 0 0 0.5rem;
 		border: none;
-		padding: 0;
+		padding: 0.5rem 0;
+		background: var(--paper);
 		text-transform: uppercase;
 	}
 
@@ -61,6 +67,7 @@
 
 	input[type='search'] {
 		width: 100%;
+		text-transform: uppercase;
 	}
 
 	/* Form controls don't inherit text-transform */
