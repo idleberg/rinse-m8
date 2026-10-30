@@ -45,6 +45,20 @@
 	);
 
 	const description = $derived(details?.description ? paragraphs(details.description) : []);
+
+	let expanded = $state(false);
+	let overflowing = $state(false);
+	let imageHeight = $state(0);
+	let clip: HTMLDivElement | undefined = $state();
+
+	$effect(() => {
+		description;
+		imageHeight;
+
+		if (clip && !expanded) {
+			overflowing = clip.scrollHeight > clip.clientHeight;
+		}
+	});
 </script>
 
 <header>
@@ -63,12 +77,17 @@
 {#if details?.image || description.length}
 	<section>
 		{#if details?.image}
-			<img src={details.image} alt="" />
+			<img src={details.image} alt="" bind:clientHeight={imageHeight} />
 		{/if}
-		<div>
-			{#each description as paragraph}
-				<p>{paragraph}</p>
-			{/each}
+		<div class="description" style:max-height={expanded ? null : imageHeight ? `${imageHeight}px` : '12rem'}>
+			<div class="clip" bind:this={clip}>
+				{#each description as paragraph}
+					<p>{paragraph}</p>
+				{/each}
+			</div>
+			{#if expanded || overflowing}
+				<button onclick={() => (expanded = !expanded)}>{expanded ? 'Show less' : 'Show more'}</button>
+			{/if}
 		</div>
 	</section>
 {/if}
@@ -109,6 +128,17 @@
 	img {
 		width: 12rem;
 		height: auto;
+	}
+
+	.description {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.clip {
+		min-height: 0;
+		overflow: hidden;
 	}
 
 	section p {
