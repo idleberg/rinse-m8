@@ -152,6 +152,16 @@ impl DownloadQueue {
         true
     }
 
+    /// Drops the episode from the waiting downloads; returns whether it was there.
+    /// The running one stays, since it can't be cancelled.
+    pub fn remove(&mut self, id: &str) -> bool {
+        let before = self.waiting.len();
+
+        self.waiting.retain(|d| d.episode.id != id);
+
+        self.waiting.len() != before
+    }
+
     /// Starts the oldest waiting download, unless one is still running.
     pub fn next(&mut self) -> Option<Download> {
         if self.current.is_some() {
@@ -773,6 +783,29 @@ mod tests {
         assert_eq!(queue.failed.as_ref().unwrap().episode.id, "2315290");
         assert_eq!(queue.next().unwrap().episode.id, "2319482");
         assert_eq!(queue.failed, None);
+    }
+
+    #[test]
+    fn removing_a_waiting_download_drops_only_that_one() {
+        let mut queue = DownloadQueue::default();
+
+        queue.push(queued("2315290", "/a"));
+        queue.push(queued("2319482", "/a"));
+        queue.push(queued("2319625", "/a"));
+        queue.next();
+
+        assert!(queue.remove("2319482"));
+        assert!(!queue.remove("2315290"));
+        assert!(!queue.remove("9999999"));
+        assert_eq!(queue.current.as_ref().unwrap().episode.id, "2315290");
+
+        let waiting: Vec<_> = queue
+            .waiting
+            .iter()
+            .map(|d| d.episode.id.as_str())
+            .collect();
+
+        assert_eq!(waiting, ["2319625"]);
     }
 
     #[test]

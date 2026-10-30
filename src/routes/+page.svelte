@@ -5,6 +5,7 @@
 	import DownloadStatus from '../lib/DownloadStatus.svelte';
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
+	import QueueView from '../lib/QueueView.svelte';
 	import ShowSection from '../lib/ShowSection.svelte';
 	import ShowView from '../lib/ShowView.svelte';
 	import ThemeToggle from '../lib/ThemeToggle.svelte';
@@ -89,7 +90,7 @@
 		}
 	}
 
-	let view = $state<'dashboard' | 'schedule'>('dashboard');
+	let view = $state<'dashboard' | 'schedule' | 'queue'>('dashboard');
 	let openedShow = $state<Show | null>(null);
 
 	/** Of `openedShow`, once its fetch has returned. */
@@ -134,6 +135,15 @@
 		}
 	}
 
+	function openView(value: typeof view) {
+		view = value;
+		openedShow = null;
+	}
+
+	async function dismissFailure() {
+		await invoke('dismiss_download_failure');
+	}
+
 	function showError(e: unknown) {
 		error = String(e);
 	}
@@ -164,13 +174,9 @@
 
 <nav>
 	<div>
-		{#each [['dashboard', 'Dashboard'], ['schedule', 'Schedule']] as const as [value, label] (value)}
-			<button
-				aria-current={!openedShow && view === value ? 'page' : undefined}
-				onclick={() => {
-					view = value;
-					openedShow = null;
-				}}>{label}</button
+		{#each [['dashboard', 'Dashboard'], ['schedule', 'Schedule'], ['queue', 'Queue']] as const as [value, label] (value)}
+			<button aria-current={!openedShow && view === value ? 'page' : undefined} onclick={() => openView(value)}
+				>{label}</button
 			>
 		{/each}
 	</div>
@@ -199,6 +205,12 @@
 				onback={() => (openedShow = null)}
 			/>
 		{/key}
+	{:else if view === 'queue'}
+		<QueueView
+			{downloads}
+			onremove={(id) => invoke('remove_download', { id }).catch(showError)}
+			ondismiss={() => dismissFailure().catch(showError)}
+		/>
 	{:else}
 		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:search>
 			{#if view === 'dashboard'}
@@ -256,7 +268,11 @@
 	{/if}
 </main>
 
-<DownloadStatus {downloads} ondismiss={() => invoke('dismiss_download_failure').catch(showError)} />
+<DownloadStatus
+	{downloads}
+	ondismiss={() => dismissFailure().catch(showError)}
+	onviewqueue={() => openView('queue')}
+/>
 
 <style>
 	nav {

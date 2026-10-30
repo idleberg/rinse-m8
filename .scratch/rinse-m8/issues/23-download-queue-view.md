@@ -4,13 +4,19 @@
 
 **Blocked by:** 19 (Views as tabs)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The footer shows a progress bar with the percentage and the number of queued items while something downloads
-- [ ] "VIEW QUEUE" in the footer and the Queue tab in the nav open the queue view
-- [ ] The queue view lists the current download with its progress, then the waiting downloads in order
+- [x] The footer shows a progress bar with the percentage and the number of queued items while something downloads
+- [x] "VIEW QUEUE" in the footer and the Queue tab in the nav open the queue view
+- [x] The queue view lists the current download with its progress, then the waiting downloads in order
 - [ ] A waiting download can be removed; the removal is saved and survives a restart
-- [ ] The running download has no remove control
-- [ ] A failed download shows in the footer and the queue view with a way to dismiss it
-- [ ] Unit test: removing a waiting download drops only that one; removing an unknown or running one changes nothing
-- [ ] GLOSSARY.md defines **Queue view**
+- [x] The running download has no remove control
+- [x] A failed download shows in the footer and the queue view with a way to dismiss it
+- [x] Unit test: removing a waiting download drops only that one; removing an unknown or running one changes nothing
+- [x] GLOSSARY.md defines **Queue view**
+
+## Comments
+
+- `DownloadQueue::remove` drops a waiting download by id and leaves the running one; the `remove_download` command saves through `update_downloads`, like every other queue change.
+- The footer's progress bar carries the episode label as its accessible name; the visible text is only the percent, the queued count and "View queue".
+- Left unticked: removal surviving a restart is covered by the existing save path but hasn't been checked in the running app.

@@ -91,6 +91,11 @@ fn get_download_queue(app: tauri::AppHandle) -> Result<serde_json::Value, String
 }
 
 #[tauri::command]
+fn remove_download(app: tauri::AppHandle, id: String) {
+    update_downloads(&app, |queue| queue.remove(&id));
+}
+
+#[tauri::command]
 fn dismiss_download_failure(app: tauri::AppHandle) {
     update_downloads(&app, |queue| queue.failed = None);
 }
@@ -345,6 +350,7 @@ pub fn run() {
             refresh_show,
             download,
             get_download_queue,
+            remove_download,
             dismiss_download_failure,
             get_settings,
             set_settings,

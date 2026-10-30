@@ -27,3 +27,7 @@ _Avoid_: Queue, playlist
 **Download queue**:
 The ordered list of episodes waiting to be downloaded, worked strictly one at a time.
 _Avoid_: Queue, downloads
+
+**Queue view**:
+The view listing the download queue: the running download with its progress, the waiting ones, and the last failure.
+_Avoid_: Downloads view, queue page

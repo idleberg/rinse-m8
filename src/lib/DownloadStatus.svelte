@@ -1,21 +1,27 @@
 <script lang="ts">
 	import { type DownloadQueue, episodeLabel } from './episodes';
 
-	let { downloads, ondismiss }: { downloads: DownloadQueue; ondismiss: () => void } = $props();
+	let {
+		downloads,
+		ondismiss,
+		onviewqueue,
+	}: { downloads: DownloadQueue; ondismiss: () => void; onviewqueue: () => void } = $props();
 </script>
 
 {#if downloads.current}
 	<footer role="status">
-		{episodeLabel(downloads.current)}
+		<progress max="100" value={downloads.percent ?? undefined} aria-label={episodeLabel(downloads.current)}></progress>
 		{downloads.percent === null ? '' : `${downloads.percent}%`}
 		{#if downloads.waiting.length}
 			· {downloads.waiting.length} queued
 		{/if}
+		<button onclick={onviewqueue}>View queue</button>
 	</footer>
 {:else if downloads.failed}
 	<footer role="alert">
 		Failed: {episodeLabel(downloads.failed)}
 		<button onclick={ondismiss}>Dismiss</button>
+		<button onclick={onviewqueue}>View queue</button>
 	</footer>
 {/if}
 
