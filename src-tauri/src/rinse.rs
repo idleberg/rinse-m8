@@ -113,6 +113,9 @@ pub struct DownloadQueue {
     pub waiting: VecDeque<Download>,
     /// The last download that failed, until the next one starts or it's dismissed.
     pub failed: Option<Download>,
+    /// Ids of every episode the app has finished downloading; defaults for queues saved before it existed.
+    #[serde(default)]
+    pub downloaded: BTreeSet<String>,
 }
 
 /// A queued episode and the folder it was queued with, which later folder changes don't move.
@@ -162,12 +165,16 @@ impl DownloadQueue {
         self.current.clone()
     }
 
-    /// Ends the current download, keeping it as the last failure unless it `succeeded`.
+    /// Ends the current download, recording it as downloaded if it `succeeded` and as the last failure if not.
     pub fn finish(&mut self, succeeded: bool) {
-        let current = self.current.take();
+        let Some(current) = self.current.take() else {
+            return;
+        };
 
-        if !succeeded {
-            self.failed = current;
+        if succeeded {
+            self.downloaded.insert(current.episode.id);
+        } else {
+            self.failed = Some(current);
         }
     }
 }
@@ -618,6 +625,20 @@ mod tests {
         queue.finish(true);
 
         assert_eq!(queue.next().unwrap().episode.id, "2319482");
+    }
+
+    #[test]
+    fn only_a_successful_download_is_recorded_as_downloaded() {
+        let mut queue = DownloadQueue::default();
+
+        queue.push(queued("2315290", "/a"));
+        queue.push(queued("2319482", "/a"));
+        queue.next();
+        queue.finish(true);
+        queue.next();
+        queue.finish(false);
+
+        assert_eq!(queue.downloaded, BTreeSet::from(["2315290".to_string()]));
     }
 
     #[test]

@@ -24,6 +24,7 @@
 	let mp3Only = $state(true);
 	let hideRebroadcasts = $state(false);
 	let search = $state('');
+	let showDownloaded = $state(false);
 
 	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null, autoDownload: false });
 	const subscribed = $derived(settings.subscriptions.map((s) => s.slug));
@@ -44,12 +45,15 @@
 	const showSections = $derived(
 		settings.subscriptions.map((show) => ({
 			show,
-			episodes: filteredEpisodes.filter((episode) => episode.showSlug === show.slug),
+			episodes: filteredEpisodes.filter(
+				(episode) =>
+					episode.showSlug === show.slug && (showDownloaded || !downloads.downloaded.includes(episode.id)),
+			),
 		})),
 	);
 	const scheduleEpisodes = $derived(filteredEpisodes.filter((episode) => episode.scheduled));
 
-	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failed: null });
+	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failed: null, downloaded: [] });
 
 	/** Queues the episode, asking for a download folder first if none is set. */
 	async function download(episode: Episode) {
@@ -194,6 +198,10 @@
 						onchange={() => saveAutoDownload().catch(showError)}
 					/>
 					auto-download
+				</label>
+				<label>
+					<input type="checkbox" bind:checked={showDownloaded} />
+					show downloaded
 				</label>
 			{/if}
 		</EpisodeFilters>

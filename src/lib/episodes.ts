@@ -33,6 +33,8 @@ export type DownloadQueue = {
 	waiting: Episode[];
 	/** The last download that failed, until the next one starts or it's dismissed. */
 	failed: Episode | null;
+	/** Ids of every episode the app has finished downloading. */
+	downloaded: string[];
 };
 
 /** `YYYY-MM-DD` as `YYYY/MM/DD`. */
