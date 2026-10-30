@@ -70,6 +70,7 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
 **Data source contract (researched live 2026-10-29)**
 - Schedule: `GET https://www.rinse.fm/api/query/v1/schedule` returns `{episodes, channels, eventTakeovers}`, roughly 200 episodes covering about 7 days across all four stations.
 - Show: `GET https://www.rinse.fm/api/query/v1/shows/<slug>` returns `{entry, episodes}`, about 30 recent episodes, newest first.
+- Show index: `GET https://www.rinse.fm/api/query/v1/shows/filter?offset=N`, the endpoint behind rinse.fm's Artists page, returns `{entries}`, 20 shows per page. `offset` is a page index (0, 1, 2…), not an item offset, and an empty `entries` marks the end. There's no total count and no free-text search. About 1,588 shows over 80 pages. Raw show fields used: `slug`, `title`, `genreTag[].title`, `channel[0].slug`, which maps to a station like an episode's; about 200 shows have no channel.
 - Plain GETs with no cookies or headers. There's no full-archive endpoint. The admin Craft GraphQL at admin.rinse.fm exposes the whole archive but is deliberately not used because it's unofficial.
 - Raw episode fields used: `id`, `title`, `episodeDate`, `episodeTime`, `episodeLength`, `isRebroadcast`, `genreTag`, `fileUrl`, `channel[0].slug`, `parentShow[0]` (`id`, `slug`, `title`).
 

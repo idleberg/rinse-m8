@@ -223,7 +223,7 @@ struct RawResponse {
 struct RawEpisode {
     id: String,
     title: String,
-    episode_date: String,
+    episode_date: Option<String>,
     episode_time: Option<String>,
     episode_length: Option<u32>,
     is_rebroadcast: bool,
@@ -256,6 +256,21 @@ struct RawShow {
     id: String,
     slug: String,
     title: String,
+}
+
+/// One page of the show index.
+#[derive(Deserialize)]
+struct RawShowIndex {
+    entries: Vec<RawIndexShow>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawIndexShow {
+    slug: String,
+    title: String,
+    genre_tag: Vec<RawGenre>,
+    channel: Vec<RawChannel>,
 }
 
 #[derive(Deserialize)]
@@ -314,16 +329,50 @@ pub fn map_show(json: &str) -> serde_json::Result<ShowPage> {
     })
 }
 
-/// Skips episodes without a channel, show, time or parseable date, which can't be placed in the table.
-fn map_episode(raw: RawEpisode) -> Option<Episode> {
-    let station = match raw.channel.first()?.slug.as_str() {
+/// A show in the show directory, every show Rinse lists.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DirectoryShow {
+    pub slug: String,
+    pub title: String,
+    /// Empty for a show without a channel.
+    pub station: String,
+    pub genres: Vec<String>,
+}
+
+/// Maps one raw show index page. An empty list marks the end of the index.
+pub fn map_show_index(json: &str) -> serde_json::Result<Vec<DirectoryShow>> {
+    let raw: RawShowIndex = serde_json::from_str(json)?;
+
+    Ok(raw
+        .entries
+        .into_iter()
+        .map(|show| DirectoryShow {
+            slug: show.slug,
+            title: show.title,
+            station: show
+                .channel
+                .first()
+                .map_or("", |c| station_name(&c.slug))
+                .into(),
+            genres: show.genre_tag.into_iter().map(|t| t.title).collect(),
+        })
+        .collect())
+}
+
+/// The station a channel slug stands for; slugs that aren't one of the four stations pass through.
+fn station_name(slug: &str) -> &str {
+    match slug {
         "uk" => "Rinse FM",
         "france" => "Rinse FR",
         "kool" => "Kool FM",
         "swu" => "SWU FM",
         other => other,
     }
-    .to_string();
+}
+
+/// Skips episodes without a channel, show, time or parseable date, which can't be placed in the table.
+fn map_episode(raw: RawEpisode) -> Option<Episode> {
+    let station = station_name(&raw.channel.first()?.slug).to_string();
 
     let show = raw.parent_show.into_iter().next()?;
     let london = |s: &str| {
@@ -335,7 +384,9 @@ fn map_episode(raw: RawEpisode) -> Option<Episode> {
     // episodeDate is London midnight in UTC. episodeTime is the London wall-clock time put on
     // today's date and converted with today's offset, so convert it back with that same offset:
     // the broadcast date's offset would shift BST episodes by an hour.
-    let date = london(&raw.episode_date)?.format("%Y-%m-%d").to_string();
+    let date = london(raw.episode_date.as_deref()?)?
+        .format("%Y-%m-%d")
+        .to_string();
     let time = london(raw.episode_time.as_deref()?)?
         .format("%H:%M")
         .to_string();
@@ -372,6 +423,31 @@ pub async fn fetch_show(slug: &str) -> Result<ShowPage, String> {
     let json = fetch_text(&format!("https://www.rinse.fm/api/query/v1/shows/{slug}")).await?;
 
     map_show(&json).map_err(|e| e.to_string())
+}
+
+/// Every show Rinse lists, walking the index one page at a time until an empty page. Any failed page fails the
+/// whole walk, so a partial directory is never returned.
+pub async fn fetch_show_directory() -> Result<Vec<DirectoryShow>, String> {
+    let mut shows = Vec::new();
+
+    // `offset` is a page index, not an item offset
+    for page in 0.. {
+        let url = format!("https://www.rinse.fm/api/query/v1/shows/filter?offset={page}");
+        let entries = map_show_index(&fetch_text(&url).await?).map_err(|e| e.to_string())?;
+
+        if entries.is_empty() {
+            break;
+        }
+
+        shows.extend(entries);
+    }
+
+    // A show added mid-walk shifts later pages, repeating a show the list keys by slug
+    let mut slugs = BTreeSet::new();
+
+    shows.retain(|show| slugs.insert(show.slug.clone()));
+
+    Ok(shows)
 }
 
 async fn fetch_episodes(url: &str) -> Result<Vec<Episode>, String> {
@@ -640,6 +716,18 @@ mod tests {
     }
 
     #[test]
+    fn episodes_without_a_date_are_skipped() {
+        let mut json: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/show.json")).unwrap();
+
+        json["episodes"][0]["episodeDate"] = serde_json::json!(null);
+
+        let episodes = map_show(&json.to_string()).unwrap().episodes;
+
+        assert_eq!(episodes.len(), show_fixture().len() - 1);
+    }
+
+    #[test]
     fn the_image_filename_is_percent_encoded() {
         let mut json: serde_json::Value =
             serde_json::from_str(include_str!("../tests/fixtures/show.json")).unwrap();
@@ -654,6 +742,36 @@ mod tests {
                 .as_deref(),
             Some("https://rinse-platform-assets.s3.amazonaws.com/images/a%20b%23%3F.jpg")
         );
+    }
+
+    #[test]
+    fn maps_every_show_in_a_show_index_page() {
+        let shows = map_show_index(include_str!("../tests/fixtures/shows.json")).unwrap();
+        let show = |slug: &str| shows.iter().find(|s| s.slug == slug).unwrap();
+
+        assert_eq!(shows.len(), 20);
+        assert_eq!(
+            *show("guava"),
+            DirectoryShow {
+                slug: "guava".into(),
+                title: "Guava".into(),
+                station: "Rinse FM".into(),
+                genres: vec!["Bass".into(), "House".into(), "Techno".into()],
+            }
+        );
+        assert_eq!(show("grown-ass-folks-melodies").station, "Rinse FR");
+        assert_eq!(show("halogenix").station, "Kool FM");
+        assert_eq!(show("harmonia").station, "SWU FM");
+        assert!(show("harmonia").genres.is_empty());
+        // A channel that isn't one of the four stations passes through as its slug.
+        assert_eq!(show("hannah").station, "radio-alhara");
+        // A show without a channel is still listed, so it can be followed.
+        assert_eq!(show("hannah-wants").station, "");
+    }
+
+    #[test]
+    fn the_last_show_index_page_is_empty() {
+        assert_eq!(map_show_index(r#"{"entries":[]}"#).unwrap(), []);
     }
 
     #[test]

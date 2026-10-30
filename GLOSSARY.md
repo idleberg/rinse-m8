@@ -14,6 +14,10 @@ _Avoid_: Timetable, main table
 The default view, with one section per subscribed show listing its newest episodes.
 _Avoid_: Subscribed table, for you, feed
 
+**Show directory**:
+Every show Rinse lists, not only the ones in the schedule, as the Shows tab lists them. Cached and refreshed in the background once a week.
+_Avoid_: Show list, artists
+
 **Show view**:
 The screen for a single show, listing its known episodes.
 _Avoid_: Show page, show detail

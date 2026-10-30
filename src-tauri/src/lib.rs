@@ -369,6 +369,58 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// The cached show directory, or none until the first refresh finishes.
+#[tauri::command]
+fn get_show_directory(app: tauri::AppHandle) -> Result<Option<Vec<rinse::DirectoryShow>>, String> {
+    let store = app.store("directory.json").map_err(|e| e.to_string())?;
+
+    store
+        .get("shows")
+        .map(serde_json::from_value)
+        .transpose()
+        .map_err(|e| e.to_string())
+}
+
+/// Refreshes the show directory when it's missing or more than a week old, checking at startup and then hourly,
+/// so a failed refresh keeps the old directory and is retried an hour later.
+async fn poll_show_directory(app: tauri::AppHandle) {
+    let mut interval = tokio::time::interval(Duration::from_secs(60 * 60));
+
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+
+    loop {
+        interval.tick().await;
+
+        if let Err(e) = refresh_stale_show_directory(&app).await {
+            eprintln!("show directory refresh failed: {e}");
+        }
+    }
+}
+
+async fn refresh_stale_show_directory(app: &tauri::AppHandle) -> Result<(), String> {
+    let store = app.store("directory.json").map_err(|e| e.to_string())?;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_secs();
+    let fetched_at = store.get("fetchedAt").and_then(|v| v.as_u64());
+
+    if store.has("shows") && fetched_at.is_some_and(|t| now.saturating_sub(t) < 7 * 24 * 60 * 60) {
+        return Ok(());
+    }
+
+    let shows = rinse::fetch_show_directory().await?;
+
+    store.set(
+        "shows",
+        serde_json::to_value(&shows).map_err(|e| e.to_string())?,
+    );
+    store.set("fetchedAt", now);
+    store.save().map_err(|e| e.to_string())?;
+
+    app.emit("show-directory", shows).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -386,6 +438,7 @@ pub fn run() {
             });
 
             tauri::async_runtime::spawn(poll(app.handle().clone()));
+            tauri::async_runtime::spawn(poll_show_directory(app.handle().clone()));
             tauri::async_runtime::spawn(download_worker(app.handle().clone(), cancelled));
 
             Ok(())
@@ -402,7 +455,8 @@ pub fn run() {
             get_settings,
             set_settings,
             subscribe,
-            unsubscribe
+            unsubscribe,
+            get_show_directory
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

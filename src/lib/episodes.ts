@@ -19,6 +19,9 @@ export type Episode = {
 
 export type Show = { slug: string; title: string };
 
+/** A show in the show directory. `station` is empty for a show without a channel. */
+export type DirectoryShow = Show & { station: string; genres: string[] };
+
 /** What Rinse says about a show besides its episodes. */
 export type ShowDetails = {
 	image: string | null;

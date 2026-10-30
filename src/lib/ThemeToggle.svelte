@@ -23,8 +23,8 @@
 	});
 
 	const options: [string, Theme | undefined][] = [
+    ['Light', 'light'],
 		['System', undefined],
-		['Light', 'light'],
 		['Dark', 'dark'],
 	];
 </script>

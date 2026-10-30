@@ -6,10 +6,11 @@
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
 	import QueueView from '../lib/QueueView.svelte';
+	import ShowDirectory from '../lib/ShowDirectory.svelte';
 	import ShowSection from '../lib/ShowSection.svelte';
 	import ShowView from '../lib/ShowView.svelte';
 	import ThemeToggle from '../lib/ThemeToggle.svelte';
-	import { type DownloadQueue, type Episode, type Show, type ShowDetails, type ShowPage, showOf, stations } from '../lib/episodes';
+	import { type DirectoryShow, type DownloadQueue, type Episode, type Show, type ShowDetails, type ShowPage, showOf, stations } from '../lib/episodes';
 
 	type Settings = {
 		subscriptions: Show[];
@@ -65,6 +66,21 @@
 	);
 	const scheduleEpisodes = $derived(filteredEpisodes.filter((episode) => episode.scheduled));
 
+	/** Null until the first refresh finishes. */
+	let directory = $state<DirectoryShow[] | null>(null);
+
+	const filteredDirectory = $derived.by(() => {
+		const query = search.trim().toLowerCase();
+
+		return (
+			directory?.filter(
+				(show) =>
+					(!stations.includes(show.station) || shownStations.includes(show.station)) &&
+					[show.title, ...show.genres].some((text) => text.toLowerCase().includes(query)),
+			) ?? null
+		);
+	});
+
 	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failed: null, downloaded: [] });
 
 	/** Queues the episode, asking for a download folder first if none is set. */
@@ -101,7 +117,7 @@
 		}
 	}
 
-	let view = $state<'dashboard' | 'schedule' | 'queue'>('dashboard');
+	let view = $state<'dashboard' | 'schedule' | 'shows' | 'queue'>('dashboard');
 	let openedShow = $state<Show | null>(null);
 
 	/** Of `openedShow`, once its fetch has returned. */
@@ -181,6 +197,17 @@
 	listen<DownloadQueue>('download-queue', (event) => {
 		downloads = event.payload;
 	});
+
+	invoke<DirectoryShow[] | null>('get_show_directory')
+		.then((loaded) => {
+			directory ??= loaded;
+		})
+		.catch(showError);
+
+	// The background refresh sends the whole directory once it has every page
+	listen<DirectoryShow[]>('show-directory', (event) => {
+		directory = event.payload;
+	});
 </script>
 
 <!-- With Tauri's file drop off, a dropped file would otherwise open in the window -->
@@ -191,7 +218,7 @@
 
 <nav>
 	<div>
-		{#each [['dashboard', 'Dashboard'], ['schedule', 'Schedule'], ['queue', 'Queue']] as const as [value, label] (value)}
+		{#each [['dashboard', 'Dashboard'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Queue']] as const as [value, label] (value)}
 			<button aria-current={!openedShow && view === value ? 'page' : undefined} onclick={() => openView(value)}
 				>{label}</button
 			>
@@ -229,6 +256,16 @@
 			onmove={(id, index) => invoke('move_download', { id, index }).catch(showError)}
 			oncancel={() => invoke('cancel_download').catch(showError)}
 			ondismiss={() => dismissFailure().catch(showError)}
+		/>
+	{:else if view === 'shows'}
+		<EpisodeFilters bind:shownStations bind:search />
+
+		<ShowDirectory
+			shows={filteredDirectory}
+			{subscribed}
+			{subscribing}
+			onopenshow={(show) => openShow(show).catch(showError)}
+			ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
 		/>
 	{:else}
 		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:search>
@@ -310,5 +347,12 @@
 	nav div {
 		display: flex;
 		gap: 0.5rem;
+	}
+
+	[role='alert'] {
+		margin: 0 0 1rem;
+		padding: 0.5rem 1rem;
+		background: var(--accent);
+		color: #fff;
 	}
 </style>
