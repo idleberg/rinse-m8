@@ -15,6 +15,27 @@
 	color-scheme: dark;
 }
 
+/* Set while the Settings page is open, which shows the opposite theme */
+:root[data-inverted][data-theme='light'] {
+	color-scheme: dark;
+}
+
+:root[data-inverted][data-theme='dark'] {
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+	:root[data-inverted]:not([data-theme]) {
+		color-scheme: dark;
+	}
+}
+
+@media (prefers-color-scheme: dark) {
+	:root[data-inverted]:not([data-theme]) {
+		color-scheme: light;
+	}
+}
+
 body {
 	margin: 0;
 	background: var(--paper);

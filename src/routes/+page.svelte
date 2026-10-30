@@ -133,6 +133,11 @@
 	let view = $state<'dashboard' | 'schedule' | 'shows' | 'queue' | 'settings'>('dashboard');
 	let openedShow = $state<Show | null>(null);
 
+	// Settings swap light and dark, to stand apart from the other pages
+	$effect(() => {
+		document.documentElement.toggleAttribute('data-inverted', view === 'settings' && !openedShow);
+	});
+
 	/** Of `openedShow`, once its fetch has returned. */
 	let showDetails = $state<ShowDetails | null>(null);
 	let refreshing = $state<string[]>([]);
