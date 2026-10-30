@@ -96,6 +96,11 @@ fn remove_download(app: tauri::AppHandle, id: String) {
 }
 
 #[tauri::command]
+fn move_download(app: tauri::AppHandle, id: String, index: usize) {
+    update_downloads(&app, |queue| queue.move_to(&id, index));
+}
+
+#[tauri::command]
 fn dismiss_download_failure(app: tauri::AppHandle) {
     update_downloads(&app, |queue| queue.failed = None);
 }
@@ -351,6 +356,7 @@ pub fn run() {
             download,
             get_download_queue,
             remove_download,
+            move_download,
             dismiss_download_failure,
             get_settings,
             set_settings,

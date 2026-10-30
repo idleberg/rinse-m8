@@ -162,6 +162,22 @@ impl DownloadQueue {
         self.waiting.len() != before
     }
 
+    /// Moves the waiting episode to `index` among the waiting downloads; returns whether it moved.
+    pub fn move_to(&mut self, id: &str, index: usize) -> bool {
+        if index >= self.waiting.len() {
+            return false;
+        }
+
+        let Some(from) = self.waiting.iter().position(|d| d.episode.id == id) else {
+            return false;
+        };
+
+        let download = self.waiting.remove(from).unwrap();
+        self.waiting.insert(index, download);
+
+        true
+    }
+
     /// Starts the oldest waiting download, unless one is still running.
     pub fn next(&mut self) -> Option<Download> {
         if self.current.is_some() {
@@ -806,6 +822,31 @@ mod tests {
             .collect();
 
         assert_eq!(waiting, ["2319625"]);
+    }
+
+    #[test]
+    fn moving_a_waiting_download_reorders_only_the_waiting_ones() {
+        let mut queue = DownloadQueue::default();
+
+        queue.push(queued("2315290", "/a"));
+        queue.push(queued("2319482", "/a"));
+        queue.push(queued("2319625", "/a"));
+        queue.push(queued("2319238", "/a"));
+        queue.next();
+
+        assert!(queue.move_to("2319238", 0));
+        assert!(!queue.move_to("2315290", 0));
+        assert!(!queue.move_to("9999999", 0));
+        assert!(!queue.move_to("2319482", 3));
+        assert_eq!(queue.current.as_ref().unwrap().episode.id, "2315290");
+
+        let waiting: Vec<_> = queue
+            .waiting
+            .iter()
+            .map(|d| d.episode.id.as_str())
+            .collect();
+
+        assert_eq!(waiting, ["2319238", "2319482", "2319625"]);
     }
 
     #[test]

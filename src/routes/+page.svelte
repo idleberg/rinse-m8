@@ -172,6 +172,12 @@
 	});
 </script>
 
+<!-- With Tauri's file drop off, a dropped file would otherwise open in the window -->
+<svelte:window
+	ondragover={(event) => event.dataTransfer?.types.includes('Files') && event.preventDefault()}
+	ondrop={(event) => event.dataTransfer?.types.includes('Files') && event.preventDefault()}
+/>
+
 <nav>
 	<div>
 		{#each [['dashboard', 'Dashboard'], ['schedule', 'Schedule'], ['queue', 'Queue']] as const as [value, label] (value)}
@@ -209,6 +215,7 @@
 		<QueueView
 			{downloads}
 			onremove={(id) => invoke('remove_download', { id }).catch(showError)}
+			onmove={(id, index) => invoke('move_download', { id, index }).catch(showError)}
 			ondismiss={() => dismissFailure().catch(showError)}
 		/>
 	{:else}
