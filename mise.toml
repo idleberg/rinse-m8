@@ -1,0 +1,56 @@
+[tools]
+bun = "latest"
+hk = "latest"
+node = "lts"
+pkl = "latest"
+rust = { version = "latest", targets = "aarch64-apple-darwin,x86_64-apple-darwin" }
+
+[env]
+HK_MISE = 1
+
+[hooks]
+postinstall = "hk install --mise && bun install"
+
+[tasks.dev]
+description = "Run the app in development mode"
+run = "bun tauri dev"
+
+[tasks.build]
+description = "Build the app for the host platform"
+run = "bun tauri build"
+
+# Tauri doesn't cross-compile reliably, so each target builds on its own OS.
+[tasks."build:macos"]
+description = "Build a universal macOS app (run on macOS)"
+run = "bun tauri build --target universal-apple-darwin"
+
+[tasks."build:windows"]
+description = "Build the Windows installer (run on Windows)"
+run = "bun tauri build --target x86_64-pc-windows-msvc"
+
+[tasks."build:linux"]
+description = "Build the Linux bundles (run on Linux)"
+run = "bun tauri build --target x86_64-unknown-linux-gnu"
+
+[tasks.checks]
+description = "Run all checks"
+depends = ["check", "format:check", "lint"]
+
+[tasks.check]
+description = "Typecheck the Svelte frontend"
+run = "bun run check"
+
+[tasks.format]
+description = "Format Rust code"
+dir = "src-tauri"
+run = "cargo fmt"
+
+[tasks."format:check"]
+description = "Check Rust code formatting"
+dir = "src-tauri"
+run = "cargo fmt --check"
+
+[tasks.lint]
+description = "Lint Rust code with Clippy"
+dir = "src-tauri"
+run = "cargo clippy -- --deny warnings"
