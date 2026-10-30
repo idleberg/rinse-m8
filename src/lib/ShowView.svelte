@@ -79,8 +79,14 @@
 		{#if details?.image}
 			<img src={details.image} alt="" bind:clientHeight={imageHeight} />
 		{/if}
-		<div class="description" style:max-height={expanded ? null : imageHeight ? `${imageHeight}px` : '12rem'}>
-			<div class="clip" bind:this={clip}>
+		<div class="description">
+			<!-- On the clip itself: WebKit doesn't shrink a flex item to a column container's max-height.
+			     Rounded down to whole lines, so no half-cut line sits above the button. -->
+			<div
+				class="clip"
+				bind:this={clip}
+				style:max-height={expanded ? null : `round(down, ${imageHeight ? `${imageHeight}px` : '12rem'}, 1lh)`}
+			>
 				{#each description as paragraph}
 					<p>{paragraph}</p>
 				{/each}
@@ -137,12 +143,12 @@
 	}
 
 	.clip {
-		min-height: 0;
 		overflow: hidden;
 	}
 
 	section p {
-		margin: 0 0 0.5rem;
+		/* A whole line, so every line stays on the clip's line grid */
+		margin: 0 0 1lh;
 		max-width: 60ch;
 		white-space: pre-line;
 	}

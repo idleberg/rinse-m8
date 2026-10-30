@@ -6,6 +6,7 @@
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
 	import QueueView from '../lib/QueueView.svelte';
+	import SettingsView from '../lib/SettingsView.svelte';
 	import ShowDirectory from '../lib/ShowDirectory.svelte';
 	import ShowSection from '../lib/ShowSection.svelte';
 	import ShowView from '../lib/ShowView.svelte';
@@ -83,19 +84,30 @@
 
 	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failed: null, downloaded: [] });
 
+	/** Asks for a download folder and saves it, returning false if the dialog was cancelled. */
+	async function chooseFolder() {
+		const folder = await open({
+			directory: true,
+			title: 'Choose a download folder',
+			defaultPath: settings.downloadFolder ?? undefined,
+		});
+
+		if (!folder) {
+			return false;
+		}
+
+		await invoke('set_settings', { patch: { downloadFolder: folder } });
+		settings.downloadFolder = folder;
+
+		return true;
+	}
+
 	/** Queues the episode, asking for a download folder first if none is set. */
 	async function download(episode: Episode) {
 		error = '';
 
-		if (!settings.downloadFolder) {
-			const folder = await open({ directory: true, title: 'Choose a download folder' });
-
-			if (!folder) {
-				return;
-			}
-
-			await invoke('set_settings', { patch: { downloadFolder: folder } });
-			settings.downloadFolder = folder;
+		if (!settings.downloadFolder && !(await chooseFolder())) {
+			return;
 		}
 
 		await invoke('download', { episode });
@@ -117,7 +129,7 @@
 		}
 	}
 
-	let view = $state<'dashboard' | 'schedule' | 'shows' | 'queue'>('dashboard');
+	let view = $state<'dashboard' | 'schedule' | 'shows' | 'queue' | 'settings'>('dashboard');
 	let openedShow = $state<Show | null>(null);
 
 	/** Of `openedShow`, once its fetch has returned. */
@@ -218,7 +230,7 @@
 
 <nav>
 	<div>
-		{#each [['dashboard', 'Dashboard'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Queue']] as const as [value, label] (value)}
+		{#each [['dashboard', 'Dashboard'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Queue'], ['settings', 'Settings']] as const as [value, label] (value)}
 			<button aria-current={!openedShow && view === value ? 'page' : undefined} onclick={() => openView(value)}
 				>{label}</button
 			>
@@ -257,6 +269,16 @@
 			oncancel={() => invoke('cancel_download').catch(showError)}
 			ondismiss={() => dismissFailure().catch(showError)}
 		/>
+	{:else if view === 'settings'}
+		<SettingsView
+			downloadFolder={settings.downloadFolder}
+			bind:autoDownload={settings.autoDownload}
+			onchoosefolder={() => {
+				error = '';
+				chooseFolder().catch(showError);
+			}}
+			onautodownloadchange={() => saveAutoDownload().catch(showError)}
+		/>
 	{:else if view === 'shows'}
 		<EpisodeFilters bind:shownStations bind:search />
 
@@ -270,14 +292,6 @@
 	{:else}
 		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:search>
 			{#if view === 'dashboard'}
-				<label>
-					<input
-						type="checkbox"
-						bind:checked={settings.autoDownload}
-						onchange={() => saveAutoDownload().catch(showError)}
-					/>
-					auto-download
-				</label>
 				<label>
 					<input type="checkbox" bind:checked={showDownloaded} />
 					show downloaded
