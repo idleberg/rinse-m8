@@ -104,33 +104,53 @@ pub fn new_episodes(
 }
 
 /// The episodes waiting to be downloaded, worked strictly one at a time in arrival order.
-/// Sent to the frontend as is on every change.
-#[derive(Debug, Default, Serialize)]
+/// Sent to the frontend and saved to disk as is on every change.
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct DownloadQueue {
-    pub current: Option<Episode>,
+    pub current: Option<Download>,
     /// Of `current`, once the server has reported a size.
     pub percent: Option<u8>,
-    pub waiting: VecDeque<Episode>,
+    pub waiting: VecDeque<Download>,
     /// The last download that failed, until the next one starts or it's dismissed.
-    pub failed: Option<Episode>,
+    pub failed: Option<Download>,
+}
+
+/// A queued episode and the folder it was queued with, which later folder changes don't move.
+/// Flattened, so the frontend sees an `Episode` with an extra `folder`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Download {
+    #[serde(flatten)]
+    pub episode: Episode,
+    pub folder: PathBuf,
 }
 
 impl DownloadQueue {
-    /// Adds the episode unless it's already waiting or downloading; returns whether it was added.
-    pub fn push(&mut self, episode: Episode) -> bool {
+    /// The queue saved by a previous run, with its interrupted download first in line again.
+    pub fn restore(mut saved: DownloadQueue) -> DownloadQueue {
+        if let Some(current) = saved.current.take() {
+            saved.waiting.push_front(current);
+        }
+
+        saved.percent = None;
+
+        saved
+    }
+
+    /// Adds the download unless its episode is already waiting or downloading; returns whether it was added.
+    pub fn push(&mut self, download: Download) -> bool {
         let mut queued = self.current.iter().chain(&self.waiting);
 
-        if queued.any(|e| e.id == episode.id) {
+        if queued.any(|d| d.episode.id == download.episode.id) {
             return false;
         }
 
-        self.waiting.push_back(episode);
+        self.waiting.push_back(download);
 
         true
     }
 
-    /// Starts the oldest waiting episode, unless one is still downloading.
-    pub fn next(&mut self) -> Option<Episode> {
+    /// Starts the oldest waiting download, unless one is still running.
+    pub fn next(&mut self) -> Option<Download> {
         if self.current.is_some() {
             return None;
         }
@@ -577,34 +597,66 @@ mod tests {
         assert!(e.scheduled);
     }
 
+    fn queued(id: &str, folder: &str) -> Download {
+        Download {
+            episode: episode(id),
+            folder: folder.into(),
+        }
+    }
+
     #[test]
     fn the_download_queue_runs_first_in_first_out_and_skips_duplicates() {
         let mut queue = DownloadQueue::default();
 
-        assert!(queue.push(episode("2315290")));
-        assert!(queue.push(episode("2319482")));
-        assert!(!queue.push(episode("2315290")));
-        assert_eq!(queue.next().unwrap().id, "2315290");
-        assert!(!queue.push(episode("2315290")));
+        assert!(queue.push(queued("2315290", "/a")));
+        assert!(queue.push(queued("2319482", "/a")));
+        assert!(!queue.push(queued("2315290", "/a")));
+        assert_eq!(queue.next().unwrap().episode.id, "2315290");
+        assert!(!queue.push(queued("2315290", "/a")));
         assert_eq!(queue.next(), None);
 
         queue.finish(true);
 
-        assert_eq!(queue.next().unwrap().id, "2319482");
+        assert_eq!(queue.next().unwrap().episode.id, "2319482");
     }
 
     #[test]
     fn a_failed_download_is_kept_until_the_next_one_starts() {
         let mut queue = DownloadQueue::default();
 
-        queue.push(episode("2315290"));
-        queue.push(episode("2319482"));
+        queue.push(queued("2315290", "/a"));
+        queue.push(queued("2319482", "/a"));
         queue.next();
         queue.finish(false);
 
-        assert_eq!(queue.failed.as_ref().unwrap().id, "2315290");
-        assert_eq!(queue.next().unwrap().id, "2319482");
+        assert_eq!(queue.failed.as_ref().unwrap().episode.id, "2315290");
+        assert_eq!(queue.next().unwrap().episode.id, "2319482");
         assert_eq!(queue.failed, None);
+    }
+
+    #[test]
+    fn a_restored_queue_starts_with_the_interrupted_download_in_its_own_folder() {
+        let mut queue = DownloadQueue::default();
+
+        queue.push(queued("2315290", "/a"));
+        queue.push(queued("2319482", "/b"));
+        queue.next();
+        queue.percent = Some(40);
+
+        let saved = serde_json::to_value(&queue).unwrap();
+        let mut queue = DownloadQueue::restore(serde_json::from_value(saved).unwrap());
+
+        assert_eq!(queue.current, None);
+        assert_eq!(queue.percent, None);
+
+        let first = queue.next().unwrap();
+
+        assert_eq!(first.episode.id, "2315290");
+        assert_eq!(first.folder, Path::new("/a"));
+
+        queue.finish(true);
+
+        assert_eq!(queue.next().unwrap().folder, Path::new("/b"));
     }
 
     #[test]

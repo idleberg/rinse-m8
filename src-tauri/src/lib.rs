@@ -10,7 +10,6 @@ use tauri_plugin_store::StoreExt;
 static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
 
 /// The download queue and the signal that wakes its worker.
-#[derive(Default)]
 struct Downloads {
     queue: Mutex<rinse::DownloadQueue>,
     wake: tokio::sync::Notify,
@@ -63,12 +62,29 @@ fn merge(
         .collect())
 }
 
-/// Adds the episode to the download queue, unless it's already in it.
+/// Adds the episode to the download queue with the current download folder, unless it's already in it.
 #[tauri::command]
-fn download(app: tauri::AppHandle, episode: rinse::Episode) {
-    if update_downloads(&app, |queue| queue.push(episode)) {
+fn download(app: tauri::AppHandle, episode: rinse::Episode) -> Result<(), String> {
+    let folder = load_settings(&app, serde_json::Map::new())?
+        .download_folder
+        .ok_or("no download folder set")?;
+
+    if update_downloads(&app, |queue| {
+        queue.push(rinse::Download { episode, folder })
+    }) {
         app.state::<Downloads>().wake.notify_one();
     }
+
+    Ok(())
+}
+
+/// The queue as it is now, for a page that missed the events, e.g. the one the restored queue sends at launch.
+#[tauri::command]
+fn get_download_queue(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let downloads = app.state::<Downloads>();
+    let queue = downloads.queue.lock().unwrap_or_else(|e| e.into_inner());
+
+    serde_json::to_value(&*queue).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -76,7 +92,7 @@ fn dismiss_download_failure(app: tauri::AppHandle) {
     update_downloads(&app, |queue| queue.failed = None);
 }
 
-/// Applies `change` to the download queue and sends the result to the frontend.
+/// Applies `change` to the download queue, saves it and sends it to the frontend.
 fn update_downloads<T>(
     app: &tauri::AppHandle,
     change: impl FnOnce(&mut rinse::DownloadQueue) -> T,
@@ -85,6 +101,10 @@ fn update_downloads<T>(
     let mut queue = downloads.queue.lock().unwrap_or_else(|e| e.into_inner());
     let result = change(&mut queue);
 
+    if let Err(e) = save_downloads(app, &queue) {
+        eprintln!("saving the download queue failed: {e}");
+    }
+
     if let Err(e) = app.emit("download-queue", &*queue) {
         eprintln!("download queue event failed: {e}");
     }
@@ -92,29 +112,54 @@ fn update_downloads<T>(
     result
 }
 
+/// Writes the whole queue, so a quit at any point keeps it as it was.
+fn save_downloads(app: &tauri::AppHandle, queue: &rinse::DownloadQueue) -> Result<(), String> {
+    let store = app.store("downloads.json").map_err(|e| e.to_string())?;
+
+    store.set(
+        "queue",
+        serde_json::to_value(queue).map_err(|e| e.to_string())?,
+    );
+
+    store.save().map_err(|e| e.to_string())
+}
+
+/// The queue saved by the previous run, ready to start again; an unreadable one starts empty.
+fn load_downloads(app: &tauri::AppHandle) -> rinse::DownloadQueue {
+    let saved = app
+        .store("downloads.json")
+        .map_err(|e| e.to_string())
+        .and_then(|store| {
+            store
+                .get("queue")
+                .map(serde_json::from_value)
+                .transpose()
+                .map_err(|e| e.to_string())
+        })
+        .unwrap_or_else(|e| {
+            eprintln!("loading the download queue failed: {e}");
+            None
+        })
+        .unwrap_or_default();
+
+    rinse::DownloadQueue::restore(saved)
+}
+
 /// Works through the download queue one episode at a time, for as long as the app runs.
-/// Each download goes into the folder that's set when it starts, which the frontend sets before queueing.
 async fn download_worker(app: tauri::AppHandle) {
     loop {
-        let Some(episode) = update_downloads(&app, |queue| queue.next()) else {
+        let Some(download) = update_downloads(&app, |queue| queue.next()) else {
             app.state::<Downloads>().wake.notified().await;
             continue;
         };
 
-        let result = async {
-            let folder = load_settings(&app, serde_json::Map::new())?
-                .download_folder
-                .ok_or("no download folder set")?;
-
-            rinse::download(&episode, &folder, |percent| {
-                update_downloads(&app, |queue| queue.percent = Some(percent));
-            })
-            .await
-        }
+        let result = rinse::download(&download.episode, &download.folder, |percent| {
+            update_downloads(&app, |queue| queue.percent = Some(percent));
+        })
         .await;
 
         if let Err(e) = &result {
-            eprintln!("downloading {} failed: {e}", episode.id);
+            eprintln!("downloading {} failed: {e}", download.episode.id);
         }
 
         update_downloads(&app, |queue| queue.finish(result.is_ok()));
@@ -260,11 +305,12 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
     app.emit("episodes-updated", cache)
         .map_err(|e| e.to_string())?;
 
-    // ponytail: the download queue lives in memory, so queued auto-downloads are lost on quit
-    // and a failed one isn't retried, since the episode is already seen
+    // ponytail: queued auto-downloads survive restarts, but a failed one isn't retried, since the episode is already seen
     if auto_download {
         for episode in unseen {
-            download(app.clone(), episode);
+            if let Err(e) = download(app.clone(), episode) {
+                eprintln!("queueing an auto-download failed: {e}");
+            }
         }
     }
 
@@ -278,8 +324,12 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
-        .manage(Downloads::default())
         .setup(|app| {
+            app.manage(Downloads {
+                queue: Mutex::new(load_downloads(app.handle())),
+                wake: tokio::sync::Notify::new(),
+            });
+
             tauri::async_runtime::spawn(poll(app.handle().clone()));
             tauri::async_runtime::spawn(download_worker(app.handle().clone()));
 
@@ -289,6 +339,7 @@ pub fn run() {
             get_episodes,
             refresh_show,
             download,
+            get_download_queue,
             dismiss_download_failure,
             get_settings,
             set_settings,

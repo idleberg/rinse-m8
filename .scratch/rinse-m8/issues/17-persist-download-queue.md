@@ -4,10 +4,10 @@
 
 **Blocked by:** 16 (Resumable downloads)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] The download queue, including the item in progress, is saved to disk whenever it changes
-- [ ] Each item records the download folder it was queued with
-- [ ] At launch the saved download queue starts again by itself, resuming the first item
-- [ ] The `ponytail:` comment about failed auto-downloads not being retried is updated to reflect that queued auto-downloads now survive restarts
+- [x] The download queue, including the item in progress, is saved to disk whenever it changes
+- [x] Each item records the download folder it was queued with
+- [x] At launch the saved download queue starts again by itself, resuming the first item
+- [x] The `ponytail:` comment about failed auto-downloads not being retried is updated to reflect that queued auto-downloads now survive restarts
 - [ ] Manual check: queue three downloads, quit during the first, relaunch; the first resumes and the other two follow

@@ -129,7 +129,12 @@
 	// The subscription poller sends the whole cache after each check
 	listen<Episode[]>('episodes-updated', (event) => setEpisodes(event.payload));
 
-	// ponytail: the queue is only sent on change, so a reloaded page shows it from the next event on
+	invoke<DownloadQueue>('get_download_queue')
+		.then((loaded) => {
+			downloads = loaded;
+		})
+		.catch(showError);
+
 	listen<DownloadQueue>('download-queue', (event) => {
 		downloads = event.payload;
 	});
