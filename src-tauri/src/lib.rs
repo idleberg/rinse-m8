@@ -9,10 +9,11 @@ use tauri_plugin_store::StoreExt;
 /// Serialises settings read-modify-writes between commands and the poller.
 static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
 
-/// The download queue and the signal that wakes its worker.
+/// The download queue and the signals that wake its worker and stop its running download.
 struct Downloads {
     queue: Mutex<rinse::DownloadQueue>,
     wake: tokio::sync::Notify,
+    cancel: tokio::sync::mpsc::UnboundedSender<()>,
 }
 
 /// Merges a fresh schedule fetch into the episode cache and returns the whole cache.
@@ -100,6 +101,16 @@ fn move_download(app: tauri::AppHandle, id: String, index: usize) {
     update_downloads(&app, |queue| queue.move_to(&id, index));
 }
 
+/// Takes the running download off the queue; the worker then drops its partial file and starts the next one.
+#[tauri::command]
+fn cancel_download(app: tauri::AppHandle) {
+    update_downloads(&app, |queue| {
+        if queue.cancel() {
+            let _ = app.state::<Downloads>().cancel.send(());
+        }
+    });
+}
+
 #[tauri::command]
 fn dismiss_download_failure(app: tauri::AppHandle) {
     update_downloads(&app, |queue| queue.failed = None);
@@ -159,17 +170,43 @@ fn load_downloads(app: &tauri::AppHandle) -> rinse::DownloadQueue {
 }
 
 /// Works through the download queue one episode at a time, for as long as the app runs.
-async fn download_worker(app: tauri::AppHandle) {
+async fn download_worker(
+    app: tauri::AppHandle,
+    mut cancelled: tokio::sync::mpsc::UnboundedReceiver<()>,
+) {
     loop {
-        let Some(download) = update_downloads(&app, |queue| queue.next()) else {
+        // A cancel sent before this lock was for a download that had already ended, so it mustn't stop this one
+        let Some(download) = update_downloads(&app, |queue| {
+            while cancelled.try_recv().is_ok() {}
+
+            queue.next()
+        }) else {
             app.state::<Downloads>().wake.notified().await;
             continue;
         };
 
-        let result = rinse::download(&download.episode, &download.folder, |percent| {
+        let transfer = rinse::download(&download.episode, &download.folder, |percent| {
             update_downloads(&app, |queue| queue.percent = Some(percent));
-        })
-        .await;
+        });
+
+        let finished = tokio::select! {
+            result = transfer => Some(result),
+            Some(()) = cancelled.recv() => None,
+        };
+
+        // The cancel already took it off the queue, so only its partial file is left
+        let Some(result) = finished else {
+            let part = rinse::part_path(&download.episode, &download.folder);
+
+            match tokio::fs::remove_file(&part).await {
+                Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
+                    eprintln!("deleting {} failed: {e}", part.display());
+                }
+                _ => {}
+            }
+
+            continue;
+        };
 
         if let Err(e) = &result {
             eprintln!("downloading {} failed: {e}", download.episode.id);
@@ -340,13 +377,16 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            let (cancel, cancelled) = tokio::sync::mpsc::unbounded_channel();
+
             app.manage(Downloads {
                 queue: Mutex::new(load_downloads(app.handle())),
                 wake: tokio::sync::Notify::new(),
+                cancel,
             });
 
             tauri::async_runtime::spawn(poll(app.handle().clone()));
-            tauri::async_runtime::spawn(download_worker(app.handle().clone()));
+            tauri::async_runtime::spawn(download_worker(app.handle().clone(), cancelled));
 
             Ok(())
         })
@@ -357,6 +397,7 @@ pub fn run() {
             get_download_queue,
             remove_download,
             move_download,
+            cancel_download,
             dismiss_download_failure,
             get_settings,
             set_settings,

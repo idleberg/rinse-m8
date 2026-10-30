@@ -5,6 +5,7 @@
 		downloads,
 		onremove,
 		onmove,
+		oncancel,
 		ondismiss,
 	}: {
 		downloads: DownloadQueue;
@@ -12,6 +13,8 @@
 		onremove: (id: string) => void;
 		/** Takes an episode id and its new index among the waiting downloads. */
 		onmove: (id: string, index: number) => void;
+		/** Stops the running download. */
+		oncancel: () => void;
 		ondismiss: () => void;
 	} = $props();
 
@@ -57,7 +60,6 @@
 			</tr>
 		</thead>
 		<tbody>
-			<!-- The running download has no remove button, since it can't be cancelled -->
 			{#if downloads.current}
 				<tr>
 					<td>{formatDate(downloads.current.date)}</td>
@@ -66,6 +68,7 @@
 					<td>
 						<progress max="100" value={downloads.percent ?? undefined}></progress>
 						{downloads.percent === null ? 'Downloading…' : `${downloads.percent}%`}
+						<button onclick={oncancel}>Cancel</button>
 					</td>
 				</tr>
 			{/if}

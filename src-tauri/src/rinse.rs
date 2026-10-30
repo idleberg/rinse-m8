@@ -153,7 +153,7 @@ impl DownloadQueue {
     }
 
     /// Drops the episode from the waiting downloads; returns whether it was there.
-    /// The running one stays, since it can't be cancelled.
+    /// The running one stays, since stopping it is `cancel`.
     pub fn remove(&mut self, id: &str) -> bool {
         let before = self.waiting.len();
 
@@ -189,6 +189,13 @@ impl DownloadQueue {
         self.failed = None;
 
         self.current.clone()
+    }
+
+    /// Ends the current download without recording it as downloaded or failed; returns whether one was running.
+    pub fn cancel(&mut self) -> bool {
+        self.percent = None;
+
+        self.current.take().is_some()
     }
 
     /// Ends the current download, recording it as downloaded if it `succeeded` and as the last failure if not.
@@ -391,7 +398,7 @@ pub async fn download(
 ) -> Result<(), String> {
     let url = episode.mp3.as_deref().ok_or("episode has no mp3")?;
     let path = folder.join(file_name(episode));
-    let part = path.with_extension("mp3.part");
+    let part = part_path(episode, folder);
     let mut offset = tokio::fs::metadata(&part)
         .await
         .map(|m| m.len())
@@ -456,6 +463,11 @@ pub async fn download(
     tokio::fs::rename(&part, &path)
         .await
         .map_err(|e| e.to_string())
+}
+
+/// Where `download` writes the episode until it's whole.
+pub fn part_path(episode: &Episode, folder: &Path) -> PathBuf {
+    folder.join(file_name(episode)).with_extension("mp3.part")
 }
 
 /// Requests the file from byte `offset` on, or all of it when that's zero.
@@ -799,6 +811,25 @@ mod tests {
         assert_eq!(queue.failed.as_ref().unwrap().episode.id, "2315290");
         assert_eq!(queue.next().unwrap().episode.id, "2319482");
         assert_eq!(queue.failed, None);
+    }
+
+    #[test]
+    fn cancelling_the_running_download_neither_fails_nor_records_it() {
+        let mut queue = DownloadQueue::default();
+
+        assert!(!queue.cancel());
+
+        queue.push(queued("2315290", "/a"));
+        queue.push(queued("2319482", "/a"));
+        queue.next();
+        queue.percent = Some(40);
+
+        assert!(queue.cancel());
+        assert_eq!(queue.current, None);
+        assert_eq!(queue.percent, None);
+        assert_eq!(queue.failed, None);
+        assert!(queue.downloaded.is_empty());
+        assert_eq!(queue.next().unwrap().episode.id, "2319482");
     }
 
     #[test]

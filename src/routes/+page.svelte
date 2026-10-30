@@ -227,6 +227,7 @@
 			{downloads}
 			onremove={(id) => invoke('remove_download', { id }).catch(showError)}
 			onmove={(id, index) => invoke('move_download', { id, index }).catch(showError)}
+			oncancel={() => invoke('cancel_download').catch(showError)}
 			ondismiss={() => dismissFailure().catch(showError)}
 		/>
 	{:else}
