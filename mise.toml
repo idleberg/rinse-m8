@@ -3,7 +3,8 @@ bun = "latest"
 hk = "latest"
 node = "lts"
 pkl = "latest"
-rust = { version = "latest", targets = "aarch64-apple-darwin,x86_64-apple-darwin" }
+rust = { version = "latest", targets = "aarch64-apple-darwin,x86_64-apple-darwin,x86_64-pc-windows-msvc" }
+"cargo:cargo-xwin" = "latest"
 
 [env]
 HK_MISE = 1
@@ -19,14 +20,16 @@ run = "bun tauri dev"
 description = "Build the app for the host platform"
 run = "bun tauri build"
 
-# Tauri doesn't cross-compile reliably, so each target builds on its own OS.
+# Linux needs a Linux host. Windows cross-builds the NSIS installer elsewhere
+# (needs Homebrew llvm, lld and nsis on macOS).
 [tasks."build:macos"]
 description = "Build a universal macOS app (run on macOS)"
 run = "bun tauri build --target universal-apple-darwin"
 
 [tasks."build:windows"]
-description = "Build the Windows installer (run on Windows)"
-run = "bun tauri build --target x86_64-pc-windows-msvc"
+description = "Build the Windows installer"
+run = 'PATH="$(brew --prefix llvm)/bin:$(brew --prefix lld)/bin:$PATH" bun tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis'
+run_windows = "bun tauri build --target x86_64-pc-windows-msvc"
 
 [tasks."build:linux"]
 description = "Build the Linux bundles (run on Linux)"
