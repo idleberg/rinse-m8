@@ -428,6 +428,28 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        .register_asynchronous_uri_scheme_protocol("image", |ctx, request, responder| {
+            let app = ctx.app_handle().clone();
+            let name = request.uri().path().trim_start_matches('/').to_owned();
+
+            tauri::async_runtime::spawn(async move {
+                let image = match app.path().app_cache_dir() {
+                    Ok(dir) => rinse::cached_image(&name, &dir.join("images")).await,
+                    Err(e) => Err(e.to_string()),
+                };
+
+                responder.respond(image.map_or_else(
+                    |e| {
+                        eprintln!("image {name} failed: {e}");
+
+                        let mut response = tauri::http::Response::new(Vec::new());
+                        *response.status_mut() = tauri::http::StatusCode::BAD_GATEWAY;
+                        response
+                    },
+                    tauri::http::Response::new,
+                ));
+            });
+        })
         .setup(|app| {
             let (cancel, cancelled) = tokio::sync::mpsc::unbounded_channel();
 

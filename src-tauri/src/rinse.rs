@@ -293,6 +293,7 @@ pub fn map_episodes(json: &str) -> serde_json::Result<Vec<Episode>> {
 /// What Rinse says about a show besides its episodes, each field only when it provides one.
 #[derive(Debug, Default, PartialEq, Serialize)]
 pub struct ShowDetails {
+    /// Served through the `image` scheme, which caches it on disk.
     pub image: Option<String>,
     /// HTML, which must never be injected into the page as is.
     pub description: Option<String>,
@@ -309,9 +310,7 @@ pub fn map_show(json: &str) -> serde_json::Result<ShowPage> {
     let details = serde_json::from_str::<RawShowResponse>(json)
         .map(|raw| ShowDetails {
             image: raw.entry.featured_image.into_iter().next().map(|i| {
-                let mut url =
-                    reqwest::Url::parse("https://rinse-platform-assets.s3.amazonaws.com/images")
-                        .expect("valid base url");
+                let mut url = reqwest::Url::parse(IMAGE_SCHEME_BASE).expect("valid base url");
 
                 url.path_segments_mut()
                     .expect("base url has a path")
@@ -448,6 +447,52 @@ pub async fn fetch_show_directory() -> Result<Vec<DirectoryShow>, String> {
     shows.retain(|show| slugs.insert(show.slug.clone()));
 
     Ok(shows)
+}
+
+const IMAGE_BASE: &str = "https://rinse-platform-assets.s3.amazonaws.com/images";
+
+/// Where the webview reaches the `image` scheme, which Windows only allows over http.
+#[cfg(windows)]
+const IMAGE_SCHEME_BASE: &str = "http://image.localhost";
+#[cfg(not(windows))]
+const IMAGE_SCHEME_BASE: &str = "image://localhost";
+
+/// Returns the show image `name` from `cache`, fetching it from Rinse the first time.
+/// `name` is the percent-encoded filename, which doubles as the file's name in `cache`.
+/// Rinse never reuses a filename for a new image, so a cached one never goes stale.
+pub async fn cached_image(name: &str, cache: &Path) -> Result<Vec<u8>, String> {
+    if name.is_empty() || name == "." || name == ".." || name.contains(['/', '\\']) {
+        return Err(format!("invalid image name: {name}"));
+    }
+
+    let path = cache.join(name);
+
+    if let Ok(bytes) = tokio::fs::read(&path).await {
+        return Ok(bytes);
+    }
+
+    let bytes = reqwest::get(format!("{IMAGE_BASE}/{name}"))
+        .await
+        .and_then(|r| r.error_for_status())
+        .map_err(|e| e.to_string())?
+        .bytes()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // Written aside and renamed, so a crash never leaves a truncated image behind.
+    let part = cache.join(format!("{name}.part"));
+
+    tokio::fs::create_dir_all(cache)
+        .await
+        .map_err(|e| e.to_string())?;
+    tokio::fs::write(&part, &bytes)
+        .await
+        .map_err(|e| e.to_string())?;
+    tokio::fs::rename(&part, &path)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(bytes.into())
 }
 
 async fn fetch_episodes(url: &str) -> Result<Vec<Episode>, String> {
@@ -678,8 +723,10 @@ mod tests {
         let show = map_show(include_str!("../tests/fixtures/show.json")).unwrap();
 
         assert_eq!(
-            show.details.image.as_deref(),
-            Some("https://rinse-platform-assets.s3.amazonaws.com/images/Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg")
+            show.details.image,
+            Some(format!(
+                "{IMAGE_SCHEME_BASE}/Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg"
+            ))
         );
         assert!(show
             .details
@@ -735,13 +782,18 @@ mod tests {
         json["entry"]["featuredImage"][0]["filename"] = serde_json::json!("a b#?.jpg");
 
         assert_eq!(
-            map_show(&json.to_string())
-                .unwrap()
-                .details
-                .image
-                .as_deref(),
-            Some("https://rinse-platform-assets.s3.amazonaws.com/images/a%20b%23%3F.jpg")
+            map_show(&json.to_string()).unwrap().details.image,
+            Some(format!("{IMAGE_SCHEME_BASE}/a%20b%23%3F.jpg"))
         );
+    }
+
+    #[test]
+    fn a_cached_image_name_cannot_leave_the_cache() {
+        let cache = std::env::temp_dir();
+
+        for name in ["", ".", "..", "../x.jpg", "a/b.jpg", "..\\x.jpg"] {
+            assert!(tauri::async_runtime::block_on(cached_image(name, &cache)).is_err());
+        }
     }
 
     #[test]
