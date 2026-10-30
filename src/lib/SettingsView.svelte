@@ -2,14 +2,19 @@
 	let {
 		downloadFolder,
 		autoDownload = $bindable(),
+		keepRunning = $bindable(),
 		onchoosefolder,
 		onautodownloadchange,
+		onkeeprunningchange,
 	}: {
 		downloadFolder: string | null;
 		autoDownload: boolean;
+		keepRunning: boolean;
 		onchoosefolder: () => void;
 		/** Called after the bound checkbox has changed. */
 		onautodownloadchange: () => void;
+		/** Called after the bound checkbox has changed. */
+		onkeeprunningchange: () => void;
 	} = $props();
 </script>
 
@@ -28,6 +33,13 @@
 		<label>
 			<input type="checkbox" bind:checked={autoDownload} onchange={onautodownloadchange} />
 			auto-download new episodes of subscribed shows
+		</label>
+	</dd>
+	<dt>Window</dt>
+	<dd>
+		<label>
+			<input type="checkbox" bind:checked={keepRunning} onchange={onkeeprunningchange} />
+			keep running in menu bar
 		</label>
 	</dd>
 </dl>

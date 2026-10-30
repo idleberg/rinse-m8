@@ -22,6 +22,10 @@ _Avoid_: Show list, artists
 The screen for a single show, listing its known episodes.
 _Avoid_: Show page, show detail
 
+**Image cache**:
+The show view images kept on disk once loaded, indefinitely, until cleared from Settings.
+_Avoid_: Thumbnail cache, bio cache
+
 ### Queues
 
 **Play queue**:

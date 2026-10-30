@@ -2,6 +2,8 @@ mod rinse;
 
 use std::sync::Mutex;
 use std::time::Duration;
+use tauri::menu::MenuBuilder;
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_store::StoreExt;
@@ -230,7 +232,80 @@ fn set_settings(
     let _lock = SETTINGS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let settings = load_settings(&app, patch)?;
 
-    save_settings(&app, &settings)
+    save_settings(&app, &settings)?;
+
+    sync_tray(&app, settings.keep_running)
+}
+
+/// Adds the menu bar or tray icon, whose presence makes closing the window hide it, or removes it again.
+fn sync_tray(app: &tauri::AppHandle, enable: bool) -> Result<(), String> {
+    if !enable {
+        app.remove_tray_by_id("main");
+
+        return Ok(());
+    }
+
+    if app.tray_by_id("main").is_some() {
+        return Ok(());
+    }
+
+    let menu = MenuBuilder::new(app)
+        .text("show", "Show")
+        .text("quit", "Quit")
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    // macOS tints the black M8 to suit the menu bar, which Windows and Linux can't, so they get the app icon
+    let icon = if cfg!(target_os = "macos") {
+        tauri::image::Image::from_bytes(include_bytes!("../icons/tray.png"))
+            .map_err(|e| e.to_string())?
+    } else {
+        app.default_window_icon().ok_or("no app icon")?.clone()
+    };
+
+    // macOS opens the menu on left-click, Windows and Linux show the window and keep the menu on right-click
+    TrayIconBuilder::with_id("main")
+        .icon(icon)
+        .icon_as_template(true)
+        .tooltip("Rinse M8")
+        .menu(&menu)
+        .show_menu_on_left_click(cfg!(target_os = "macos"))
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "show" => show_window(app),
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                if !cfg!(target_os = "macos") {
+                    show_window(tray.app_handle());
+                }
+            }
+        })
+        .build(app)
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+/// Brings the hidden or minimised window back to the front.
+fn show_window(app: &tauri::AppHandle) {
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+
+    if let Err(e) = window
+        .unminimize()
+        .and_then(|()| window.show())
+        .and_then(|()| window.set_focus())
+    {
+        eprintln!("showing the window failed: {e}");
+    }
 }
 
 /// Follows the show, fetching it first so its already available episodes are marked as seen
@@ -463,7 +538,25 @@ pub fn run() {
             tauri::async_runtime::spawn(poll_show_directory(app.handle().clone()));
             tauri::async_runtime::spawn(download_worker(app.handle().clone(), cancelled));
 
+            if let Err(e) = load_settings(app.handle(), serde_json::Map::new())
+                .and_then(|settings| sync_tray(app.handle(), settings.keep_running))
+            {
+                eprintln!("adding the menu bar icon failed: {e}");
+            }
+
             Ok(())
+        })
+        // While the icon is there, closing only hides the window, so the poller and downloads carry on
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if window.app_handle().tray_by_id("main").is_some() {
+                    api.prevent_close();
+
+                    if let Err(e) = window.hide() {
+                        eprintln!("hiding the window failed: {e}");
+                    }
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             get_episodes,
@@ -480,6 +573,13 @@ pub fn run() {
             unsubscribe,
             get_show_directory
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app, _event| {
+            // Clicking the Dock icon brings a hidden window back
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = _event {
+                show_window(_app);
+            }
+        });
 }

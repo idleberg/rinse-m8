@@ -46,7 +46,7 @@ pub fn merge_episode(cached: Option<Episode>, fetched: Episode) -> Episode {
 }
 
 /// Everything kept in the settings store, one store key per field.
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
     pub subscriptions: Vec<Subscription>,
@@ -55,6 +55,20 @@ pub struct Settings {
     pub download_folder: Option<PathBuf>,
     /// Whether the poller also downloads each new episode into `download_folder`.
     pub auto_download: bool,
+    /// Whether closing the window hides it behind a menu bar or tray icon instead of quitting.
+    pub keep_running: bool,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            subscriptions: Vec::new(),
+            seen: BTreeSet::new(),
+            download_folder: None,
+            auto_download: false,
+            keep_running: true,
+        }
+    }
 }
 
 /// A followed show.
@@ -824,6 +838,13 @@ mod tests {
     #[test]
     fn the_last_show_index_page_is_empty() {
         assert_eq!(map_show_index(r#"{"entries":[]}"#).unwrap(), []);
+    }
+
+    #[test]
+    fn an_empty_store_keeps_running_in_the_menu_bar() {
+        let settings: Settings = serde_json::from_str("{}").unwrap();
+
+        assert!(settings.keep_running);
     }
 
     #[test]

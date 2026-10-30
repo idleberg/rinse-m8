@@ -18,6 +18,7 @@
 		seen: string[];
 		downloadFolder: string | null;
 		autoDownload: boolean;
+		keepRunning: boolean;
 	};
 
 	let episodes = $state<Episode[]>([]);
@@ -40,7 +41,7 @@
 		localStorage.setItem('filters', JSON.stringify({ shownStations, mp3Only, hideRebroadcasts }));
 	});
 
-	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null, autoDownload: false });
+	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null, autoDownload: false, keepRunning: true });
 	const subscribed = $derived(settings.subscriptions.map((s) => s.slug));
 
 	const filteredEpisodes = $derived.by(() => {
@@ -117,14 +118,14 @@
 		episodes = list.sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
 	}
 
-	/** Saves the checkbox, which is bound to `settings`, and unticks it again if saving fails. */
-	async function saveAutoDownload() {
+	/** Saves a checkbox bound to `settings`, and unticks it again if saving fails. */
+	async function saveCheckbox(key: 'autoDownload' | 'keepRunning') {
 		error = '';
 
 		try {
-			await invoke('set_settings', { patch: { autoDownload: settings.autoDownload } });
+			await invoke('set_settings', { patch: { [key]: settings[key] } });
 		} catch (e) {
-			settings.autoDownload = !settings.autoDownload;
+			settings[key] = !settings[key];
 			throw e;
 		}
 	}
@@ -273,11 +274,13 @@
 		<SettingsView
 			downloadFolder={settings.downloadFolder}
 			bind:autoDownload={settings.autoDownload}
+			bind:keepRunning={settings.keepRunning}
 			onchoosefolder={() => {
 				error = '';
 				chooseFolder().catch(showError);
 			}}
-			onautodownloadchange={() => saveAutoDownload().catch(showError)}
+			onautodownloadchange={() => saveCheckbox('autoDownload').catch(showError)}
+			onkeeprunningchange={() => saveCheckbox('keepRunning').catch(showError)}
 		/>
 	{:else if view === 'shows'}
 		<EpisodeFilters bind:shownStations bind:search />
