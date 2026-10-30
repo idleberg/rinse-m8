@@ -13,6 +13,8 @@ export type Episode = {
 	rebroadcast: boolean;
 	genres: string[];
 	mp3: string | null;
+	/** Whether the episode has ever appeared in the schedule feed. */
+	scheduled: boolean;
 };
 
 export type Show = { slug: string; title: string };

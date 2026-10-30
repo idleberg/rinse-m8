@@ -29,7 +29,7 @@ async fn refresh_show(app: tauri::AppHandle, slug: String) -> Result<Vec<rinse::
     merge(&app, fetched)
 }
 
-/// Adds `episodes` to the cache, replacing any with the same id, and returns the whole cache.
+/// Adds `episodes` to the cache, replacing any with the same id but keeping its schedule mark, and returns the whole cache.
 fn merge(
     app: &tauri::AppHandle,
     episodes: Vec<rinse::Episode>,
@@ -38,6 +38,11 @@ fn merge(
     let cache = app.store("episodes.json").map_err(|e| e.to_string())?;
 
     for episode in episodes {
+        let cached = cache
+            .get(&episode.id)
+            .and_then(|v| serde_json::from_value(v).ok());
+        let episode = rinse::merge_episode(cached, episode);
+
         let value = serde_json::to_value(&episode).map_err(|e| e.to_string())?;
         cache.set(episode.id, value);
     }

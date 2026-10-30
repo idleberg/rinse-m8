@@ -33,6 +33,7 @@
 		return episodes.filter(
 			(episode) =>
 				(!stations.includes(episode.station) || shownStations.includes(episode.station)) &&
+				episode.scheduled &&
 				(!mp3Only || episode.mp3) &&
 				(!hideRebroadcasts || !episode.rebroadcast) &&
 				(!subscribedOnly || subscribed.includes(episode.showSlug)) &&

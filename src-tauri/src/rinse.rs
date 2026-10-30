@@ -26,6 +26,21 @@ pub struct Episode {
     pub genres: Vec<String>,
     /// Set only when the episode has a downloadable mp3.
     pub mp3: Option<String>,
+    /// Whether the episode has ever appeared in the schedule feed. Cache entries from before the mark count as scheduled.
+    #[serde(default = "scheduled_by_default")]
+    pub scheduled: bool,
+}
+
+fn scheduled_by_default() -> bool {
+    true
+}
+
+/// The episode to store for `fetched`: its fresh fields, keeping the schedule mark of the `cached` copy.
+pub fn merge_episode(cached: Option<Episode>, fetched: Episode) -> Episode {
+    Episode {
+        scheduled: fetched.scheduled || cached.is_some_and(|e| e.scheduled),
+        ..fetched
+    }
 }
 
 /// Everything kept in the settings store, one store key per field.
@@ -170,11 +185,18 @@ fn map_episode(raw: RawEpisode) -> Option<Episode> {
         rebroadcast: raw.is_rebroadcast,
         genres: raw.genre_tag.into_iter().map(|t| t.title).collect(),
         mp3: raw.file_url.filter(|url| url.ends_with(".mp3")),
+        scheduled: false,
     })
 }
 
 pub async fn fetch_schedule() -> Result<Vec<Episode>, String> {
-    fetch_episodes("https://www.rinse.fm/api/query/v1/schedule").await
+    let mut episodes = fetch_episodes("https://www.rinse.fm/api/query/v1/schedule").await?;
+
+    for episode in &mut episodes {
+        episode.scheduled = true;
+    }
+
+    Ok(episodes)
 }
 
 /// The show's ~30 most recent episodes.
@@ -411,6 +433,33 @@ mod tests {
             .collect();
 
         assert_eq!(ids, ["2241796"]);
+    }
+
+    #[test]
+    fn a_show_fetch_keeps_the_schedule_mark() {
+        let scheduled = Episode {
+            scheduled: true,
+            ..episode("2315290")
+        };
+        let merged = merge_episode(Some(scheduled), show_fixture().remove(0));
+
+        assert!(merged.scheduled);
+    }
+
+    #[test]
+    fn a_show_only_episode_stays_unmarked() {
+        assert!(!merge_episode(None, show_fixture().remove(0)).scheduled);
+    }
+
+    #[test]
+    fn cache_entries_without_the_mark_count_as_scheduled() {
+        let mut value = serde_json::to_value(episode("2315290")).unwrap();
+
+        value.as_object_mut().unwrap().remove("scheduled");
+
+        let e: Episode = serde_json::from_value(value).unwrap();
+
+        assert!(e.scheduled);
     }
 
     #[test]
