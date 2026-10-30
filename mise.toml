@@ -37,11 +37,15 @@ run = "bun tauri build --target x86_64-unknown-linux-gnu"
 
 [tasks.checks]
 description = "Run all checks"
-depends = ["check", "format:check", "lint"]
+depends = ["check", "test", "format:check", "lint"]
 
 [tasks.check]
 description = "Typecheck the Svelte frontend"
 run = "bun run check"
+
+[tasks.test]
+description = "Run the frontend unit tests"
+run = "bun test"
 
 [tasks.format]
 description = "Format Rust code"

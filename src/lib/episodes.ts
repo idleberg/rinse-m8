@@ -65,6 +65,33 @@ export type DownloadQueue = {
 	downloaded: string[];
 };
 
+export type SortColumn = 'date' | 'station' | 'show' | 'title';
+
+export type Sort = { column: SortColumn; ascending: boolean };
+
+/** Newest first. */
+export const defaultSort: Sort = { column: 'date', ascending: false };
+
+const sortKeys: Record<SortColumn, (episode: Episode) => string> = {
+	date: (episode) => `${episode.date} ${episode.time}`,
+	station: (episode) => episode.station,
+	show: (episode) => episode.showTitle,
+	title: (episode) => episode.title,
+};
+
+/** A sorted copy of `episodes`. Ties keep their order in `episodes`. */
+export function sortEpisodes(episodes: Episode[], sort: Sort): Episode[] {
+	const key = sortKeys[sort.column];
+	const direction = sort.ascending ? 1 : -1;
+
+	return episodes.toSorted((a, b) => direction * key(a).localeCompare(key(b)));
+}
+
+/** The sort after clicking `column`: the same column reverses, another one ascends. */
+export function toggleSort(sort: Sort, column: SortColumn): Sort {
+	return sort.column === column ? { column, ascending: !sort.ascending } : { column, ascending: true };
+}
+
 /** `YYYY-MM-DD` as `YYYY/MM/DD`. */
 export function formatDate(date: string): string {
 	return date.replaceAll('-', '/');

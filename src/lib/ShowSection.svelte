@@ -13,7 +13,7 @@
 		ontogglesubscription,
 	}: {
 		show: Show;
-		/** The show's filtered episodes, newest first. */
+		/** The show's filtered episodes. */
 		episodes: Episode[];
 		/** Show slugs. */
 		subscribed: string[];
@@ -33,7 +33,8 @@
 	<h2><button class="link" onclick={() => onopenshow(show)}>{show.title}</button></h2>
 	{#if episodes.length}
 		<EpisodeTable
-			episodes={expanded ? episodes : episodes.slice(0, limit)}
+			{episodes}
+			limit={expanded ? undefined : limit}
 			{subscribed}
 			{downloads}
 			{subscribing}

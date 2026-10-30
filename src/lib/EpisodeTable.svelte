@@ -1,10 +1,19 @@
 <script lang="ts">
 	import DownloadButton from './DownloadButton.svelte';
 	import SubscribeButton from './SubscribeButton.svelte';
-	import { type DownloadQueue, type Episode, formatDate } from './episodes';
+	import {
+		type DownloadQueue,
+		type Episode,
+		type SortColumn,
+		defaultSort,
+		formatDate,
+		sortEpisodes,
+		toggleSort,
+	} from './episodes';
 
 	let {
 		episodes,
+		limit,
 		subscribed,
 		downloads,
 		subscribing,
@@ -13,6 +22,8 @@
 		ontogglesubscription,
 	}: {
 		episodes: Episode[];
+		/** Shows only the first `limit` episodes, after sorting. */
+		limit?: number;
 		/** Show slugs. */
 		subscribed: string[];
 		downloads: DownloadQueue;
@@ -22,21 +33,38 @@
 		onopenshow: (episode: Episode) => void;
 		ontogglesubscription: (episode: Episode) => void;
 	} = $props();
+
+	const columns: [SortColumn, string][] = [
+		['date', 'Date'],
+		['station', 'Station'],
+		['show', 'Show'],
+		['title', 'Title'],
+	];
+
+	let sort = $state(defaultSort);
+
+	const rows = $derived(sortEpisodes(episodes, sort).slice(0, limit));
 </script>
 
 <table>
 	<thead>
 		<tr>
-			<th>Date</th>
-			<th>Station</th>
-			<th>Show</th>
-			<th>Title</th>
+			{#each columns as [column, label]}
+				<th aria-sort={sort.column === column ? (sort.ascending ? 'ascending' : 'descending') : undefined}>
+					<button class="sort" onclick={() => (sort = toggleSort(sort, column))}>
+						{label}
+						{#if sort.column === column}
+							<span aria-hidden="true">{sort.ascending ? '↑' : '↓'}</span>
+						{/if}
+					</button>
+				</th>
+			{/each}
 			<th></th>
 			<th></th>
 		</tr>
 	</thead>
 	<tbody>
-		{#each episodes as episode (episode.id)}
+		{#each rows as episode (episode.id)}
 			<tr>
 				<td>{formatDate(episode.date)}</td>
 				<td>{episode.station}</td>
@@ -86,6 +114,12 @@
 	/* A row of `-` characters: a 1ch-wide tile, mostly dash, repeated along the bottom edge */
 	td {
 		background: linear-gradient(to right, var(--muted) 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+	}
+
+	.sort {
+		border: none;
+		padding: 0;
+		font-weight: inherit;
 	}
 
 	.link {

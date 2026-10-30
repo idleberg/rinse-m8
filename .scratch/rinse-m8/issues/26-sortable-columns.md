@@ -4,12 +4,12 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Clicking Date, Station, Show or Title sorts the table by that column; clicking it again reverses the order
-- [ ] Each table, and each dashboard section, keeps its own sort
-- [ ] Tables start sorted newest first
-- [ ] The sorted heading is marked for assistive tech
-- [ ] A dashboard section shows its first 5 episodes in the chosen order, and "SHOW ALL (n)" keeps that order
-- [ ] Unit test: the default order is newest first, a column sort ascends, and clicking again reverses it
+- [x] Clicking Date, Station, Show or Title sorts the table by that column; clicking it again reverses the order
+- [x] Each table, and each dashboard section, keeps its own sort
+- [x] Tables start sorted newest first
+- [x] The sorted heading is marked for assistive tech
+- [x] A dashboard section shows its first 5 episodes in the chosen order, and "SHOW ALL (n)" keeps that order
+- [x] Unit test: the default order is newest first, a column sort ascends, and clicking again reverses it
 - [ ] Manual check: sort the schedule by title, then one dashboard section by station, and see each table keep its own order
