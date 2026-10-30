@@ -18,8 +18,28 @@
 		mp3: string | null;
 	};
 
+	const stations = ['Rinse FM', 'Rinse FR', 'Kool FM', 'SWU FM'];
+
 	let episodes = $state<Episode[]>([]);
 	let error = $state('');
+
+	let shownStations = $state([...stations]);
+	let mp3Only = $state(true);
+	let hideRebroadcasts = $state(false);
+	let search = $state('');
+
+	const visibleEpisodes = $derived.by(() => {
+		const query = search.trim().toLowerCase();
+
+		// Stations without a checkbox stay visible rather than unreachable
+		return episodes.filter(
+			(episode) =>
+				(!stations.includes(episode.station) || shownStations.includes(episode.station)) &&
+				(!mp3Only || episode.mp3) &&
+				(!hideRebroadcasts || !episode.rebroadcast) &&
+				[episode.title, episode.showTitle, ...episode.genres].some((text) => text.toLowerCase().includes(query)),
+		);
+	});
 
 	invoke<Episode[]>('get_episodes')
 		.then((list) => {
@@ -35,6 +55,15 @@
 		<p role="alert">{error}</p>
 	{/if}
 
+	<fieldset aria-label="Filters">
+		{#each stations as station (station)}
+			<label><input type="checkbox" bind:group={shownStations} value={station} /> {station}</label>
+		{/each}
+		<label><input type="checkbox" bind:checked={mp3Only} /> mp3 available only</label>
+		<label><input type="checkbox" bind:checked={hideRebroadcasts} /> hide rebroadcasts</label>
+		<input type="search" bind:value={search} placeholder="Search title, show, genres" aria-label="Search" />
+	</fieldset>
+
 	<table>
 		<thead>
 			<tr>
@@ -47,7 +76,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each episodes as episode (episode.id)}
+			{#each visibleEpisodes as episode (episode.id)}
 				<tr>
 					<td>{episode.date}</td>
 					<td>{episode.time}</td>
@@ -69,6 +98,16 @@
 	main {
 		padding: 1rem;
 		font-family: system-ui, sans-serif;
+	}
+
+	fieldset {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1rem;
+		align-items: center;
+		margin: 0 0 1rem;
+		border: none;
+		padding: 0;
 	}
 
 	table {

@@ -4,11 +4,11 @@
 
 **Blocked by:** 02 (Schedule episodes in a table)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Four station checkboxes, all on by default; unchecking one hides that station's rows
-- [ ] "mp3 available only" is on by default and hides rows without an available mp3
-- [ ] "hide rebroadcasts" hides rebroadcast rows
-- [ ] Text search matches title, show and genres case-insensitively
-- [ ] Filtering is a derived value over the episode list, with no table or filter library
-- [ ] `bun run check` passes
+- [x] Four station checkboxes, all on by default; unchecking one hides that station's rows
+- [x] "mp3 available only" is on by default and hides rows without an available mp3
+- [x] "hide rebroadcasts" hides rebroadcast rows
+- [x] Text search matches title, show and genres case-insensitively
+- [x] Filtering is a derived value over the episode list, with no table or filter library
+- [x] `bun run check` passes
