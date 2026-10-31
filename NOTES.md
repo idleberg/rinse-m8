@@ -1,2 +1,0 @@
-- smart show outdated detection
-- copy link
