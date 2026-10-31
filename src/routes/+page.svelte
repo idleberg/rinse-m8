@@ -271,6 +271,12 @@
 		await invoke('dismiss_download_failure');
 	}
 
+	/** Queues the failed episode again, resuming its `.part` file, and clears the failure right away rather than once it starts. */
+	async function retryFailure(episode: Episode) {
+		await download(episode);
+		await dismissFailure();
+	}
+
 	function showError(e: unknown) {
 		errorMessage = String(e);
 	}
@@ -392,6 +398,7 @@
 			onremove={(id) => invoke('remove_download', { id }).catch(showError)}
 			onmove={(id, index) => invoke('move_download', { id, index }).catch(showError)}
 			oncancel={() => invoke('cancel_download').catch(showError)}
+			onretry={(episode) => retryFailure(episode).catch(showError)}
 			ondismiss={() => dismissFailure().catch(showError)}
 			onerror={showError}
 		/>
@@ -526,6 +533,7 @@
 	<DownloadStatus
 		{downloads}
 		oncancel={() => invoke('cancel_download').catch(showError)}
+		onretry={(episode) => retryFailure(episode).catch(showError)}
 		ondismiss={() => dismissFailure().catch(showError)}
 		onviewqueue={() => openView('queue')}
 	/>

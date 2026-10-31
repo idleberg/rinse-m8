@@ -1,16 +1,19 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { type DownloadQueue, episodeLabel } from './episodes';
+	import { type DownloadQueue, type Episode, episodeLabel } from './episodes';
 
 	let {
 		downloads,
 		oncancel,
+		onretry,
 		ondismiss,
 		onviewqueue,
 	}: {
 		downloads: DownloadQueue;
 		/** Stops the running download; the next waiting one starts. */
 		oncancel: () => void;
+		/** Takes the failed episode. */
+		onretry: (episode: Episode) => void;
 		ondismiss: () => void;
 		onviewqueue: () => void;
 	} = $props();
@@ -50,6 +53,7 @@
 	<footer role="alert">
 		Failed: {episodeLabel(downloads.failed)}
 		<div>
+			<button type="button" onclick={() => downloads.failed && onretry(downloads.failed)}>Retry</button>
 			<button type="button" onclick={ondismiss}>Dismiss</button>
 			<button type="button" onclick={onviewqueue}>View queue</button>
 		</div>

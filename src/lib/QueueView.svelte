@@ -8,6 +8,7 @@
 		onremove,
 		onmove,
 		oncancel,
+		onretry,
 		ondismiss,
 		onerror,
 	}: {
@@ -18,6 +19,8 @@
 		onmove: (id: string, index: number) => void;
 		/** Stops the running download. */
 		oncancel: () => void;
+		/** Takes the failed episode. */
+		onretry: (episode: Episode) => void;
 		ondismiss: () => void;
 		onerror: (error: unknown) => void;
 	} = $props();
@@ -139,6 +142,7 @@
 				</tr>
 			{/each}
 			{#if downloads.failed}
+				{@const failed = downloads.failed}
 				<tr class="failed">
 					<td>{formatDate(downloads.failed.date)}</td>
 					<td>
@@ -148,7 +152,10 @@
 						{/if}
 					</td>
 					<td class="status">Failed</td>
-					<td><button type="button" onclick={ondismiss}>Dismiss</button></td>
+					<td>
+						<button type="button" onclick={() => onretry(failed)}>Retry</button>
+						<button type="button" onclick={ondismiss}>Dismiss</button>
+					</td>
 				</tr>
 			{/if}
 		</tbody>
@@ -260,7 +267,8 @@
 		cursor: grab;
 	}
 
-	.failed {
+	.failed,
+	.failed .subtitle {
 		color: var(--accent);
 	}
 
