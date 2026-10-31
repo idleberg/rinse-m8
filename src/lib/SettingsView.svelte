@@ -1,4 +1,6 @@
 <script lang="ts">
+	import ThemeToggle from './ThemeToggle.svelte';
+
 	let {
 		downloadFolder,
 		autoDownload = $bindable(),
@@ -31,6 +33,10 @@
 </script>
 
 <dl>
+	<dt>Appearance</dt>
+	<dd>
+		<ThemeToggle />
+	</dd>
 	<dt>Download folder</dt>
 	<dd>
 		{#if downloadFolder}

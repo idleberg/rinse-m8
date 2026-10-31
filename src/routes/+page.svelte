@@ -10,7 +10,6 @@
 	import ShowDirectory from '../lib/ShowDirectory.svelte';
 	import ShowSection from '../lib/ShowSection.svelte';
 	import ShowView from '../lib/ShowView.svelte';
-	import ThemeToggle from '../lib/ThemeToggle.svelte';
 	import { type DirectoryShow, type DownloadQueue, type Episode, type Show, type ShowDetails, type ShowPage, showOf, stations } from '../lib/episodes';
 
 	type Settings = {
@@ -283,13 +282,18 @@
 
 <nav>
 	<div>
-		{#each [['dashboard', 'Dashboard'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Queue'], ['settings', 'Settings']] as const as [value, label] (value)}
+		{#each [['dashboard', 'Dashboard'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Queue']] as const as [value, label] (value)}
 			<button aria-current={!openedShow && view === value ? 'page' : undefined} onclick={() => openView(value)}
 				>{label}</button
 			>
 		{/each}
 	</div>
-	<ThemeToggle />
+	<!-- Feather's "sliders" icon -->
+	<button class="icon" aria-label="Settings" title="Settings" aria-current={!openedShow && view === 'settings' ? 'page' : undefined} onclick={() => openView('settings')}>
+		<svg viewBox="0 0 24 24" aria-hidden="true">
+			<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
+		</svg>
+	</button>
 </nav>
 
 <!-- Settings swap light and dark, to stand apart from the other pages -->
