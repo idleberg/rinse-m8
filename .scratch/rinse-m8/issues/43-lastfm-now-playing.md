@@ -6,7 +6,7 @@ The tags themselves are typed by hand and inconsistent, and Rinse FR is mostly u
 
 - **artist:** the station, for example `Kool FM`
 - **album:** the station plus ` Podcast`, for example `Kool FM Podcast`
-- **track:** the show title, then the episode's display title if it has one, then ` - ` and the London date as `DD Month YYYY`. For example, `Amber's with Hutch - 30 October 2026`, or `Uncle Dugs - 30 October 2026`.
+- **track:** the show title, then the episode's display title if it has one, then `-` and the London date as `DD Month YYYY`. For example, `Amber's with Hutch - 30 October 2026`, or `Uncle Dugs - 30 October 2026`.
 - **duration:** the episode's length
 
 If Last.fm rejects the session, for example because the user revoked access, the app disconnects quietly.

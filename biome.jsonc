@@ -18,7 +18,8 @@
 				"useExportsLast": "off",
 				"useGlobalThis": "off",
 				"noJsxLiterals": "off",
-				"noHeadElement": "off"
+				"noHeadElement": "off",
+				"noExcessiveLinesPerFile": "off"
 			},
 			"correctness": {
 				// No Qwik here; `preset: all` turns its rules on anyway.

@@ -2,10 +2,10 @@ amends "package://github.com/jdx/hk/releases/download/v2.5.0/hk@2.5.0#/Config.pk
 import "package://github.com/jdx/hk/releases/download/v2.5.0/hk@2.5.0#/Builtins.pkl"
 
 local linters = new Mapping<String, Step> {
-  // Lints and formats JS, TS, JSON, CSS, and the markup in .svelte files.
+  // Lints and formats JS, TS, JSON, CSS, Markdown, and the markup in .svelte files.
   ["biome"] = (Builtins.biome) {
     // The builtin only matches JS, TS and JSON.
-    glob = List("**/*.{js,ts,json,jsonc,css,html,svelte}")
+    glob = List("**/*.{js,ts,json,jsonc,css,html,svelte,md}")
     check = "biome check --no-errors-on-unmatched --files-ignore-unknown=true {{ files }}"
     fix = "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {{ files }}"
   }
