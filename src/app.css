@@ -120,7 +120,27 @@ select {
 	cursor: pointer;
 }
 
+/* Drawn like the player's seek bar: a square box filled up to the value */
+progress {
+	appearance: none;
+	box-sizing: border-box;
+	height: 1.5em;
+	border: 1px solid currentColor;
+	border-radius: 0;
+	background: none;
+}
+
+progress::-webkit-progress-bar {
+	background: none;
+}
+
+progress::-webkit-progress-value {
+	background: var(--ink);
+}
+
+/* The size leaves out the border, so icon buttons are as tall as a line of text in a text button */
 button.icon {
+	box-sizing: content-box;
 	display: inline-grid;
 	place-items: center;
 	width: 1.5em;

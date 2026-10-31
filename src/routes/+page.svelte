@@ -443,6 +443,7 @@
 							onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
 							onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
 							ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
+							subscribeOnHover
 						/>
 					{:else if loadingEpisodes}
 						<p role="status">Loading episodes…</p>
@@ -515,6 +516,7 @@
 <div class="bars">
 	<DownloadStatus
 		{downloads}
+		oncancel={() => invoke('cancel_download').catch(showError)}
 		ondismiss={() => dismissFailure().catch(showError)}
 		onviewqueue={() => openView('queue')}
 	/>

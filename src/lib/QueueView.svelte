@@ -81,6 +81,7 @@
 				<th>Date</th>
 				<th>Show</th>
 				<th></th>
+				<th></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -90,14 +91,16 @@
 					<td>
 						{downloads.current.showTitle}
 						{#if downloads.current.displayTitle}
-							<br />
 							<span class="subtitle">{downloads.current.displayTitle}</span>
 						{/if}
 					</td>
+					<td class="status">{downloads.percent === null ? 'Downloading…' : `${downloads.percent}%`}</td>
 					<td>
-						<progress max="100" value={downloads.percent ?? undefined}></progress>
-						{downloads.percent === null ? 'Downloading…' : `${downloads.percent}%`}
-						<button type="button" onclick={oncancel}>Cancel</button>
+						<button type="button" class="icon" aria-label="Cancel" title="Cancel" onclick={oncancel}>
+							<svg viewBox="0 0 16 16" aria-hidden="true">
+								<path d="M4 4l8 8M12 4l-8 8" />
+							</svg>
+						</button>
 					</td>
 				</tr>
 			{/if}
@@ -128,10 +131,10 @@
 					<td>
 						{episode.showTitle}
 						{#if episode.displayTitle}
-							<br />
 							<span class="subtitle">{episode.displayTitle}</span>
 						{/if}
 					</td>
+					<td></td>
 					<td><button type="button" onclick={() => onremove(episode.id)}>Remove</button></td>
 				</tr>
 			{/each}
@@ -141,11 +144,11 @@
 					<td>
 						{downloads.failed.showTitle}
 						{#if downloads.failed.displayTitle}
-							<br />
 							<span class="subtitle">{downloads.failed.displayTitle}</span>
 						{/if}
 					</td>
-					<td>Failed <button type="button" onclick={ondismiss}>Dismiss</button></td>
+					<td class="status">Failed</td>
+					<td><button type="button" onclick={ondismiss}>Dismiss</button></td>
 				</tr>
 			{/if}
 		</tbody>
@@ -223,6 +226,24 @@
 		padding: 0.25rem 1ch;
 		text-align: left;
 		white-space: nowrap;
+	}
+
+	/* Dates are all `YYYY/MM/DD`, so shrinking to them starts Show at the same x in both tables */
+	td:first-child {
+		width: 1%;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* Actions line up on the right edge in both tables */
+	td:last-child {
+		width: 1%;
+		text-align: right;
+	}
+
+	/* Leaves the spare width to Show, as in the previous downloads */
+	.status {
+		width: 1%;
+		text-align: right;
 	}
 
 	[draggable='true'] {

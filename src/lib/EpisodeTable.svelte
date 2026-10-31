@@ -25,6 +25,7 @@
 		onmark,
 		onopenshow,
 		ontogglesubscription,
+		subscribeOnHover = false,
 	}: {
 		episodes: Episode[];
 		/** Shows only the first `limit` episodes, after sorting. */
@@ -44,6 +45,8 @@
 		onopenshow: (episode: Episode) => void;
 		/** Adds a subscribe button to each row. */
 		ontogglesubscription?: (episode: Episode) => void;
+		/** Moves the subscribe button before the other actions, shown while the row is hovered. */
+		subscribeOnHover?: boolean;
 	} = $props();
 
 	const columns: [SortColumn, string][] = [
@@ -97,6 +100,15 @@
 				</td>
 				<td>
 					<div class="actions">
+						{#if ontogglesubscription && subscribeOnHover}
+							<span class="reveal">
+								<SubscribeButton
+									subscribed={subscribed.includes(episode.showSlug)}
+									disabled={subscribing.includes(episode.showSlug)}
+									onclick={() => ontogglesubscription(episode)}
+								/>
+							</span>
+						{/if}
 						{#if available(episode)}
 							{#if playing === episode.id}
 								<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={onpause}>
@@ -113,7 +125,7 @@
 							{/if}
 							<DownloadButton {episode} {downloads} {ondownload} {onmark} />
 						{/if}
-						{#if ontogglesubscription}
+						{#if ontogglesubscription && !subscribeOnHover}
 							<SubscribeButton
 								subscribed={subscribed.includes(episode.showSlug)}
 								disabled={subscribing.includes(episode.showSlug)}
@@ -186,6 +198,18 @@
 		gap: 0.5ch;
 		justify-content: flex-end;
 		align-items: center;
+	}
+
+	/* Opacity rather than visibility, so the button stays reachable by keyboard */
+	/* Flex, so the wrapper is no taller than the button and it lines up with the other actions */
+	.reveal {
+		display: flex;
+		opacity: 0;
+	}
+
+	tr:hover .reveal,
+	.reveal:focus-within {
+		opacity: 1;
 	}
 
 	.subtitle {
