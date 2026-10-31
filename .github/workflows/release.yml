@@ -65,7 +65,11 @@ jobs:
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
 
+      # Compiled into the app, so release builds show the Last.fm row
       - name: Build
+        env:
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
         run: bun tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
 
       # GitHub turns the space in "Rinse M8" into a dot on upload; dashes read better.

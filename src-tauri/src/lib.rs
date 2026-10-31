@@ -1,3 +1,4 @@
+mod lastfm;
 mod rinse;
 
 use chrono::Timelike;
@@ -9,6 +10,7 @@ use tauri::menu::MenuBuilder;
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager};
 use tauri_plugin_notification::{Action, ActionPerformed, ActionType, NotificationExt};
+use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_store::StoreExt;
 
 /// Serialises settings read-modify-writes between commands and the poller.
@@ -347,6 +349,62 @@ fn set_settings(
     save_settings(&app, &settings)?;
 
     sync_tray(&app, settings.keep_running)
+}
+
+/// The Last.fm row, which a build without an API key leaves out.
+#[derive(serde::Serialize)]
+struct Lastfm {
+    /// The connected account's name, if any.
+    user: Option<String>,
+}
+
+#[tauri::command]
+fn get_lastfm(app: tauri::AppHandle) -> Result<Option<Lastfm>, String> {
+    if lastfm::credentials().is_none() {
+        return Ok(None);
+    }
+
+    Ok(Some(Lastfm {
+        user: load_lastfm_session(&app)?.map(|s| s.name),
+    }))
+}
+
+/// Opens Last.fm's approval page and, once the user approves, stores the session and returns the account's name.
+#[tauri::command]
+async fn connect_lastfm(app: tauri::AppHandle) -> Result<String, String> {
+    let session = lastfm::connect(|url| {
+        app.opener()
+            .open_url(url, None::<&str>)
+            .map_err(|e| e.to_string())
+    })
+    .await?;
+    let store = app.store("lastfm.json").map_err(|e| e.to_string())?;
+
+    store.set(
+        "session",
+        serde_json::to_value(&session).map_err(|e| e.to_string())?,
+    );
+    store.save().map_err(|e| e.to_string())?;
+
+    Ok(session.name)
+}
+
+#[tauri::command]
+fn disconnect_lastfm(app: tauri::AppHandle) -> Result<(), String> {
+    let store = app.store("lastfm.json").map_err(|e| e.to_string())?;
+
+    store.delete("session");
+    store.save().map_err(|e| e.to_string())
+}
+
+/// The stored Last.fm session, kept apart from the settings so its key never reaches the webview.
+fn load_lastfm_session(app: &tauri::AppHandle) -> Result<Option<lastfm::Session>, String> {
+    app.store("lastfm.json")
+        .map_err(|e| e.to_string())?
+        .get("session")
+        .map(serde_json::from_value)
+        .transpose()
+        .map_err(|e| e.to_string())
 }
 
 fn image_cache(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
@@ -799,6 +857,9 @@ pub fn run() {
             recheck_mp3,
             get_settings,
             set_settings,
+            get_lastfm,
+            connect_lastfm,
+            disconnect_lastfm,
             get_image_cache_size,
             clear_image_cache,
             subscribe,

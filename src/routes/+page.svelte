@@ -245,6 +245,28 @@
 		imageCacheSize = 0;
 	}
 
+	let lastfm = $state<{ user: string | null } | null>(null);
+	let connectingLastfm = $state(false);
+
+	/** Resolves once the user approves on Last.fm, or fails when approval times out. */
+	async function connectLastfm() {
+		errorMessage = '';
+		connectingLastfm = true;
+
+		try {
+			lastfm = { user: await invoke<string>('connect_lastfm') };
+		} finally {
+			connectingLastfm = false;
+		}
+	}
+
+	async function disconnectLastfm() {
+		errorMessage = '';
+
+		await invoke('disconnect_lastfm');
+		lastfm = { user: null };
+	}
+
 	async function dismissFailure() {
 		await invoke('dismiss_download_failure');
 	}
@@ -256,6 +278,12 @@
 	invoke<Settings>('get_settings')
 		.then((loaded) => {
 			settings = loaded;
+		})
+		.catch(showError);
+
+	invoke<{ user: string | null } | null>('get_lastfm')
+		.then((loaded) => {
+			lastfm = loaded;
 		})
 		.catch(showError);
 
@@ -367,6 +395,10 @@
 			onupdateintervalchange={(hours) => saveUpdateInterval(hours).catch(showError)}
 			{imageCacheSize}
 			onclearimagecache={() => clearImageCache().catch(showError)}
+			{lastfm}
+			{connectingLastfm}
+			onconnectlastfm={() => connectLastfm().catch(showError)}
+			ondisconnectlastfm={() => disconnectLastfm().catch(showError)}
 		/>
 	{:else if view === 'shows'}
 		<EpisodeFilters bind:shownStations bind:search />

@@ -7,11 +7,15 @@
 		keepRunning = $bindable(),
 		updateInterval,
 		imageCacheSize,
+		lastfm,
+		connectingLastfm,
 		onchoosefolder,
 		onautodownloadchange,
 		onkeeprunningchange,
 		onupdateintervalchange,
 		onclearimagecache,
+		onconnectlastfm,
+		ondisconnectlastfm,
 	}: {
 		downloadFolder: string | null;
 		autoDownload: boolean;
@@ -20,6 +24,10 @@
 		updateInterval: number;
 		/** In bytes, or null until it has loaded. */
 		imageCacheSize: number | null;
+		/** Null in a build without a Last.fm API key, which leaves the row out. */
+		lastfm: { user: string | null } | null;
+		/** While the app waits for the user to approve it on Last.fm. */
+		connectingLastfm: boolean;
 		onchoosefolder: () => void;
 		/** Called after the bound checkbox has changed. */
 		onautodownloadchange: () => void;
@@ -27,6 +35,8 @@
 		onkeeprunningchange: () => void;
 		onupdateintervalchange: (hours: number) => void;
 		onclearimagecache: () => void;
+		onconnectlastfm: () => void;
+		ondisconnectlastfm: () => void;
 	} = $props();
 
 	/** In hours. */
@@ -81,6 +91,19 @@
 		{/if}
 		<button type="button" onclick={onclearimagecache} disabled={!imageCacheSize}>Clear</button>
 	</dd>
+	{#if lastfm}
+		<dt>Last.fm</dt>
+		<dd>
+			{#if connectingLastfm}
+				<span class="muted">waiting for approval…</span>
+			{:else if lastfm.user}
+				connected as {lastfm.user}
+				<button type="button" onclick={ondisconnectlastfm}>Disconnect</button>
+			{:else}
+				<button type="button" onclick={onconnectlastfm}>Connect</button>
+			{/if}
+		</dd>
+	{/if}
 </dl>
 
 <style>
