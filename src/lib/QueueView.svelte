@@ -228,6 +228,16 @@
 		white-space: nowrap;
 	}
 
+	th {
+		border-bottom: 1px solid currentColor;
+		font-weight: 700;
+	}
+
+	/* A row of `-` characters, as in the episode tables */
+	td {
+		background: linear-gradient(to right, var(--muted) 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+	}
+
 	/* Dates are all `YYYY/MM/DD`, so shrinking to them starts Show at the same x in both tables */
 	td:first-child {
 		width: 1%;
