@@ -34,7 +34,8 @@
 		/** Adds a "Mark as downloaded" button next to each download button. */
 		onmark?: (episode: Episode) => void;
 		onopenshow: (episode: Episode) => void;
-		ontogglesubscription: (episode: Episode) => void;
+		/** Adds a subscribe button to each row. */
+		ontogglesubscription?: (episode: Episode) => void;
 	} = $props();
 
 	const columns: [SortColumn, string][] = [
@@ -83,11 +84,13 @@
 						{#if episode.mp3}
 							<DownloadButton {episode} {downloads} {ondownload} {onmark} />
 						{/if}
-						<SubscribeButton
-							subscribed={subscribed.includes(episode.showSlug)}
-							disabled={subscribing.includes(episode.showSlug)}
-							onclick={() => ontogglesubscription(episode)}
-						/>
+						{#if ontogglesubscription}
+							<SubscribeButton
+								subscribed={subscribed.includes(episode.showSlug)}
+								disabled={subscribing.includes(episode.showSlug)}
+								onclick={() => ontogglesubscription(episode)}
+							/>
+						{/if}
 					</div>
 				</td>
 			</tr>

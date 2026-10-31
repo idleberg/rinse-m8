@@ -1,5 +1,6 @@
 <script lang="ts">
 	import EpisodeTable from './EpisodeTable.svelte';
+	import SubscribeButton from './SubscribeButton.svelte';
 	import { type DownloadQueue, type Episode, type Show, showOf } from './episodes';
 
 	let {
@@ -32,7 +33,14 @@
 </script>
 
 <section>
-	<h2><button class="link" onclick={() => onopenshow(show)}>{show.title}</button></h2>
+	<header>
+		<h2><button class="link" onclick={() => onopenshow(show)}>{show.title}</button></h2>
+		<SubscribeButton
+			subscribed={subscribed.includes(show.slug)}
+			disabled={subscribing.includes(show.slug)}
+			onclick={() => ontogglesubscription(show)}
+		/>
+	</header>
 	{#if episodes.length}
 		<EpisodeTable
 			{episodes}
@@ -43,7 +51,6 @@
 			{ondownload}
 			{onmark}
 			onopenshow={(episode) => onopenshow(showOf(episode))}
-			ontogglesubscription={(episode) => ontogglesubscription(showOf(episode))}
 		/>
 		{#if episodes.length > limit}
 			<button aria-expanded={expanded} onclick={() => (expanded = !expanded)}>
@@ -60,8 +67,15 @@
 		margin: 0 0 2rem;
 	}
 
-	h2 {
+	header {
+		display: flex;
+		gap: 1rem;
+		align-items: center;
 		margin: 0 0 0.5rem;
+	}
+
+	h2 {
+		margin: 0;
 		font-size: 1.25rem;
 		text-transform: uppercase;
 	}

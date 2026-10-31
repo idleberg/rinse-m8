@@ -282,7 +282,7 @@
 
 <nav>
 	<div>
-		{#each [['dashboard', 'Dashboard'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Queue']] as const as [value, label] (value)}
+		{#each [['dashboard', 'My Shows'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Queue']] as const as [value, label] (value)}
 			<button aria-current={!openedShow && view === value ? 'page' : undefined} onclick={() => openView(value)}
 				>{label}</button
 			>
