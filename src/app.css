@@ -61,7 +61,8 @@ a {
 }
 
 button,
-input {
+input,
+select {
 	color: inherit;
 	font: inherit;
 }
@@ -84,6 +85,19 @@ button[aria-current='page'] {
 	border-color: var(--ink);
 	background: var(--ink);
 	color: var(--paper);
+}
+
+/* Still a native select, with a `v` drawn from two diagonal strokes in the text colour, so it follows the theme */
+select {
+	appearance: none;
+	border: 1px solid currentColor;
+	border-radius: 0;
+	padding: 0 calc(1em + 1ch) 0 0.5ch;
+	background:
+		linear-gradient(45deg, transparent calc(50% - 0.5px), currentColor calc(50% - 0.5px) calc(50% + 0.5px), transparent calc(50% + 0.5px)) calc(100% - 0.5ch - 0.3em) 55% / 0.3em 0.3em no-repeat,
+		linear-gradient(-45deg, transparent calc(50% - 0.5px), currentColor calc(50% - 0.5px) calc(50% + 0.5px), transparent calc(50% + 0.5px)) calc(100% - 0.5ch) 55% / 0.3em 0.3em no-repeat;
+	text-transform: uppercase;
+	cursor: pointer;
 }
 
 button.icon {

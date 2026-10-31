@@ -3,15 +3,19 @@
 		downloadFolder,
 		autoDownload = $bindable(),
 		keepRunning = $bindable(),
+		updateInterval,
 		imageCacheSize,
 		onchoosefolder,
 		onautodownloadchange,
 		onkeeprunningchange,
+		onupdateintervalchange,
 		onclearimagecache,
 	}: {
 		downloadFolder: string | null;
 		autoDownload: boolean;
 		keepRunning: boolean;
+		/** In hours. */
+		updateInterval: number;
 		/** In bytes, or null until it has loaded. */
 		imageCacheSize: number | null;
 		onchoosefolder: () => void;
@@ -19,6 +23,7 @@
 		onautodownloadchange: () => void;
 		/** Called after the bound checkbox has changed. */
 		onkeeprunningchange: () => void;
+		onupdateintervalchange: (hours: number) => void;
 		onclearimagecache: () => void;
 	} = $props();
 
@@ -48,6 +53,14 @@
 			<input type="checkbox" bind:checked={keepRunning} onchange={onkeeprunningchange} />
 			keep running in menu bar
 		</label>
+	</dd>
+	<dt>Updates</dt>
+	<dd>
+		<select aria-label="Update interval" value={updateInterval} onchange={(e) => onupdateintervalchange(Number(e.currentTarget.value))}>
+			{#each [1, 6, 12, 24, 48] as hours}
+				<option value={hours}>every {hours === 1 ? 'hour' : `${hours} hours`}</option>
+			{/each}
+		</select>
 	</dd>
 	<dt>Image cache</dt>
 	<dd>

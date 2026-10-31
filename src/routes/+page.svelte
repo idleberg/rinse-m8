@@ -19,6 +19,8 @@
 		downloadFolder: string | null;
 		autoDownload: boolean;
 		keepRunning: boolean;
+		/** In hours. */
+		updateInterval: number;
 	};
 
 	let episodes = $state<Episode[]>([]);
@@ -41,7 +43,7 @@
 		localStorage.setItem('filters', JSON.stringify({ shownStations, mp3Only, hideRebroadcasts }));
 	});
 
-	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null, autoDownload: false, keepRunning: true });
+	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null, autoDownload: false, keepRunning: true, updateInterval: 6 });
 	const subscribed = $derived(settings.subscriptions.map((s) => s.slug));
 
 	const filteredEpisodes = $derived.by(() => {
@@ -142,6 +144,21 @@
 			await invoke('set_settings', { patch: { [key]: settings[key] } });
 		} catch (e) {
 			settings[key] = !settings[key];
+			throw e;
+		}
+	}
+
+	/** Saves the update interval, and puts the stored one back if saving fails. */
+	async function saveUpdateInterval(hours: number) {
+		const stored = settings.updateInterval;
+
+		error = '';
+		settings.updateInterval = hours;
+
+		try {
+			await invoke('set_settings', { patch: { updateInterval: hours } });
+		} catch (e) {
+			settings.updateInterval = stored;
 			throw e;
 		}
 	}
@@ -317,6 +334,8 @@
 			}}
 			onautodownloadchange={() => saveCheckbox('autoDownload').catch(showError)}
 			onkeeprunningchange={() => saveCheckbox('keepRunning').catch(showError)}
+			updateInterval={settings.updateInterval}
+			onupdateintervalchange={(hours) => saveUpdateInterval(hours).catch(showError)}
 			{imageCacheSize}
 			onclearimagecache={() => clearImageCache().catch(showError)}
 		/>
