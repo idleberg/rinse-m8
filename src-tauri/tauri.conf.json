@@ -15,7 +15,8 @@
 				"title": "Rinse M8",
 				"width": 980,
 				"height": 980,
-				"dragDropEnabled": false
+				"dragDropEnabled": false,
+				"zoomHotkeysEnabled": true
 			}
 		],
 		"security": {
