@@ -6,9 +6,9 @@ Clicking the notification itself, outside the button, behaves as it did before.
 
 **Blocked by:** 35 (Clicking a notification shows the window)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human (needs a click test in a release build)
 
-- [ ] With auto-download off, a notification offers a Download button
-- [ ] With auto-download on, a notification has no Download button
-- [ ] Pressing Download queues the episode and leaves the window as it was
-- [ ] Pressing Download for an episode that's already queued or downloaded doesn't queue it again
+- [x] With auto-download off, a notification offers a Download button
+- [x] With auto-download on, a notification has no Download button
+- [x] Pressing Download queues the episode and leaves the window as it was
+- [x] Pressing Download for an episode that's already queued or downloaded doesn't queue it again

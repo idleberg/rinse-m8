@@ -8,7 +8,7 @@ use std::time::Duration;
 use tauri::menu::MenuBuilder;
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager};
-use tauri_plugin_notification::NotificationExt;
+use tauri_plugin_notification::{Action, ActionPerformed, ActionType, NotificationExt};
 use tauri_plugin_store::StoreExt;
 
 /// Serialises settings read-modify-writes between commands and the poller.
@@ -152,6 +152,33 @@ fn download(app: tauri::AppHandle, episode: rinse::Episode) -> Result<(), String
     }
 
     Ok(())
+}
+
+/// Queues the episode of a notification's Download button, unless it's already downloaded; the window stays as it was.
+fn download_notified(app: &tauri::AppHandle, action: &ActionPerformed) {
+    let Some(episode) = action
+        .notification()
+        .and_then(|n| n.extra().get("episode"))
+        .and_then(|v| serde_json::from_value::<rinse::Episode>(v.clone()).ok())
+    else {
+        return;
+    };
+
+    let downloaded = app
+        .state::<Downloads>()
+        .queue
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .downloaded
+        .contains(&episode.id);
+
+    if downloaded {
+        return;
+    }
+
+    if let Err(e) = download(app.clone(), episode) {
+        eprintln!("queueing the notified episode failed: {e}");
+    }
 }
 
 /// The queue as it is now, for a page that missed the events, e.g. the one the restored queue sends at launch.
@@ -551,12 +578,14 @@ async fn update_episodes(app: &tauri::AppHandle) -> Result<(), String> {
         .collect();
     let mut unseen = Vec::new();
     let mut auto_download = false;
+    let mut offer_download = false;
 
     // Seen is saved before notifying, so a crash can drop a notification but never repeat one.
     update_settings(app, |settings| {
         unseen = rinse::new_episodes(&settings.subscriptions, &settings.seen, fetched);
         settings.seen.extend(unseen.iter().map(|e| e.id.clone()));
         auto_download = settings.auto_download && settings.download_folder.is_some();
+        offer_download = !settings.auto_download && settings.download_folder.is_some();
     })?;
 
     // ponytail: the startup update can emit before the webview listens, which then fetches the schedule itself
@@ -579,14 +608,21 @@ async fn update_episodes(app: &tauri::AppHandle) -> Result<(), String> {
             title: episode.show_title.clone(),
         };
 
-        // The show rides along so a click can open it
-        if let Err(e) = app
+        // The show rides along so a click can open it, the episode so its Download button can queue it
+        let mut notification = app
             .notification()
             .builder()
             .title(title)
-            .extra("show", show)
-            .show()
-        {
+            .extra("show", show);
+
+        // An auto-download already queues the episode, so the button would have nothing left to do
+        if offer_download {
+            notification = notification
+                .action_type_id("new-episode")
+                .extra("episode", episode);
+        }
+
+        if let Err(e) = notification.show() {
             eprintln!("notification failed: {e}");
         }
     }
@@ -693,9 +729,20 @@ pub fn run() {
                 cancel,
             });
 
+            // The id matches the title, since macOS reports a button by its title
+            app.notification()
+                .register_action_types(vec![ActionType::builder("new-episode")
+                    .actions(vec![Action::builder("Download", "Download").build()])
+                    .build()])?;
+
             // Registered before polling starts, since notifications shown without a handler report no click
             let handle = app.handle().clone();
             app.notification().on_action(move |action| {
+                if action.action_id() == "Download" {
+                    download_notified(&handle, action);
+                    return;
+                }
+
                 if action.action_id() != "tap" {
                     return;
                 }
