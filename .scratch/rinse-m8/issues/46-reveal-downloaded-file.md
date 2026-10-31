@@ -4,10 +4,10 @@
 
 **Blocked by:** 45 (Split the downloads view into Active and Previous Downloads)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] A Previous Downloads row whose file exists in the download folder shows a magnifier button labelled "Show in folder"
-- [ ] Clicking it reveals the file in the system file manager
-- [ ] A row whose file is missing, or any row while no download folder is set, has no button
-- [ ] A failed reveal reports the error
+- [x] A Previous Downloads row whose file exists in the download folder shows a magnifier button labelled "Show in folder"
+- [x] Clicking it reveals the file in the system file manager
+- [x] A row whose file is missing, or any row while no download folder is set, has no button
+- [x] A failed reveal reports the error
 - [ ] Manual check: reveal a downloaded file, then move it out of the folder, reopen the downloads view and see its button gone

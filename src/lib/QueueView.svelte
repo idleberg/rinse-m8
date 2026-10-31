@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
+	import { revealItemInDir } from '@tauri-apps/plugin-opener';
 	import { type DownloadQueue, type Episode, formatDate } from './episodes';
 
 	let {
@@ -21,8 +22,8 @@
 		onerror: (error: unknown) => void;
 	} = $props();
 
-	/** Downloaded and marked episodes, newest first. */
-	let previous = $state<Episode[]>([]);
+	/** Downloaded and marked episodes, newest first, with the mp3 when it's in the download folder. */
+	let previous = $state<(Episode & { file: string | null })[]>([]);
 
 	// Joined, so progress updates that leave the ids as they were don't refetch
 	const downloadedKey = $derived(downloads.downloaded.join());
@@ -33,7 +34,7 @@
 			return;
 		}
 
-		invoke<Episode[]>('get_previous_downloads')
+		invoke<typeof previous>('get_previous_downloads')
 			.then((loaded) => {
 				previous = loaded;
 			})
@@ -161,6 +162,7 @@
 			<tr>
 				<th>Date</th>
 				<th>Show</th>
+				<th></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -171,6 +173,22 @@
 						{episode.showTitle}
 						{#if episode.displayTitle}
 							<span class="subtitle">{episode.displayTitle}</span>
+						{/if}
+					</td>
+					<td>
+						{#if episode.file}
+							{@const file = episode.file}
+							<button type="button"
+								class="icon"
+								aria-label="Show in folder"
+								title="Show in folder"
+								onclick={() => revealItemInDir(file).catch(onerror)}
+							>
+								<svg viewBox="0 0 16 16" aria-hidden="true">
+									<circle cx="7" cy="7" r="4.5" />
+									<path d="M10.5 10.5L14 14" />
+								</svg>
+							</button>
 						{/if}
 					</td>
 				</tr>

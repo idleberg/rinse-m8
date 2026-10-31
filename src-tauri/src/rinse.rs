@@ -724,6 +724,14 @@ pub fn file_name(episode: &Episode) -> String {
     format!("{} - {}.mp3", show.trim(), episode.date)
 }
 
+/// Where the episode's download sits in `folder`, if it's there under its `file_name`. Paths aren't tracked, so a
+/// file that was moved, renamed or saved to an earlier folder isn't found.
+pub fn downloaded_file(folder: &Path, episode: &Episode) -> Option<PathBuf> {
+    let path = folder.join(file_name(episode));
+
+    path.is_file().then_some(path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1085,6 +1093,24 @@ mod tests {
             .collect();
 
         assert_eq!(ids, ["2315290", "2241796"]);
+    }
+
+    #[test]
+    fn a_downloaded_file_is_found_under_its_download_name() {
+        let folder = std::env::temp_dir().join(format!("rinse-downloads-{}", std::process::id()));
+        let episode = episode("2315290");
+
+        std::fs::create_dir_all(&folder).unwrap();
+
+        assert_eq!(downloaded_file(&folder, &episode), None);
+
+        std::fs::write(folder.join(file_name(&episode)), []).unwrap();
+
+        assert_eq!(
+            downloaded_file(&folder, &episode),
+            Some(folder.join(file_name(&episode)))
+        );
+        std::fs::remove_dir_all(&folder).unwrap();
     }
 
     #[test]

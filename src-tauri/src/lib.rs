@@ -192,9 +192,19 @@ fn get_download_queue(app: tauri::AppHandle) -> Result<serde_json::Value, String
     serde_json::to_value(&*queue).map_err(|e| e.to_string())
 }
 
+/// A Previous Downloads row.
+#[derive(serde::Serialize)]
+struct PreviousDownload {
+    #[serde(flatten)]
+    episode: rinse::Episode,
+    /// The mp3 in the current download folder, if it's there.
+    file: Option<std::path::PathBuf>,
+}
+
 /// Every episode recorded as downloaded or marked, newest first, as far as the episode cache has it.
 #[tauri::command]
-fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<rinse::Episode>, String> {
+fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<PreviousDownload>, String> {
+    let folder = load_settings(&app, serde_json::Map::new())?.download_folder;
     let downloaded = app
         .state::<Downloads>()
         .queue
@@ -210,7 +220,15 @@ fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<rinse::Episode>, 
         .filter_map(|v| serde_json::from_value(v).ok())
         .collect();
 
-    Ok(rinse::previous_downloads(&downloaded, cache))
+    Ok(rinse::previous_downloads(&downloaded, cache)
+        .into_iter()
+        .map(|episode| PreviousDownload {
+            file: folder
+                .as_deref()
+                .and_then(|folder| rinse::downloaded_file(folder, &episode)),
+            episode,
+        })
+        .collect())
 }
 
 #[tauri::command]
