@@ -352,7 +352,16 @@
 <!-- Settings swap light and dark, to stand apart from the other pages -->
 <main class:inverted={view === 'settings' && !openedShow}>
 	{#if errorMessage}
-		<p role="alert">{errorMessage}</p>
+		<p role="alert">
+			{errorMessage}
+			<button type="button" class="icon" aria-label="Dismiss" title="Dismiss" onclick={() => {
+					errorMessage = '';
+				}}>
+				<svg viewBox="0 0 16 16" aria-hidden="true">
+					<path d="M4 4l8 8M12 4l-8 8" />
+				</svg>
+			</button>
+		</p>
 	{/if}
 
 	{#if openedShow}
@@ -576,6 +585,10 @@
 	}
 
 	[role='alert'] {
+		display: flex;
+		gap: 1rem;
+		align-items: center;
+		justify-content: space-between;
 		margin: 0 0 1rem;
 		padding: 0.5rem 1rem;
 		background: var(--accent);
