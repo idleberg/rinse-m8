@@ -1,36 +1,38 @@
 {
-  "name": "rinse-m8",
-  "version": "0.1.0",
-  "devDependencies": {
-    "@fontsource/ibm-plex-mono": "^5.3.0",
-    "@fontsource/ibm-plex-sans": "^5.3.0",
-    "@sveltejs/adapter-static": "^4.0.0",
-    "@sveltejs/kit": "^3.1.0",
-    "@sveltejs/vite-plugin-svelte": "^7.3.1",
-    "@tauri-apps/api": "^2.12.4",
-    "@tauri-apps/cli": "^2.12.4",
-    "@types/bun": "^1.4.4",
-    "svelte": "^5.57.3",
-    "svelte-check": "^4.7.7",
-    "tslib": "^2.8.1",
-    "typescript": "^6",
-    "vite": "^8.3.5"
-  },
-  "description": "",
-  "license": "MIT",
-  "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "tauri": "tauri"
-  },
-  "type": "module",
-  "dependencies": {
-    "@tauri-apps/plugin-dialog": "^2.8.4",
-    "@tauri-apps/plugin-notification": "^2.8.0",
-    "@tauri-apps/plugin-opener": "^2.7.2",
-    "@tauri-apps/plugin-store": "^2.5.0"
-  }
+	"name": "rinse-m8",
+	"version": "0.1.0",
+	"devDependencies": {
+		"@biomejs/biome": "^2.6.4",
+		"@fontsource/ibm-plex-mono": "^5.3.0",
+		"@fontsource/ibm-plex-sans": "^5.3.0",
+		"@sveltejs/adapter-static": "^4.0.0",
+		"@sveltejs/kit": "^3.1.0",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
+		"@tauri-apps/api": "^2.12.4",
+		"@tauri-apps/cli": "^2.12.4",
+		"@types/bun": "^1.4.4",
+		"svelte": "^5.57.3",
+		"svelte-check": "^4.7.7",
+		"tslib": "^2.8.1",
+		"typescript": "^6",
+		"vite": "^8.3.5"
+	},
+	"description": "",
+	"license": "MIT",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"tauri": "tauri"
+	},
+	"type": "module",
+	"dependencies": {
+		"@tauri-apps/plugin-dialog": "^2.8.4",
+		"@tauri-apps/plugin-notification": "^2.8.0",
+		"@tauri-apps/plugin-opener": "^2.7.2",
+		"@tauri-apps/plugin-store": "^2.5.0"
+	},
+	"packageManager": "pnpm@12.17.0+sha512.b8d223ebec04b580a89ed206daa71d1bccb6a1ee1d52efa95cc3b0db75271561df8f0d8e2c43add39c5ec08018af7a8a95108e7090f95a29f88727b7a40fd53d"
 }

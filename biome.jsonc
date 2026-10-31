@@ -8,8 +8,6 @@
 		"formatter": { "quoteStyle": "single", "trailingCommas": "all" }
 	},
 	"html": { "experimentalFullSupportEnabled": true },
-	// The daisyUI theme is written for Tailwind.
-	"css": { "parser": { "tailwindDirectives": true } },
 	"linter": {
 		"rules": {
 			"preset": "all",
@@ -24,9 +22,7 @@
 			},
 			"correctness": {
 				"noUnresolvedImports": "off",
-				"useImportExtensions": "off",
-				// `preset: all` enables Qwik rules, which misfire on Svelte scripts.
-				"useQwikValidLexicalScope": "off"
+				"useImportExtensions": "off"
 			},
 			"complexity": {
 				"noExcessiveLinesPerFunction": "off"
@@ -51,11 +47,6 @@
 			}
 		},
 		{
-			// The config is read with strip-json-comments, so users can annotate it.
-			"includes": ["listr.config.json"],
-			"json": { "parser": { "allowComments": true } }
-		},
-		{
 			// SvelteKit declares its app types in `namespace App`.
 			"includes": ["src/app.d.ts"],
 			"linter": { "rules": { "style": { "noNamespace": "off" } } }
@@ -64,11 +55,6 @@
 			// Test fixtures are made of arbitrary values.
 			"includes": ["**/*.test.ts", "**/*.spec.ts"],
 			"linter": { "rules": { "style": { "noMagicNumbers": "off" } } }
-		},
-		{
-			// Biome knows CSS functions, not Sass ones like map-get-multiple().
-			"includes": ["**/*.scss"],
-			"linter": { "rules": { "correctness": { "noUnknownFunction": "off" } } }
 		},
 		{
 			// Components are PascalCase; SvelteKit routes start with `+`.

@@ -8,6 +8,8 @@ rust = { version = "latest", targets = "aarch64-apple-darwin,x86_64-apple-darwin
 
 [env]
 HK_MISE = 1
+# Runs the project's own Biome, whatever else is on PATH.
+_.path = ["{{config_root}}/node_modules/.bin"]
 
 [hooks]
 postinstall = "hk install --mise && bun install"
@@ -37,7 +39,11 @@ run = "bun tauri build --target x86_64-unknown-linux-gnu"
 
 [tasks.checks]
 description = "Run all checks"
-depends = ["check", "test", "format:check", "lint"]
+depends = ["biome", "check", "test", "format:check", "lint"]
+
+[tasks.biome]
+description = "Lint and check formatting of the frontend with Biome"
+run = "biome ci ."
 
 [tasks.check]
 description = "Typecheck the Svelte frontend"
