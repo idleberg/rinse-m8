@@ -14,11 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Only what Biome needs; the Rust toolchain and cargo-xwin take minutes.
-      - name: Set up mise
-        uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          install_args: bun hk node
+      # Downloads the Biome binary only, at the version the lockfile pins.
+      - name: Set up Biome
+        uses: biomejs/setup-biome@4c91541eaada48f67d7dbd7833600ce162b68f51 # v2.7.1
 
       - name: Biome
-        run: mise run biome
+        run: biome ci .
