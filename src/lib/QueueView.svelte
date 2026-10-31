@@ -63,7 +63,13 @@
 			{#if downloads.current}
 				<tr>
 					<td>{formatDate(downloads.current.date)}</td>
-					<td>{downloads.current.showTitle}</td>
+					<td>
+						{downloads.current.showTitle}
+						{#if downloads.current.displayTitle}
+							<br />
+							<span class="subtitle">{downloads.current.displayTitle}</span>
+						{/if}
+					</td>
 					<td>{downloads.current.title}</td>
 					<td>
 						<progress max="100" value={downloads.percent ?? undefined}></progress>
@@ -94,7 +100,13 @@
 					onkeydown={(event) => moveWithArrows(event, episode.id, index)}
 				>
 					<td>{formatDate(episode.date)}</td>
-					<td>{episode.showTitle}</td>
+					<td>
+						{episode.showTitle}
+						{#if episode.displayTitle}
+							<br />
+							<span class="subtitle">{episode.displayTitle}</span>
+						{/if}
+					</td>
 					<td>{episode.title}</td>
 					<td><button onclick={() => onremove(episode.id)}>Remove</button></td>
 				</tr>
@@ -102,7 +114,13 @@
 			{#if downloads.failed}
 				<tr class="failed">
 					<td>{formatDate(downloads.failed.date)}</td>
-					<td>{downloads.failed.showTitle}</td>
+					<td>
+						{downloads.failed.showTitle}
+						{#if downloads.failed.displayTitle}
+							<br />
+							<span class="subtitle">{downloads.failed.displayTitle}</span>
+						{/if}
+					</td>
 					<td>{downloads.failed.title}</td>
 					<td>Failed <button onclick={ondismiss}>Dismiss</button></td>
 				</tr>
@@ -137,6 +155,10 @@
 
 	p {
 		text-transform: uppercase;
+		color: var(--muted);
+	}
+
+	.subtitle {
 		color: var(--muted);
 	}
 </style>

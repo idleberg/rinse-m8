@@ -10,6 +10,7 @@ function episode(id: string, date: string, title: string): Episode {
 		showId: id,
 		showSlug: id,
 		showTitle: id,
+		displayTitle: null,
 		station: 'Rinse FM',
 		date,
 		time: '12:00',

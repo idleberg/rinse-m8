@@ -72,7 +72,13 @@
 			<tr>
 				<td>{formatDate(episode.date)}</td>
 				<td>{episode.station}</td>
-				<td><button class="link" onclick={() => onopenshow(episode)}>{episode.showTitle}</button></td>
+				<td>
+					<button class="link" onclick={() => onopenshow(episode)}>{episode.showTitle}</button>
+					{#if episode.displayTitle}
+						<br />
+						<span class="subtitle">{episode.displayTitle}</span>
+					{/if}
+				</td>
 				<td>{episode.title}</td>
 				<td>
 					{#if episode.rebroadcast}
@@ -140,6 +146,10 @@
 		gap: 0.5ch;
 		justify-content: flex-end;
 		align-items: center;
+	}
+
+	.subtitle {
+		color: var(--muted);
 	}
 
 	.badge {

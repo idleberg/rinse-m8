@@ -17,6 +17,8 @@ pub struct Episode {
     pub show_id: String,
     pub show_slug: String,
     pub show_title: String,
+    /// What sets this episode apart from the show's others, such as a guest or a special.
+    pub display_title: Option<String>,
     pub station: String,
     /// London broadcast date, `YYYY-MM-DD`.
     pub date: String,
@@ -246,6 +248,7 @@ struct RawResponse {
 struct RawEpisode {
     id: String,
     title: String,
+    display_title: Option<String>,
     episode_date: Option<String>,
     episode_time: Option<String>,
     episode_length: Option<u32>,
@@ -419,6 +422,7 @@ fn map_episode(raw: RawEpisode) -> Option<Episode> {
         show_id: show.id,
         show_slug: show.slug,
         show_title: show.title,
+        display_title: raw.display_title.filter(|t| !t.trim().is_empty()),
         station,
         date,
         time,
@@ -704,6 +708,17 @@ mod tests {
         assert_eq!(e.show_slug, "dubquake-records");
         assert_eq!(e.show_title, "Dubquake Records");
         assert_eq!(e.genres, ["Dub", "Reggae"]);
+    }
+
+    #[test]
+    fn display_title_is_set_only_when_rinse_provides_one() {
+        let episodes = show_fixture();
+
+        assert_eq!(
+            episodes[0].display_title.as_deref(),
+            Some("O.B.F x Terremoto - São Paulo Special")
+        );
+        assert_eq!(episodes[1].display_title, None);
     }
 
     #[test]

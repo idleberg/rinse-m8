@@ -21,7 +21,7 @@
 
 <!-- Outside the fieldset, so it scrolls away while the checkboxes stay pinned -->
 {#if search !== undefined}
-	<input type="search" bind:value={search} placeholder="Search title, show, genres" aria-label="Search" />
+	<input type="search" bind:value={search} placeholder="Filter title, show, genres" aria-label="Search" />
 {/if}
 
 <fieldset aria-label="Filters">

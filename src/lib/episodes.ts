@@ -4,6 +4,8 @@ export type Episode = {
 	showId: string;
 	showSlug: string;
 	showTitle: string;
+	/** What sets this episode apart from the show's others, such as a guest or a special. */
+	displayTitle: string | null;
 	station: string;
 	/** London date, `YYYY-MM-DD`. */
 	date: string;

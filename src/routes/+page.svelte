@@ -54,7 +54,7 @@
 				(!stations.includes(episode.station) || shownStations.includes(episode.station)) &&
 				(!mp3Only || episode.mp3) &&
 				(!hideRebroadcasts || !episode.rebroadcast) &&
-				[episode.title, episode.showTitle, ...episode.genres].some((text) => text.toLowerCase().includes(query)),
+				[episode.title, episode.showTitle, episode.displayTitle ?? '', ...episode.genres].some((text) => text.toLowerCase().includes(query)),
 		);
 	});
 
