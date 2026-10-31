@@ -84,6 +84,27 @@ pub enum Failure {
 
 /// Sets `track` as "Scrobbling now" on the session's profile.
 pub async fn now_playing(session: &Session, track: &Track) -> Result<(), Failure> {
+    send("track.updateNowPlaying", session, track, &[]).await
+}
+
+/// Adds `track` to the session's scrobbles, stamped with when it started playing in Unix seconds.
+pub async fn scrobble(session: &Session, track: &Track, started: u64) -> Result<(), Failure> {
+    send(
+        "track.scrobble",
+        session,
+        track,
+        &[("timestamp", &started.to_string())],
+    )
+    .await
+}
+
+/// Calls a track method with `track`'s fields and `extra` params.
+async fn send(
+    method: &str,
+    session: &Session,
+    track: &Track,
+    extra: &[(&str, &str)],
+) -> Result<(), Failure> {
     let duration = track.duration.to_string();
     let mut params = vec![
         ("artist", track.artist.as_str()),
@@ -92,14 +113,14 @@ pub async fn now_playing(session: &Session, track: &Track) -> Result<(), Failure
         ("sk", &session.key),
     ];
 
+    params.extend_from_slice(extra);
+
     // Rinse leaves some lengths out, which come through as 0
     if track.duration > 0 {
         params.push(("duration", &duration));
     }
 
-    let reply = call("track.updateNowPlaying", &params)
-        .await
-        .map_err(Failure::Other)?;
+    let reply = call(method, &params).await.map_err(Failure::Other)?;
 
     match parse::<serde_json::Value>(&reply) {
         Ok(_) => Ok(()),

@@ -3,6 +3,7 @@
 	import { load } from '@tauri-apps/plugin-store';
 	import { tick } from 'svelte';
 	import { type Episode, episodeLabel } from './episodes';
+	import { heardBetween, scrobbleAfter } from './listen';
 
 	let {
 		episodes,
@@ -26,6 +27,12 @@
 	let duration = $state(0);
 	let showRemaining = $state(false);
 	let savedAt = 0;
+
+	/** The current listen, which runs until another episode plays or this one ends: seconds heard, the playhead at the last count, and when it started in Unix seconds. */
+	let heard = 0;
+	let heardTo = 0;
+	let started: number | null = null;
+	let scrobbled = false;
 
 	/** How often a playing episode's position is saved, in milliseconds. */
 	const saveInterval = 5000;
@@ -58,6 +65,7 @@
 			savePosition(false);
 		} else {
 			forgetPosition();
+			endListen();
 		}
 
 		// The new source loads at once, so the old one's events can't save over the reset position
@@ -103,6 +111,33 @@
 		savedAt = Date.now();
 		position = audio.currentTime;
 		persistPosition();
+	}
+
+	/** Scrobbles the episode once enough of it has been heard. */
+	function countHeard() {
+		if (!(audio && episode)) {
+			return;
+		}
+
+		// Dragging the seek bar moves the playhead in small steps too
+		if (!(audio.paused || audio.seeking)) {
+			heard += heardBetween(heardTo, audio.currentTime);
+		}
+
+		heardTo = audio.currentTime;
+
+		if (!scrobbled && started !== null && heard >= scrobbleAfter(audio.duration)) {
+			scrobbled = true;
+			invoke('scrobble', { episode, started }).catch(onerror);
+		}
+	}
+
+	/** So the next play counts, and can scrobble, from scratch. */
+	function endListen() {
+		heard = 0;
+		heardTo = 0;
+		started = null;
+		scrobbled = false;
 	}
 
 	/** On switching episodes, and when one finishes, so it starts over next time. */
@@ -158,10 +193,14 @@
 			bind:duration
 			preload="metadata"
 			onloadedmetadata={restorePosition}
-			ontimeupdate={() => savePosition(true)}
+			ontimeupdate={() => {
+				countHeard();
+				savePosition(true);
+			}}
 			onseeked={() => savePosition(false)}
 			onplay={() => {
 				playing = episode?.id ?? null;
+				started ??= Math.floor(Date.now() / millisecondsPerSecond);
 
 				if (episode) {
 					invoke('now_playing', { episode }).catch(onerror);
@@ -171,7 +210,10 @@
 				playing = null;
 				savePosition(false);
 			}}
-			onended={forgetPosition}
+			onended={() => {
+				forgetPosition();
+				endListen();
+			}}
 			onerror={() => episode && invoke('recheck_mp3', { id: episode.id }).catch(onerror)}
 		></audio>
 	</footer>

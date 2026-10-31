@@ -6,9 +6,9 @@ Only time actually heard counts: seeking forward or back adds nothing. Each epis
 
 **Blocked by:** 43
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] After 4 minutes of playback, the episode appears in the user's Last.fm scrobbles, stamped with the time it started.
-- [ ] Seeking ahead doesn't trigger a scrobble early.
+- [x] Seeking ahead doesn't trigger a scrobble early.
 - [ ] Pausing and resuming the same episode doesn't scrobble it a second time.
-- [ ] Nothing is sent while disconnected.
+- [x] Nothing is sent while disconnected.

@@ -397,14 +397,41 @@ fn disconnect_lastfm(app: tauri::AppHandle) -> Result<(), String> {
     store.save().map_err(|e| e.to_string())
 }
 
-/// Shows `episode` as "Scrobbling now" while connected. A session Last.fm rejects is dropped, and the Settings row told.
+/// Shows `episode` as "Scrobbling now" while connected.
 #[tauri::command]
 async fn now_playing(app: tauri::AppHandle, episode: rinse::Episode) -> Result<(), String> {
     let Some(session) = load_lastfm_session(&app)? else {
         return Ok(());
     };
 
-    match lastfm::now_playing(&session, &lastfm::track(&episode)).await {
+    let result = lastfm::now_playing(&session, &lastfm::track(&episode)).await;
+
+    lastfm_outcome(&app, "now playing", result)
+}
+
+/// Scrobbles `episode`, which started playing at `started` in Unix seconds, while connected. Like `now_playing`, a failed one isn't retried.
+#[tauri::command]
+async fn scrobble(
+    app: tauri::AppHandle,
+    episode: rinse::Episode,
+    started: u64,
+) -> Result<(), String> {
+    let Some(session) = load_lastfm_session(&app)? else {
+        return Ok(());
+    };
+
+    let result = lastfm::scrobble(&session, &lastfm::track(&episode), started).await;
+
+    lastfm_outcome(&app, "scrobble", result)
+}
+
+/// Drops a session Last.fm rejects and tells the Settings row. Other failures are only logged, so being offline doesn't show an error.
+fn lastfm_outcome(
+    app: &tauri::AppHandle,
+    what: &str,
+    result: Result<(), lastfm::Failure>,
+) -> Result<(), String> {
+    match result {
         Ok(()) => Ok(()),
         Err(lastfm::Failure::InvalidSession) => {
             disconnect_lastfm(app.clone())?;
@@ -412,9 +439,8 @@ async fn now_playing(app: tauri::AppHandle, episode: rinse::Episode) -> Result<(
             app.emit("lastfm-disconnected", ())
                 .map_err(|e| e.to_string())
         }
-        // Best effort, so being offline doesn't show an error
         Err(lastfm::Failure::Other(e)) => {
-            eprintln!("Last.fm now playing failed: {e}");
+            eprintln!("Last.fm {what} failed: {e}");
 
             Ok(())
         }
@@ -885,6 +911,7 @@ pub fn run() {
             connect_lastfm,
             disconnect_lastfm,
             now_playing,
+            scrobble,
             get_image_cache_size,
             clear_image_cache,
             subscribe,
