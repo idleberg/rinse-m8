@@ -6,8 +6,8 @@ In a macOS dev build, the notification plugin posts as Terminal, so a click open
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human (needs a click test in a release build; criterion 3 relies on macOS reopening the app, unverified)
 
-- [ ] Clicking a notification while the window is visible brings it to the front
-- [ ] Clicking a notification while the window is hidden in the menu bar shows it, with the Dock icon back on macOS
+- [x] Clicking a notification while the window is visible brings it to the front
+- [x] Clicking a notification while the window is hidden in the menu bar shows it, with the Dock icon back on macOS
 - [ ] Clicking a notification after a restart, from Notification Center, shows the window

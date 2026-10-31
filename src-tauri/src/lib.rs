@@ -681,6 +681,14 @@ pub fn run() {
                 cancel,
             });
 
+            // Registered before polling starts, since notifications shown without a handler report no click
+            let handle = app.handle().clone();
+            app.notification().on_action(move |action| {
+                if action.action_id() == "tap" {
+                    show_window(&handle);
+                }
+            })?;
+
             tauri::async_runtime::spawn(poll(app.handle().clone()));
             tauri::async_runtime::spawn(poll_show_directory(app.handle().clone()));
             tauri::async_runtime::spawn(download_worker(app.handle().clone(), cancelled));
