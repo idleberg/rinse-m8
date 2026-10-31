@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { type DownloadQueue, episodeLabel } from './episodes';
 
 	let {
@@ -13,16 +14,29 @@
 		ondismiss: () => void;
 		onviewqueue: () => void;
 	} = $props();
+
+	/** Downloads started since the queue was last idle, so the count runs on as the queue drains. */
+	let started = $state(0);
+	let lastId: string | null = null;
+
+	$effect.pre(() => {
+		const id = downloads.current?.id ?? null;
+
+		if (id === null) {
+			started = 0;
+		} else if (id !== lastId) {
+			started = untrack(() => started) + 1;
+		}
+
+		lastId = id;
+	});
 </script>
 
 {#if downloads.current}
 	<footer role="status">
-		<span>Downloading…</span>
+		<span>Downloading {started} / {started + downloads.waiting.length}…</span>
 		<progress max="100" value={downloads.percent ?? undefined} aria-label={episodeLabel(downloads.current)}></progress>
 		{downloads.percent === null ? '' : `${downloads.percent}%`}
-		{#if downloads.waiting.length}
-			· {downloads.waiting.length} queued
-		{/if}
 		<div>
 			<button type="button" class="icon" aria-label="Cancel" title="Cancel" onclick={oncancel}>
 				<svg viewBox="0 0 16 16" aria-hidden="true">
