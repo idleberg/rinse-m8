@@ -574,7 +574,19 @@ async fn update_episodes(app: &tauri::AppHandle) -> Result<(), String> {
             episode.date.replace('-', "/")
         );
 
-        if let Err(e) = app.notification().builder().title(title).show() {
+        let show = rinse::Subscription {
+            slug: episode.show_slug.clone(),
+            title: episode.show_title.clone(),
+        };
+
+        // The show rides along so a click can open it
+        if let Err(e) = app
+            .notification()
+            .builder()
+            .title(title)
+            .extra("show", show)
+            .show()
+        {
             eprintln!("notification failed: {e}");
         }
     }
@@ -684,8 +696,16 @@ pub fn run() {
             // Registered before polling starts, since notifications shown without a handler report no click
             let handle = app.handle().clone();
             app.notification().on_action(move |action| {
-                if action.action_id() == "tap" {
-                    show_window(&handle);
+                if action.action_id() != "tap" {
+                    return;
+                }
+
+                show_window(&handle);
+
+                if let Some(show) = action.notification().and_then(|n| n.extra().get("show")) {
+                    if let Err(e) = handle.emit("open-show", show) {
+                        eprintln!("opening the notified show failed: {e}");
+                    }
                 }
             })?;
 

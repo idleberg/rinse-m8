@@ -4,8 +4,8 @@
 
 **Blocked by:** 35 (Clicking a notification shows the window)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human (needs a click test in a release build)
 
-- [ ] Clicking a notification opens the show view of its show
-- [ ] Of two notifications for different shows, each opens its own show
-- [ ] Clicking a notification for a show whose view is already open keeps it open and lists the new episode
+- [x] Clicking a notification opens the show view of its show
+- [x] Of two notifications for different shows, each opens its own show
+- [x] Clicking a notification for a show whose view is already open keeps it open and lists the new episode

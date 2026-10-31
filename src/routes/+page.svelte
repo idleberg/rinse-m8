@@ -181,8 +181,13 @@
 	/** Shows the cached episodes at once, then merges the show's fetched episodes in. */
 	async function openShow(show: Show) {
 		errorMessage = '';
+
+		// Reopening the open show, as a notification click can, keeps its details on screen while they refresh
+		if (openedShow?.slug !== show.slug) {
+			showDetails = null;
+		}
+
 		openedShow = show;
-		showDetails = null;
 
 		refreshing.push(show.slug);
 
@@ -279,6 +284,9 @@
 			directory ??= loaded;
 		})
 		.catch(showError);
+
+	// A click on a new-episode notification opens its show, refetched so the new episode is listed
+	listen<Show>('open-show', (event) => openShow(event.payload).catch(showError));
 
 	// The background refresh sends the whole directory once it has every page
 	listen<DirectoryShow[]>('show-directory', (event) => {
