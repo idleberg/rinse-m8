@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] An empty settings store has an update interval of 6 hours
-- [ ] With the interval due, the schedule and subscribed shows are fetched on the full hour, and both views update without a reload
-- [ ] An update that lands a few seconds past the hour doesn't push the next one back by an hour
-- [ ] New episodes of subscribed shows still notify and auto-download, once each
-- [ ] Changing the stored interval takes effect at the next full hour, without a restart
+- [x] An empty settings store has an update interval of 6 hours
+- [x] With the interval due, the schedule and subscribed shows are fetched on the full hour, and both views update without a reload
+- [x] An update that lands a few seconds past the hour doesn't push the next one back by an hour
+- [x] New episodes of subscribed shows still notify and auto-download, once each
+- [x] Changing the stored interval takes effect at the next full hour, without a restart

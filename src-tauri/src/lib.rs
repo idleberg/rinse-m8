@@ -1,5 +1,6 @@
 mod rinse;
 
+use chrono::Timelike;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::menu::MenuBuilder;
@@ -409,25 +410,46 @@ fn update_settings(
     Ok(settings)
 }
 
-/// Checks the subscriptions at startup and then every 15 minutes, for as long as the app runs.
+/// Updates the episodes at startup and then on the first full hour the stored interval has passed since the last update,
+/// for as long as the app runs. The interval is read every hour, so a change applies from the next full hour.
 async fn poll(app: tauri::AppHandle) {
-    let mut interval = tokio::time::interval(Duration::from_secs(15 * 60));
-
-    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    let mut last = chrono::Utc::now().timestamp();
 
     loop {
-        interval.tick().await;
+        if let Err(e) = update_episodes(&app).await {
+            eprintln!("episode update failed: {e}");
+        }
 
-        if let Err(e) = check_subscriptions(&app).await {
-            eprintln!("subscription check failed: {e}");
+        loop {
+            // Local, so a half-hour time zone also updates on its full hours.
+            // ponytail: the sleep doesn't count time the computer is asleep, so after a wake an update can land off the hour
+            let now = chrono::Local::now();
+            let into_hour = u64::from(now.minute() * 60 + now.second());
+
+            tokio::time::sleep(Duration::from_secs(60 * 60 - into_hour)).await;
+
+            let now = chrono::Utc::now().timestamp();
+            let interval = load_settings(&app, serde_json::Map::new())
+                .map_or(rinse::Settings::default().update_interval, |s| {
+                    s.update_interval
+                });
+
+            if rinse::update_due(last, now, interval) {
+                last = now;
+                break;
+            }
         }
     }
 }
 
-/// Fetches every subscribed show, notifies once per new episode and, if there was one, pushes the cache to the table
+/// Fetches the schedule and every subscribed show, pushes the whole cache to the views, notifies once per new episode
 /// and queues the new episodes for download when auto-download is on and a folder is set.
-async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
+async fn update_episodes(app: &tauri::AppHandle) -> Result<(), String> {
     let subscriptions = load_settings(app, serde_json::Map::new())?.subscriptions;
+    let schedule = rinse::fetch_schedule().await.unwrap_or_else(|e| {
+        eprintln!("schedule fetch failed: {e}");
+        Vec::new()
+    });
     let mut fetched = Vec::new();
 
     for subscription in &subscriptions {
@@ -437,7 +459,8 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
         }
     }
 
-    let cache = merge(app, fetched.clone())?;
+    // Only the show fetches look for new episodes, since the schedule repeats some of them
+    let cache = merge(app, schedule.into_iter().chain(fetched.clone()).collect())?;
     let mut unseen = Vec::new();
     let mut auto_download = false;
 
@@ -447,6 +470,10 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
         settings.seen.extend(unseen.iter().map(|e| e.id.clone()));
         auto_download = settings.auto_download && settings.download_folder.is_some();
     })?;
+
+    // ponytail: the startup update can emit before the webview listens, which then fetches the schedule itself
+    app.emit("episodes-updated", cache)
+        .map_err(|e| e.to_string())?;
 
     if unseen.is_empty() {
         return Ok(());
@@ -463,10 +490,6 @@ async fn check_subscriptions(app: &tauri::AppHandle) -> Result<(), String> {
             eprintln!("notification failed: {e}");
         }
     }
-
-    // ponytail: the startup check can emit before the webview listens, so its rows show on the next tick
-    app.emit("episodes-updated", cache)
-        .map_err(|e| e.to_string())?;
 
     // ponytail: queued auto-downloads survive restarts, but a failed one isn't retried, since the episode is already seen
     if auto_download {

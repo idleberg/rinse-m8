@@ -57,6 +57,8 @@ pub struct Settings {
     pub auto_download: bool,
     /// Whether closing the window hides it behind a menu bar or tray icon instead of quitting.
     pub keep_running: bool,
+    /// Hours between updates of the schedule and the subscribed shows.
+    pub update_interval: u32,
 }
 
 impl Default for Settings {
@@ -67,8 +69,15 @@ impl Default for Settings {
             download_folder: None,
             auto_download: false,
             keep_running: true,
+            update_interval: 6,
         }
     }
+}
+
+/// Whether an update is due at `now`, `interval` hours after the one at `last`, both in Unix seconds.
+/// Allows a few minutes' slack, so an update that ran just past the hour doesn't push the next one back by an hour.
+pub fn update_due(last: i64, now: i64, interval: u32) -> bool {
+    now + 5 * 60 >= last + i64::from(interval) * 60 * 60
 }
 
 /// A followed show.
@@ -881,6 +890,33 @@ mod tests {
         let settings: Settings = serde_json::from_str("{}").unwrap();
 
         assert!(settings.keep_running);
+    }
+
+    #[test]
+    fn an_empty_store_updates_every_6_hours() {
+        let settings: Settings = serde_json::from_str("{}").unwrap();
+
+        assert_eq!(settings.update_interval, 6);
+    }
+
+    const HOUR: i64 = 60 * 60;
+
+    #[test]
+    fn an_update_is_due_once_the_interval_has_passed() {
+        assert!(!update_due(0, 5 * HOUR, 6));
+        assert!(update_due(0, 6 * HOUR, 6));
+        assert!(update_due(0, 7 * HOUR, 6));
+    }
+
+    #[test]
+    fn an_update_a_few_seconds_past_the_hour_doesnt_delay_the_next() {
+        assert!(update_due(12 * HOUR + 5, 18 * HOUR, 6));
+    }
+
+    #[test]
+    fn a_startup_update_mid_hour_waits_for_the_full_interval() {
+        assert!(!update_due(10 * HOUR + 37 * 60, 16 * HOUR, 6));
+        assert!(update_due(10 * HOUR + 37 * 60, 17 * HOUR, 6));
     }
 
     #[test]

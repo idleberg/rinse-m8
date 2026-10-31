@@ -233,7 +233,7 @@
 		.then(setEpisodes)
 		.catch(showError);
 
-	// The subscription poller sends the whole cache after each check
+	// The poller sends the whole cache after each update
 	listen<Episode[]>('episodes-updated', (event) => setEpisodes(event.payload));
 
 	invoke<DownloadQueue>('get_download_queue')
