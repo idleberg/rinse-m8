@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { type DownloadQueue, formatDate } from './episodes';
+	import { invoke } from '@tauri-apps/api/core';
+	import { type DownloadQueue, type Episode, formatDate } from './episodes';
 
 	let {
 		downloads,
@@ -7,6 +8,7 @@
 		onmove,
 		oncancel,
 		ondismiss,
+		onerror,
 	}: {
 		downloads: DownloadQueue;
 		/** Takes an episode id. */
@@ -16,7 +18,27 @@
 		/** Stops the running download. */
 		oncancel: () => void;
 		ondismiss: () => void;
+		onerror: (error: unknown) => void;
 	} = $props();
+
+	/** Downloaded and marked episodes, newest first. */
+	let previous = $state<Episode[]>([]);
+
+	// Joined, so progress updates that leave the ids as they were don't refetch
+	const downloadedKey = $derived(downloads.downloaded.join());
+
+	// Fetched when the view opens and again whenever a download is recorded
+	$effect(() => {
+		if (!downloadedKey) {
+			return;
+		}
+
+		invoke<Episode[]>('get_previous_downloads')
+			.then((loaded) => {
+				previous = loaded;
+			})
+			.catch(onerror);
+	});
 
 	let dragged: string | null = null;
 	let rows: Record<string, HTMLTableRowElement> = {};
@@ -48,6 +70,8 @@
 		}
 	}
 </script>
+
+<h2>Active Downloads</h2>
 
 {#if downloads.current || downloads.waiting.length || downloads.failed}
 	<table>
@@ -129,7 +153,47 @@
 	<p>The download queue is empty</p>
 {/if}
 
+<h2>Previous Downloads</h2>
+
+{#if previous.length}
+	<table>
+		<thead>
+			<tr>
+				<th>Date</th>
+				<th>Show</th>
+			</tr>
+		</thead>
+		<tbody>
+			{#each previous as episode (episode.id)}
+				<tr>
+					<td>{formatDate(episode.date)}</td>
+					<td>
+						{episode.showTitle}
+						{#if episode.displayTitle}
+							<span class="subtitle">{episode.displayTitle}</span>
+						{/if}
+					</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+{:else}
+	<p>No previous downloads</p>
+{/if}
+
 <style>
+	h2 {
+		margin: 0 0 0.5rem;
+		font-size: 1.25rem;
+		text-transform: uppercase;
+	}
+
+	/* Spaces the sections like the dashboard's */
+	table + h2,
+	p + h2 {
+		margin-top: 2rem;
+	}
+
 	table {
 		width: 100%;
 		border-collapse: collapse;

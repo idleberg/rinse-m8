@@ -192,6 +192,27 @@ fn get_download_queue(app: tauri::AppHandle) -> Result<serde_json::Value, String
     serde_json::to_value(&*queue).map_err(|e| e.to_string())
 }
 
+/// Every episode recorded as downloaded or marked, newest first, as far as the episode cache has it.
+#[tauri::command]
+fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<rinse::Episode>, String> {
+    let downloaded = app
+        .state::<Downloads>()
+        .queue
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .downloaded
+        .clone();
+    let cache = app
+        .store("episodes.json")
+        .map_err(|e| e.to_string())?
+        .values()
+        .into_iter()
+        .filter_map(|v| serde_json::from_value(v).ok())
+        .collect();
+
+    Ok(rinse::previous_downloads(&downloaded, cache))
+}
+
 #[tauri::command]
 fn remove_download(app: tauri::AppHandle, id: String) {
     update_downloads(&app, |queue| queue.remove(&id));
@@ -899,6 +920,7 @@ pub fn run() {
             refresh_show,
             download,
             get_download_queue,
+            get_previous_downloads,
             remove_download,
             move_download,
             cancel_download,

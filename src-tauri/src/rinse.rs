@@ -151,6 +151,18 @@ pub fn new_episodes(
         .collect()
 }
 
+/// The `downloaded` episodes found in `cache`, newest first. Ids the cache lacks are left out.
+pub fn previous_downloads(downloaded: &BTreeSet<String>, cache: Vec<Episode>) -> Vec<Episode> {
+    let mut episodes: Vec<_> = cache
+        .into_iter()
+        .filter(|e| downloaded.contains(&e.id))
+        .collect();
+
+    episodes.sort_by(|a, b| (&b.date, &b.time).cmp(&(&a.date, &a.time)));
+
+    episodes
+}
+
 /// The episodes waiting to be downloaded, worked strictly one at a time in arrival order.
 /// Sent to the frontend and saved to disk as is on every change.
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -1058,6 +1070,21 @@ mod tests {
             .collect();
 
         assert_eq!(ids, ["2241796"]);
+    }
+
+    #[test]
+    fn previous_downloads_lists_cached_downloads_newest_first() {
+        let downloaded = BTreeSet::from(["2241796".into(), "2315290".into(), "missing".into()]);
+        let mut cache = show_fixture();
+
+        cache.reverse();
+
+        let ids: Vec<_> = previous_downloads(&downloaded, cache)
+            .into_iter()
+            .map(|e| e.id)
+            .collect();
+
+        assert_eq!(ids, ["2315290", "2241796"]);
     }
 
     #[test]

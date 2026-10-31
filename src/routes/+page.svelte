@@ -384,6 +384,7 @@
 			onmove={(id, index) => invoke('move_download', { id, index }).catch(showError)}
 			oncancel={() => invoke('cancel_download').catch(showError)}
 			ondismiss={() => dismissFailure().catch(showError)}
+			onerror={showError}
 		/>
 	{:else if view === 'settings'}
 		<SettingsView
