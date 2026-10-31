@@ -397,6 +397,30 @@ fn disconnect_lastfm(app: tauri::AppHandle) -> Result<(), String> {
     store.save().map_err(|e| e.to_string())
 }
 
+/// Shows `episode` as "Scrobbling now" while connected. A session Last.fm rejects is dropped, and the Settings row told.
+#[tauri::command]
+async fn now_playing(app: tauri::AppHandle, episode: rinse::Episode) -> Result<(), String> {
+    let Some(session) = load_lastfm_session(&app)? else {
+        return Ok(());
+    };
+
+    match lastfm::now_playing(&session, &lastfm::track(&episode)).await {
+        Ok(()) => Ok(()),
+        Err(lastfm::Failure::InvalidSession) => {
+            disconnect_lastfm(app.clone())?;
+
+            app.emit("lastfm-disconnected", ())
+                .map_err(|e| e.to_string())
+        }
+        // Best effort, so being offline doesn't show an error
+        Err(lastfm::Failure::Other(e)) => {
+            eprintln!("Last.fm now playing failed: {e}");
+
+            Ok(())
+        }
+    }
+}
+
 /// The stored Last.fm session, kept apart from the settings so its key never reaches the webview.
 fn load_lastfm_session(app: &tauri::AppHandle) -> Result<Option<lastfm::Session>, String> {
     app.store("lastfm.json")
@@ -860,6 +884,7 @@ pub fn run() {
             get_lastfm,
             connect_lastfm,
             disconnect_lastfm,
+            now_playing,
             get_image_cache_size,
             clear_image_cache,
             subscribe,

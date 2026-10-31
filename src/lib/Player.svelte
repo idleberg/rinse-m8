@@ -162,6 +162,10 @@
 			onseeked={() => savePosition(false)}
 			onplay={() => {
 				playing = episode?.id ?? null;
+
+				if (episode) {
+					invoke('now_playing', { episode }).catch(onerror);
+				}
 			}}
 			onpause={() => {
 				playing = null;

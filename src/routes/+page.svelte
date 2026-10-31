@@ -287,6 +287,11 @@
 		})
 		.catch(showError);
 
+	// Sent when Last.fm rejects the session, for example after the user revoked access
+	listen('lastfm-disconnected', () => {
+		lastfm = { user: null };
+	});
+
 	invoke<Episode[]>('get_episodes')
 		.then(setEpisodes)
 		.catch(showError)

@@ -1,3 +1,5 @@
+use crate::rinse::Episode;
+use chrono::NaiveDate;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -39,6 +41,71 @@ fn parse<T: DeserializeOwned>(reply: &str) -> Result<T, (Option<u32>, String)> {
         Ok(Reply::Ok(body)) => Ok(body),
         Ok(Reply::Error { error, message }) => Err((Some(error), message)),
         Err(e) => Err((None, e.to_string())),
+    }
+}
+
+/// An episode as Last.fm sees it, one track named like the ID3 tags Rinse writes into its mp3s.
+#[derive(Debug, PartialEq)]
+pub struct Track {
+    pub artist: String,
+    pub album: String,
+    pub track: String,
+    /// Seconds.
+    pub duration: u32,
+}
+
+/// Built from the episode rather than read from its tags, which are typed by hand and missing on Rinse FR.
+pub fn track(episode: &Episode) -> Track {
+    let title = match &episode.display_title {
+        Some(display_title) => format!("{} {display_title}", episode.show_title),
+        None => episode.show_title.clone(),
+    };
+
+    let date = NaiveDate::parse_from_str(&episode.date, "%Y-%m-%d").map_or_else(
+        |_| episode.date.clone(),
+        |d| d.format("%-d %B %Y").to_string(),
+    );
+
+    Track {
+        artist: episode.station.clone(),
+        album: format!("{} Podcast", episode.station),
+        track: format!("{title} - {date}"),
+        duration: episode.length * 60,
+    }
+}
+
+/// Why a call made with a session failed.
+#[derive(Debug)]
+pub enum Failure {
+    /// Last.fm no longer accepts the session, for example because the user revoked access.
+    InvalidSession,
+    Other(String),
+}
+
+/// Sets `track` as "Scrobbling now" on the session's profile.
+pub async fn now_playing(session: &Session, track: &Track) -> Result<(), Failure> {
+    let duration = track.duration.to_string();
+    let mut params = vec![
+        ("artist", track.artist.as_str()),
+        ("album", &track.album),
+        ("track", &track.track),
+        ("sk", &session.key),
+    ];
+
+    // Rinse leaves some lengths out, which come through as 0
+    if track.duration > 0 {
+        params.push(("duration", &duration));
+    }
+
+    let reply = call("track.updateNowPlaying", &params)
+        .await
+        .map_err(Failure::Other)?;
+
+    match parse::<serde_json::Value>(&reply) {
+        Ok(_) => Ok(()),
+        // 9 is "Invalid session key"
+        Err((Some(9), _)) => Err(Failure::InvalidSession),
+        Err((_, message)) => Err(Failure::Other(message)),
     }
 }
 
@@ -144,6 +211,47 @@ mod tests {
         let reply = r#"{"message":"This token has not been authorized","error":14}"#;
 
         assert_eq!(parse_session(reply), Ok(None));
+    }
+
+    fn episode(show_title: &str, display_title: Option<&str>) -> Episode {
+        Episode {
+            id: "2319563".into(),
+            title: "Ignored".into(),
+            show_id: "1".into(),
+            show_slug: "show".into(),
+            show_title: show_title.into(),
+            display_title: display_title.map(Into::into),
+            station: "Kool FM".into(),
+            date: "2026-10-30".into(),
+            time: "22:00".into(),
+            length: 120,
+            rebroadcast: false,
+            genres: Vec::new(),
+            mp3: None,
+            scheduled: true,
+            mp3_found: None,
+        }
+    }
+
+    #[test]
+    fn an_episode_goes_out_as_one_track_named_like_rinse_tags() {
+        assert_eq!(
+            track(&episode("Amber's", Some("with Hutch"))),
+            Track {
+                artist: "Kool FM".into(),
+                album: "Kool FM Podcast".into(),
+                track: "Amber's with Hutch - 30 October 2026".into(),
+                duration: 7200,
+            }
+        );
+    }
+
+    #[test]
+    fn an_episode_without_a_display_title_is_named_after_the_show() {
+        assert_eq!(
+            track(&episode("Uncle Dugs", None)).track,
+            "Uncle Dugs - 30 October 2026"
+        );
     }
 
     #[test]

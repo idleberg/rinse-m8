@@ -13,9 +13,9 @@ If Last.fm rejects the session, for example because the user revoked access, the
 
 **Blocked by:** 42
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Playing an episode while connected shows it as "Scrobbling now" on Last.fm, with the artist, album and track above.
-- [ ] A unit test covers the mapping for an episode with a display title and one without.
-- [ ] Nothing is sent while disconnected.
+- [x] A unit test covers the mapping for an episode with a display title and one without.
+- [x] Nothing is sent while disconnected.
 - [ ] An invalid-session error disconnects, and the Settings row offers **Connect** again.
