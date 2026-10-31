@@ -5,6 +5,7 @@
 	import DownloadStatus from '../lib/DownloadStatus.svelte';
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
+	import Player from '../lib/Player.svelte';
 	import QueueView from '../lib/QueueView.svelte';
 	import SettingsView from '../lib/SettingsView.svelte';
 	import ShowDirectory from '../lib/ShowDirectory.svelte';
@@ -99,6 +100,8 @@
 			) ?? null
 		);
 	});
+
+	let player = $state<ReturnType<typeof Player>>();
 
 	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failed: null, downloaded: [] });
 
@@ -313,6 +316,7 @@
 				{subscribed}
 				{downloads}
 				{subscribing}
+				onplay={(episode) => player?.play(episode).catch(showError)}
 				ondownload={(episode) => download(episode).catch(showError)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
 				ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
@@ -373,6 +377,7 @@
 							{subscribed}
 							{downloads}
 							{subscribing}
+							onplay={(episode) => player?.play(episode).catch(showError)}
 							ondownload={(episode) => download(episode).catch(showError)}
 							onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
 							onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
@@ -393,6 +398,7 @@
 						{subscribed}
 						{downloads}
 						{subscribing}
+						onplay={(episode) => player?.play(episode).catch(showError)}
 						ondownload={(episode) => download(episode).catch(showError)}
 						onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
 						onopenshow={(show) => openShow(show).catch(showError)}
@@ -426,6 +432,7 @@
 				{subscribed}
 				{downloads}
 				{subscribing}
+				onplay={(episode) => player?.play(episode).catch(showError)}
 				ondownload={(episode) => download(episode).catch(showError)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
 				ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
@@ -434,11 +441,14 @@
 	{/if}
 </main>
 
-<DownloadStatus
-	{downloads}
-	ondismiss={() => dismissFailure().catch(showError)}
-	onviewqueue={() => openView('queue')}
-/>
+<div class="bars">
+	<DownloadStatus
+		{downloads}
+		ondismiss={() => dismissFailure().catch(showError)}
+		onviewqueue={() => openView('queue')}
+	/>
+	<Player bind:this={player} {episodes} onerror={showError} />
+</div>
 
 <style>
 	nav {
@@ -457,6 +467,12 @@
 	/* Fills the window below the nav, so the swapped background doesn't stop short */
 	main.inverted {
 		flex: 1;
+	}
+
+	.bars {
+		position: sticky;
+		bottom: 0;
+		margin-top: auto;
 	}
 
 	nav div {

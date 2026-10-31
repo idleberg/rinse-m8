@@ -4,10 +4,10 @@
 
 **Blocked by:** 02 (Schedule episodes in a table)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] The bottom bar uses a native `<audio>` element on the remote mp3; seeking works because the server supports byte ranges
-- [ ] The player state store holds per-episode positions (seconds) and the last-played id
-- [ ] The position is saved on time updates, throttled to about 5 s, and restored whenever an episode loads
-- [ ] At launch, the last-played episode loads paused at its saved position
+- [x] The bottom bar uses a native `<audio>` element on the remote mp3; seeking works because the server supports byte ranges
+- [x] The player state store holds per-episode positions (seconds) and the last-played id
+- [x] The position is saved on time updates, throttled to about 5 s, and restored whenever an episode loads
+- [x] At launch, the last-played episode loads paused at its saved position
 - [ ] Manual check: play, seek to the middle, quit, relaunch, press play; playback resumes there

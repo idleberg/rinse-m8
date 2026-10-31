@@ -17,6 +17,7 @@
 		subscribed,
 		downloads,
 		subscribing,
+		onplay,
 		ondownload,
 		onmark,
 		onopenshow,
@@ -30,6 +31,7 @@
 		downloads: DownloadQueue;
 		/** Show slugs. */
 		subscribing: string[];
+		onplay: (episode: Episode) => void;
 		ondownload: (episode: Episode) => void;
 		/** Adds a "Mark as downloaded" button next to each download button. */
 		onmark?: (episode: Episode) => void;
@@ -87,6 +89,11 @@
 				<td>
 					<div class="actions">
 						{#if episode.mp3}
+							<button class="icon" aria-label="Play" title="Play" onclick={() => onplay(episode)}>
+								<svg viewBox="0 0 16 16" aria-hidden="true">
+									<path d="M4 2.5l9 5.5-9 5.5z" />
+								</svg>
+							</button>
 							<DownloadButton {episode} {downloads} {ondownload} {onmark} />
 						{/if}
 						{#if ontogglesubscription}

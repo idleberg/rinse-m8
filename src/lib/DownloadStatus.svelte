@@ -27,8 +27,6 @@
 
 <style>
 	footer {
-		position: sticky;
-		bottom: 0;
 		display: flex;
 		gap: 0.5rem;
 		align-items: center;

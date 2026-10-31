@@ -12,6 +12,7 @@
 		subscribed,
 		downloads,
 		subscribing,
+		onplay,
 		ondownload,
 		onopenshow,
 		ontogglesubscription,
@@ -28,6 +29,7 @@
 		downloads: DownloadQueue;
 		/** Show slugs. */
 		subscribing: string[];
+		onplay: (episode: Episode) => void;
 		ondownload: (episode: Episode) => void;
 		onopenshow: (episode: Episode) => void;
 		ontogglesubscription: (show: Show) => void;
@@ -104,6 +106,7 @@
 	{subscribed}
 	{downloads}
 	{subscribing}
+	{onplay}
 	{ondownload}
 	{onopenshow}
 	ontogglesubscription={(episode) => ontogglesubscription(showOf(episode))}
