@@ -25,7 +25,7 @@
 	let paused = $state(true);
 	let currentTime = $state(0);
 	let duration = $state(0);
-	let showRemaining = $state(false);
+	let showRemaining = $state(localStorage.getItem('showRemaining') === 'true');
 	let savedAt = 0;
 
 	/** The current listen, which runs until another episode plays or this one ends: seconds heard, the playhead at the last count, and when it started in Unix seconds. */
@@ -179,6 +179,7 @@
 			title={showRemaining ? 'Show elapsed time' : 'Show remaining time'}
 			onclick={() => {
 				showRemaining = !showRemaining;
+				localStorage.setItem('showRemaining', String(showRemaining));
 			}}
 			><span class:hidden={!showRemaining}>-</span>{showRemaining
 				? formatTime((duration || 0) - currentTime)
