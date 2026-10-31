@@ -70,7 +70,7 @@ export type DownloadQueue = {
 	downloaded: string[];
 };
 
-export type SortColumn = 'date' | 'station' | 'show' | 'title';
+export type SortColumn = 'date' | 'time' | 'station' | 'show';
 
 export type Sort = { column: SortColumn; ascending: boolean };
 
@@ -79,9 +79,9 @@ export const defaultSort: Sort = { column: 'date', ascending: false };
 
 const sortKeys: Record<SortColumn, (episode: Episode) => string> = {
 	date: (episode) => `${episode.date} ${episode.time}`,
+	time: (episode) => episode.time,
 	station: (episode) => episode.station,
 	show: (episode) => episode.showTitle,
-	title: (episode) => episode.title,
 };
 
 /** A sorted copy of `episodes`. Ties keep their order in `episodes`. */

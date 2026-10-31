@@ -15,7 +15,7 @@
 		ontogglesubscription,
 	}: {
 		show: Show;
-		/** The show's filtered episodes. */
+		/** The show's filtered episodes, at least one. */
 		episodes: Episode[];
 		/** Show slugs. */
 		subscribed: string[];
@@ -41,24 +41,20 @@
 			onclick={() => ontogglesubscription(show)}
 		/>
 	</header>
-	{#if episodes.length}
-		<EpisodeTable
-			{episodes}
-			limit={expanded ? undefined : limit}
-			{subscribed}
-			{downloads}
-			{subscribing}
-			{ondownload}
-			{onmark}
-			onopenshow={(episode) => onopenshow(showOf(episode))}
-		/>
-		{#if episodes.length > limit}
-			<button aria-expanded={expanded} onclick={() => (expanded = !expanded)}>
-				{expanded ? 'Show less' : `Show all (${episodes.length})`}
-			</button>
-		{/if}
-	{:else}
-		<p>No episodes match the filters</p>
+	<EpisodeTable
+		{episodes}
+		limit={expanded ? undefined : limit}
+		{subscribed}
+		{downloads}
+		{subscribing}
+		{ondownload}
+		{onmark}
+		onopenshow={(episode) => onopenshow(showOf(episode))}
+	/>
+	{#if episodes.length > limit}
+		<button aria-expanded={expanded} onclick={() => (expanded = !expanded)}>
+			{expanded ? 'Show less' : `Show all (${episodes.length})`}
+		</button>
 	{/if}
 </section>
 
@@ -89,10 +85,5 @@
 
 	section > button {
 		margin-top: 0.5rem;
-	}
-
-	p {
-		text-transform: uppercase;
-		color: var(--muted);
 	}
 </style>

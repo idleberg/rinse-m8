@@ -40,9 +40,9 @@
 
 	const columns: [SortColumn, string][] = [
 		['date', 'Date'],
+		['time', 'Time'],
 		['station', 'Station'],
 		['show', 'Show'],
-		['title', 'Title'],
 	];
 
 	let sort = $state(defaultSort);
@@ -54,7 +54,7 @@
 	<thead>
 		<tr>
 			{#each columns as [column, label]}
-				<th aria-sort={sort.column === column ? (sort.ascending ? 'ascending' : 'descending') : undefined}>
+				<th class={column} aria-sort={sort.column === column ? (sort.ascending ? 'ascending' : 'descending') : undefined}>
 					<button class="sort" onclick={() => (sort = toggleSort(sort, column))}>
 						{label}
 						{#if sort.column === column}
@@ -71,15 +71,14 @@
 		{#each rows as episode (episode.id)}
 			<tr>
 				<td>{formatDate(episode.date)}</td>
+				<td>{episode.time}</td>
 				<td>{episode.station}</td>
 				<td>
 					<button class="link" onclick={() => onopenshow(episode)}>{episode.showTitle}</button>
 					{#if episode.displayTitle}
-						<br />
 						<span class="subtitle">{episode.displayTitle}</span>
 					{/if}
 				</td>
-				<td>{episode.title}</td>
 				<td>
 					{#if episode.rebroadcast}
 						<span class="badge">Rebroadcast</span>
@@ -126,6 +125,23 @@
 	/* A row of `-` characters: a 1ch-wide tile, mostly dash, repeated along the bottom edge */
 	td {
 		background: linear-gradient(to right, var(--muted) 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+	}
+
+	/* Each fits its longest value or heading with sort arrow, so columns line up across tables; Show takes the rest */
+	.date {
+		width: 10ch;
+	}
+
+	.time {
+		width: 6ch;
+	}
+
+	.station {
+		width: 9ch;
+	}
+
+	.show {
+		width: 100%;
 	}
 
 	.sort {

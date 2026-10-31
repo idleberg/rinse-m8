@@ -384,18 +384,21 @@
 				</section>
 			{/if}
 
+			<!-- The else only covers having no subscriptions, a show whose episodes are all filtered out is hidden -->
 			{#each showSections as section (section.show.slug)}
-				<ShowSection
-					show={section.show}
-					episodes={section.episodes}
-					{subscribed}
-					{downloads}
-					{subscribing}
-					ondownload={(episode) => download(episode).catch(showError)}
-					onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
-					onopenshow={(show) => openShow(show).catch(showError)}
-					ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
-				/>
+				{#if section.episodes.length}
+					<ShowSection
+						show={section.show}
+						episodes={section.episodes}
+						{subscribed}
+						{downloads}
+						{subscribing}
+						ondownload={(episode) => download(episode).catch(showError)}
+						onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
+						onopenshow={(show) => openShow(show).catch(showError)}
+						ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
+					/>
+				{/if}
 			{:else}
 				<p>
 					Subscribe to a show from the

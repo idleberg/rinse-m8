@@ -3,13 +3,13 @@
 import { expect, test } from 'bun:test';
 import { type Episode, defaultSort, sortEpisodes, toggleSort } from './episodes';
 
-function episode(id: string, date: string, title: string): Episode {
+function episode(id: string, date: string, show: string): Episode {
 	return {
 		id,
-		title,
+		title: id,
 		showId: id,
 		showSlug: id,
-		showTitle: id,
+		showTitle: show,
 		displayTitle: null,
 		station: 'Rinse FM',
 		date,
@@ -30,8 +30,8 @@ test('the default order is newest first', () => {
 });
 
 test('sorting by a column ascends, and sorting by it again reverses', () => {
-	const ascending = toggleSort(defaultSort, 'title');
+	const ascending = toggleSort(defaultSort, 'show');
 
 	expect(ids(sortEpisodes(episodes, ascending))).toEqual(['c', 'a', 'b']);
-	expect(ids(sortEpisodes(episodes, toggleSort(ascending, 'title')))).toEqual(['b', 'a', 'c']);
+	expect(ids(sortEpisodes(episodes, toggleSort(ascending, 'show')))).toEqual(['b', 'a', 'c']);
 });

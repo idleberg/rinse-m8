@@ -55,7 +55,6 @@
 			<tr>
 				<th>Date</th>
 				<th>Show</th>
-				<th>Title</th>
 				<th></th>
 			</tr>
 		</thead>
@@ -70,7 +69,6 @@
 							<span class="subtitle">{downloads.current.displayTitle}</span>
 						{/if}
 					</td>
-					<td>{downloads.current.title}</td>
 					<td>
 						<progress max="100" value={downloads.percent ?? undefined}></progress>
 						{downloads.percent === null ? 'Downloading…' : `${downloads.percent}%`}
@@ -107,7 +105,6 @@
 							<span class="subtitle">{episode.displayTitle}</span>
 						{/if}
 					</td>
-					<td>{episode.title}</td>
 					<td><button onclick={() => onremove(episode.id)}>Remove</button></td>
 				</tr>
 			{/each}
@@ -121,7 +118,6 @@
 							<span class="subtitle">{downloads.failed.displayTitle}</span>
 						{/if}
 					</td>
-					<td>{downloads.failed.title}</td>
 					<td>Failed <button onclick={ondismiss}>Dismiss</button></td>
 				</tr>
 			{/if}
