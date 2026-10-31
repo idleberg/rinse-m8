@@ -15,13 +15,13 @@
 		{#if downloads.waiting.length}
 			· {downloads.waiting.length} queued
 		{/if}
-		<button onclick={onviewqueue}>View queue</button>
+		<button type="button" onclick={onviewqueue}>View queue</button>
 	</footer>
 {:else if downloads.failed}
 	<footer role="alert">
 		Failed: {episodeLabel(downloads.failed)}
-		<button onclick={ondismiss}>Dismiss</button>
-		<button onclick={onviewqueue}>View queue</button>
+		<button type="button" onclick={ondismiss}>Dismiss</button>
+		<button type="button" onclick={onviewqueue}>View queue</button>
 	</footer>
 {/if}
 

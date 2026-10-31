@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 
-import { expect, test } from 'bun:test';
-import { type Episode, defaultSort, sortEpisodes, toggleSort } from './episodes';
+import { expect, test as it } from 'bun:test';
+import { available, dead, defaultSort, type Episode, sortEpisodes, toggleSort } from './episodes';
 
 function episode(id: string, date: string, show: string): Episode {
 	return {
@@ -19,19 +19,46 @@ function episode(id: string, date: string, show: string): Episode {
 		genres: [],
 		mp3: null,
 		scheduled: true,
+		mp3Found: null,
 	};
 }
 
-const episodes = [episode('a', '2026-10-01', 'Beta'), episode('b', '2026-10-03', 'Gamma'), episode('c', '2026-10-02', 'Alpha')];
-const ids = (list: Episode[]) => list.map((episode) => episode.id);
+const episodes = [
+	episode('a', '2026-10-01', 'Beta'),
+	episode('b', '2026-10-03', 'Gamma'),
+	episode('c', '2026-10-02', 'Alpha'),
+];
+const ids = (list: Episode[]) => list.map(({ id }) => id);
 
-test('the default order is newest first', () => {
+it('the default order is newest first', () => {
 	expect(ids(sortEpisodes(episodes, defaultSort))).toEqual(['b', 'c', 'a']);
 });
 
-test('sorting by a column ascends, and sorting by it again reverses', () => {
+it('sorting by a column ascends, and sorting by it again reverses', () => {
 	const ascending = toggleSort(defaultSort, 'show');
 
 	expect(ids(sortEpisodes(episodes, ascending))).toEqual(['c', 'a', 'b']);
 	expect(ids(sortEpisodes(episodes, toggleSort(ascending, 'show')))).toEqual(['b', 'a', 'c']);
+});
+
+it('an episode is available unless it has no mp3 or its last check got a 404', () => {
+	const mp3 = { ...episode('a', '2026-10-01', 'Beta'), mp3: 'https://replay.rinse.fm/uk/a.mp3' };
+
+	expect(available(mp3)).toBe(true);
+	expect(available({ ...mp3, mp3Found: true })).toBe(true);
+	expect(available({ ...mp3, mp3Found: false })).toBe(false);
+	expect(available(episode('a', '2026-10-01', 'Beta'))).toBe(false);
+});
+
+it('a missing episode is dead once it is over a month old', () => {
+	const missing = {
+		...episode('a', '2026-10-01', 'Beta'),
+		mp3: 'https://replay.rinse.fm/uk/a.mp3',
+		mp3Found: false,
+	};
+	const noon = (date: string) => new Date(`${date}T12:00:00Z`);
+
+	expect(dead(missing, noon('2026-10-31'))).toBe(false);
+	expect(dead(missing, noon('2026-11-01'))).toBe(true);
+	expect(dead({ ...missing, mp3Found: null }, noon('2026-12-01'))).toBe(false);
 });

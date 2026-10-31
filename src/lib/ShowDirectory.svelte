@@ -1,6 +1,6 @@
 <script lang="ts">
-	import SubscribeButton from './SubscribeButton.svelte';
 	import type { DirectoryShow, Show } from './episodes';
+	import SubscribeButton from './SubscribeButton.svelte';
 
 	let {
 		shows,
@@ -35,7 +35,7 @@
 		<tbody>
 			{#each shows as show (show.slug)}
 				<tr>
-					<td><button class="link" onclick={() => onopenshow(show)}>{show.title}</button></td>
+					<td><button type="button" class="link" onclick={() => onopenshow(show)}>{show.title}</button></td>
 					<td>{show.station}</td>
 					<td>{show.genres.join(', ')}</td>
 					<td class="actions">

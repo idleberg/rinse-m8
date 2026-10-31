@@ -1,6 +1,8 @@
 mod rinse;
 
 use chrono::Timelike;
+use futures_util::StreamExt;
+use std::collections::BTreeSet;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::menu::MenuBuilder;
@@ -47,15 +49,30 @@ fn merge(
     app: &tauri::AppHandle,
     episodes: Vec<rinse::Episode>,
 ) -> Result<Vec<rinse::Episode>, String> {
+    let cache = app.store("episodes.json").map_err(|e| e.to_string())?;
+    let merged = episodes
+        .into_iter()
+        .map(|episode| {
+            let cached = cache
+                .get(&episode.id)
+                .and_then(|v| serde_json::from_value(v).ok());
+
+            rinse::merge_episode(cached, episode)
+        })
+        .collect();
+
+    save_episodes(app, merged)
+}
+
+/// Writes `episodes` to the cache as they are and returns the whole cache.
+fn save_episodes(
+    app: &tauri::AppHandle,
+    episodes: Vec<rinse::Episode>,
+) -> Result<Vec<rinse::Episode>, String> {
     // ponytail: unbounded cache keyed by id, prune by age if it grows large
     let cache = app.store("episodes.json").map_err(|e| e.to_string())?;
 
     for episode in episodes {
-        let cached = cache
-            .get(&episode.id)
-            .and_then(|v| serde_json::from_value(v).ok());
-        let episode = rinse::merge_episode(cached, episode);
-
         let value = serde_json::to_value(&episode).map_err(|e| e.to_string())?;
         cache.set(episode.id, value);
     }
@@ -67,6 +84,58 @@ fn merge(
         .into_iter()
         .filter_map(|v| serde_json::from_value(v).ok())
         .collect())
+}
+
+/// Checks each episode's mp3 a few at a time, records the results in the cache and returns the whole cache.
+async fn check_mp3s(
+    app: &tauri::AppHandle,
+    episodes: Vec<rinse::Episode>,
+) -> Result<Vec<rinse::Episode>, String> {
+    let checked = futures_util::stream::iter(episodes)
+        .map(|episode| async move {
+            rinse::Episode {
+                mp3_found: rinse::check_mp3(&episode).await,
+                ..episode
+            }
+        })
+        .buffer_unordered(8)
+        .collect::<Vec<_>>()
+        .await;
+
+    // Recorded on the cached copy, so a fetch merged in during the checks stays, and dropped if the link changed meanwhile
+    let cache = app.store("episodes.json").map_err(|e| e.to_string())?;
+    let current = checked
+        .into_iter()
+        .filter_map(|checked| {
+            let cached: rinse::Episode = serde_json::from_value(cache.get(&checked.id)?).ok()?;
+
+            (cached.mp3 == checked.mp3).then_some(rinse::Episode {
+                mp3_found: checked.mp3_found,
+                ..cached
+            })
+        })
+        .collect();
+
+    save_episodes(app, current)
+}
+
+/// Checks the cached episode's mp3 again after a download or playback of it failed, and sends the whole cache to the views.
+#[tauri::command]
+async fn recheck_mp3(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    let cached = app
+        .store("episodes.json")
+        .map_err(|e| e.to_string())?
+        .get(&id)
+        .and_then(|v| serde_json::from_value(v).ok());
+
+    let Some(episode) = cached else {
+        return Ok(());
+    };
+
+    let cache = check_mp3s(&app, vec![episode]).await?;
+
+    app.emit("episodes-updated", cache)
+        .map_err(|e| e.to_string())
 }
 
 /// Adds the episode to the download queue with the current download folder, unless it's already in it.
@@ -222,11 +291,15 @@ async fn download_worker(
             continue;
         };
 
+        update_downloads(&app, |queue| queue.finish(result.is_ok()));
+
         if let Err(e) = &result {
             eprintln!("downloading {} failed: {e}", download.episode.id);
-        }
 
-        update_downloads(&app, |queue| queue.finish(result.is_ok()));
+            if let Err(e) = recheck_mp3(app.clone(), download.episode.id).await {
+                eprintln!("rechecking the mp3 failed: {e}");
+            }
+        }
     }
 }
 
@@ -442,8 +515,8 @@ async fn poll(app: tauri::AppHandle) {
     }
 }
 
-/// Fetches the schedule and every subscribed show, pushes the whole cache to the views, notifies once per new episode
-/// and queues the new episodes for download when auto-download is on and a folder is set.
+/// Fetches the schedule and every subscribed show, checks the mp3s that are due, pushes the whole cache to the views,
+/// notifies once per new available episode and queues those for download when auto-download is on and a folder is set.
 async fn update_episodes(app: &tauri::AppHandle) -> Result<(), String> {
     let subscriptions = load_settings(app, serde_json::Map::new())?.subscriptions;
     let schedule = rinse::fetch_schedule().await.unwrap_or_else(|e| {
@@ -459,8 +532,23 @@ async fn update_episodes(app: &tauri::AppHandle) -> Result<(), String> {
         }
     }
 
-    // Only the show fetches look for new episodes, since the schedule repeats some of them
-    let cache = merge(app, schedule.into_iter().chain(fetched.clone()).collect())?;
+    let today = chrono::Utc::now()
+        .with_timezone(&chrono_tz::Europe::London)
+        .date_naive();
+    let due = merge(app, schedule.into_iter().chain(fetched.clone()).collect())?
+        .into_iter()
+        .filter(|e| e.check_due(today))
+        .collect();
+    let cache = check_mp3s(app, due).await?;
+
+    // Only the show fetches look for new episodes, since the schedule repeats some of them. Taken from the cache for
+    // their check results, so a missing episode stays unseen and notifies once Rinse fixes it.
+    let ids: BTreeSet<_> = fetched.into_iter().map(|e| e.id).collect();
+    let fetched: Vec<_> = cache
+        .iter()
+        .filter(|e| ids.contains(&e.id))
+        .cloned()
+        .collect();
     let mut unseen = Vec::new();
     let mut auto_download = false;
 
@@ -633,6 +721,7 @@ pub fn run() {
             cancel_download,
             mark_downloaded,
             dismiss_download_failure,
+            recheck_mp3,
             get_settings,
             set_settings,
             get_image_cache_size,

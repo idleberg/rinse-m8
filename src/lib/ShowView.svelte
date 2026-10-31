@@ -1,8 +1,8 @@
 <script lang="ts">
 	import EpisodeFilters from './EpisodeFilters.svelte';
 	import EpisodeTable from './EpisodeTable.svelte';
+	import { available, type DownloadQueue, type Episode, paragraphs, type Show, type ShowDetails, showOf } from './episodes';
 	import SubscribeButton from './SubscribeButton.svelte';
-	import { type DownloadQueue, type Episode, type Show, type ShowDetails, paragraphs, showOf } from './episodes';
 
 	let {
 		show,
@@ -12,7 +12,9 @@
 		subscribed,
 		downloads,
 		subscribing,
+		playing,
 		onplay,
+		onpause,
 		ondownload,
 		onopenshow,
 		ontogglesubscription,
@@ -29,7 +31,9 @@
 		downloads: DownloadQueue;
 		/** Show slugs. */
 		subscribing: string[];
+		playing: string | null;
 		onplay: (episode: Episode) => void;
+		onpause: () => void;
 		ondownload: (episode: Episode) => void;
 		onopenshow: (episode: Episode) => void;
 		ontogglesubscription: (show: Show) => void;
@@ -42,7 +46,7 @@
 	const visibleEpisodes = $derived(
 		episodes.filter(
 			(episode) =>
-				episode.showSlug === show.slug && (!mp3Only || episode.mp3) && (!hideRebroadcasts || !episode.rebroadcast),
+				episode.showSlug === show.slug && (!mp3Only || available(episode)) && (!(hideRebroadcasts && episode.rebroadcast)),
 		),
 	);
 
@@ -54,7 +58,10 @@
 	let clip: HTMLDivElement | undefined = $state();
 
 	$effect(() => {
+		// Read so the clip is measured again when either changes
+		// biome-ignore lint/suspicious/noUnusedExpressions: Svelte tracks reads as dependencies
 		description;
+		// biome-ignore lint/suspicious/noUnusedExpressions: as above
 		imageHeight;
 
 		if (clip && !expanded) {
@@ -64,7 +71,7 @@
 </script>
 
 <header>
-	<button onclick={onback}>Back</button>
+	<button type="button" onclick={onback}>Back</button>
 	<h1>{show.title}</h1>
 	<SubscribeButton
 		subscribed={subscribed.includes(show.slug)}
@@ -91,7 +98,9 @@
 				{/each}
 			</div>
 			{#if expanded || overflowing}
-				<button onclick={() => (expanded = !expanded)}>{expanded ? 'Show less' : 'Show more'}</button>
+				<button type="button" onclick={() => {
+						expanded = !expanded;
+					}}>{expanded ? 'Show less' : 'Show more'}</button>
 			{/if}
 		</div>
 	</section>
@@ -106,7 +115,9 @@
 	{subscribed}
 	{downloads}
 	{subscribing}
+	{playing}
 	{onplay}
+	{onpause}
 	{ondownload}
 	{onopenshow}
 	ontogglesubscription={(episode) => ontogglesubscription(showOf(episode))}

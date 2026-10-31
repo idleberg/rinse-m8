@@ -1,7 +1,7 @@
 <script lang="ts">
 	import EpisodeTable from './EpisodeTable.svelte';
-	import SubscribeButton from './SubscribeButton.svelte';
 	import { type DownloadQueue, type Episode, type Show, showOf } from './episodes';
+	import SubscribeButton from './SubscribeButton.svelte';
 
 	let {
 		show,
@@ -9,7 +9,9 @@
 		subscribed,
 		downloads,
 		subscribing,
+		playing,
 		onplay,
+		onpause,
 		ondownload,
 		onmark,
 		onopenshow,
@@ -23,7 +25,9 @@
 		downloads: DownloadQueue;
 		/** Show slugs. */
 		subscribing: string[];
+		playing: string | null;
 		onplay: (episode: Episode) => void;
+		onpause: () => void;
 		ondownload: (episode: Episode) => void;
 		onmark: (episode: Episode) => void;
 		onopenshow: (show: Show) => void;
@@ -36,7 +40,7 @@
 
 <section>
 	<header>
-		<h2><button class="link" onclick={() => onopenshow(show)}>{show.title}</button></h2>
+		<h2><button type="button" class="link" onclick={() => onopenshow(show)}>{show.title}</button></h2>
 		<SubscribeButton
 			subscribed={subscribed.includes(show.slug)}
 			disabled={subscribing.includes(show.slug)}
@@ -49,13 +53,17 @@
 		{subscribed}
 		{downloads}
 		{subscribing}
+		{playing}
 		{onplay}
+		{onpause}
 		{ondownload}
 		{onmark}
 		onopenshow={(episode) => onopenshow(showOf(episode))}
 	/>
 	{#if episodes.length > limit}
-		<button aria-expanded={expanded} onclick={() => (expanded = !expanded)}>
+		<button type="button" aria-expanded={expanded} onclick={() => {
+			expanded = !expanded;
+		}}>
 			{expanded ? 'Show less' : `Show all (${episodes.length})`}
 		</button>
 	{/if}

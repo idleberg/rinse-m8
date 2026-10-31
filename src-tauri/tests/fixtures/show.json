@@ -1,474 +1,453 @@
 {
-  "entry": {
-    "__typename": "show_show_Entry",
-    "id": "2071218",
-    "title": "Dubquake Records",
-    "extract": "Cutting-edge dub and reggae powered by O.B.F Sound System.",
-    "description": "<p>Founded by O.B.F Sound System, Dubquake Records has established itself as one of the driving forces in contemporary dub and reggae. Based in Lyon (FR), the label’s mission is to nurture and expand sound system culture through its musical output, events and documentary films.</p>\n<p>Dubquake parties are held twice a year at L’Usine in Geneva (CH), a renowned autonomous cultural center. Since 2006, these sessions have offered a unique sound system experience that draws a dedicated international audience and inspired the creation of the record label in 2014. The Dubquake experience is now expanding beyond, with events taking place in Paris and around the globe.<br />On air since 2024, Dubquake brings its cutting-edge dub and reggae to Rinse France.<br /></p>",
-    "slug": "dubquake-records",
-    "seomatic": {
-      "__typename": "SeomaticType",
-      "metaTitleContainer": "<title>Dubquake Records | Rinse FM</title>",
-      "metaTagContainer": "<meta name=\"generator\" content=\"SEOmatic\"><meta name=\"description\" content=\"Cutting-edge dub and reggae powered by O.B.F Sound System.\"><meta name=\"referrer\" content=\"no-referrer-when-downgrade\"><meta name=\"robots\" content=\"all\"><meta content=\"en_GB\" property=\"og:locale\"><meta content=\"Rinse FM\" property=\"og:site_name\"><meta content=\"website\" property=\"og:type\"><meta content=\"https://admin.rinse.fm/shows/dubquake-records\" property=\"og:url\"><meta content=\"Dubquake Records\" property=\"og:title\"><meta content=\"Cutting-edge dub and reggae powered by O.B.F Sound System.\" property=\"og:description\"><meta content=\"https://rinse-platform-assets.s3.amazonaws.com/images/_1200x630_fit_center-center_82_none/Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg?mtime=1761652112\" property=\"og:image\"><meta content=\"933\" property=\"og:image:width\"><meta content=\"630\" property=\"og:image:height\"><meta name=\"twitter:card\" content=\"summary\"><meta name=\"twitter:site\" content=\"@rinsefm\"><meta name=\"twitter:creator\" content=\"@rinsefm\"><meta name=\"twitter:title\" content=\"Dubquake Records\"><meta name=\"twitter:description\" content=\"Cutting-edge dub and reggae powered by O.B.F Sound System.\"><meta name=\"twitter:image\" content=\"https://rinse-platform-assets.s3.amazonaws.com/images/_800x800_fit_center-center_82_none/Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg?mtime=1761652112\"><meta name=\"twitter:image:width\" content=\"800\"><meta name=\"twitter:image:height\" content=\"540\">"
-    },
-    "postDate": "2024-11-14T14:33:00+00:00",
-    "featuredImage": [
-      {
-        "__typename": "media_Asset",
-        "filename": "Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg",
-        "width": 1818,
-        "height": 1228,
-        "focalPoint": [
-          0.5,
-          0.5
-        ],
-        "hasFocalPoint": false
-      }
-    ],
-    "defaultEpisodeImage": [],
-    "gallery": [],
-    "genreTag": [
-      {
-        "__typename": "genre_Tag",
-        "slug": "reggae",
-        "title": "Reggae"
-      },
-      {
-        "__typename": "genre_Tag",
-        "slug": "dub",
-        "title": "Dub"
-      },
-      {
-        "__typename": "genre_Tag",
-        "slug": "bass",
-        "title": "Bass"
-      }
-    ],
-    "relatedShows": [],
-    "colourTheme": [],
-    "externalLinks": [],
-    "channel": [
-      {
-        "__typename": "channel_channel_Entry",
-        "slug": "france"
-      }
-    ],
-    "spotifyPlaylistEmbed": null
-  },
-  "episodes": [
-    {
-      "__typename": "episode_episode_Entry",
-      "id": "2315290",
-      "slug": "dubquake-records-25-10-2026-1600",
-      "featuredImage": [
-        {
-          "__typename": "media_Asset",
-          "filename": "Dubquake-Records_O.B.F-x-Terremoto-Sao-Paolo-Special_Artwork-Zach-ODwyer.jpg",
-          "width": 1080,
-          "height": 1080,
-          "focalPoint": [
-            0.5,
-            0.5
-          ],
-          "hasFocalPoint": false
-        }
-      ],
-      "title": "Dubquake Records - 25/10/2026 - 16:00",
-      "artistTitle": null,
-      "displayTitle": "O.B.F x Terremoto - São Paulo Special",
-      "subtitle": null,
-      "extract": null,
-      "episodeDate": "2026-10-24T23:00:00+00:00",
-      "episodeTime": "2026-10-30T16:00:00+00:00",
-      "episodeLength": 60,
-      "isRebroadcast": false,
-      "fileUrl": "https://replay.rinse.fm/france/DubquakeRecordsO.B.FxTerremotoSãoPauloSpecial251026(VBR).mp3",
-      "youtubeStreamUrl": null,
-      "parentShow": [
-        {
-          "__typename": "show_show_Entry",
-          "id": "2071218",
-          "url": "https://admin.rinse.fm/shows/dubquake-records",
-          "slug": "dubquake-records",
-          "title": "Dubquake Records",
-          "showStatus": "hidden",
-          "featuredImage": [
-            {
-              "__typename": "media_Asset",
-              "filename": "Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg",
-              "width": 1818,
-              "height": 1228,
-              "focalPoint": [
-                0.5,
-                0.5
-              ],
-              "hasFocalPoint": false
-            }
-          ],
-          "defaultEpisodeImage": [],
-          "extract": "Cutting-edge dub and reggae powered by O.B.F Sound System.",
-          "genreTag": [
-            {
-              "__typename": "genre_Tag",
-              "slug": "reggae",
-              "title": "Reggae"
-            },
-            {
-              "__typename": "genre_Tag",
-              "slug": "dub",
-              "title": "Dub"
-            },
-            {
-              "__typename": "genre_Tag",
-              "slug": "bass",
-              "title": "Bass"
-            }
-          ],
-          "channel": [
-            {
-              "__typename": "channel_channel_Entry",
-              "slug": "france"
-            }
-          ]
-        }
-      ],
-      "channel": [
-        {
-          "__typename": "channel_channel_Entry",
-          "id": "32",
-          "lft": 4,
-          "defaultTimezoneOffset": "Europe/Paris",
-          "channelLaunchDateTime": null,
-          "channelPagePreviewDateTime": null,
-          "isPermanentChannel": true,
-          "streamerMountPoint": "https://radio10.pro-fhi.net/flux-trmqtiat/stream",
-          "title": "France",
-          "extract": "France Extract",
-          "slug": "france",
-          "channelColour": [
-            {
-              "__typename": "colour_Entry",
-              "id": "95203",
-              "title": "Rinse Steel",
-              "slug": "rinse-steel"
-            }
-          ]
-        }
-      ],
-      "genreTag": [
-        {
-          "__typename": "genre_Tag",
-          "title": "Dub",
-          "slug": "dub",
-          "isFeaturedTag": false,
-          "isVisibleTag": true
-        },
-        {
-          "__typename": "genre_Tag",
-          "title": "Reggae",
-          "slug": "reggae",
-          "isFeaturedTag": false,
-          "isVisibleTag": true
-        }
-      ],
-      "originalEpisode": []
-    },
-    {
-      "__typename": "episode_episode_Entry",
-      "id": "2284193",
-      "slug": "dubquake-records-02-07-2026-1700",
-      "featuredImage": [],
-      "title": "Dubquake Records - 02/07/2026 - 17:00",
-      "artistTitle": null,
-      "displayTitle": null,
-      "subtitle": null,
-      "extract": null,
-      "episodeDate": "2026-07-01T23:00:00+00:00",
-      "episodeTime": "2026-10-30T17:00:00+00:00",
-      "episodeLength": 60,
-      "isRebroadcast": false,
-      "fileUrl": null,
-      "youtubeStreamUrl": null,
-      "parentShow": [
-        {
-          "__typename": "show_show_Entry",
-          "id": "2071218",
-          "url": "https://admin.rinse.fm/shows/dubquake-records",
-          "slug": "dubquake-records",
-          "title": "Dubquake Records",
-          "showStatus": "hidden",
-          "featuredImage": [
-            {
-              "__typename": "media_Asset",
-              "filename": "Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg",
-              "width": 1818,
-              "height": 1228,
-              "focalPoint": [
-                0.5,
-                0.5
-              ],
-              "hasFocalPoint": false
-            }
-          ],
-          "defaultEpisodeImage": [],
-          "extract": "Cutting-edge dub and reggae powered by O.B.F Sound System.",
-          "genreTag": [
-            {
-              "__typename": "genre_Tag",
-              "slug": "reggae",
-              "title": "Reggae"
-            },
-            {
-              "__typename": "genre_Tag",
-              "slug": "dub",
-              "title": "Dub"
-            },
-            {
-              "__typename": "genre_Tag",
-              "slug": "bass",
-              "title": "Bass"
-            }
-          ],
-          "channel": [
-            {
-              "__typename": "channel_channel_Entry",
-              "slug": "france"
-            }
-          ]
-        }
-      ],
-      "channel": [
-        {
-          "__typename": "channel_channel_Entry",
-          "id": "32",
-          "lft": 4,
-          "defaultTimezoneOffset": "Europe/Paris",
-          "channelLaunchDateTime": null,
-          "channelPagePreviewDateTime": null,
-          "isPermanentChannel": true,
-          "streamerMountPoint": "https://radio10.pro-fhi.net/flux-trmqtiat/stream",
-          "title": "France",
-          "extract": "France Extract",
-          "slug": "france",
-          "channelColour": [
-            {
-              "__typename": "colour_Entry",
-              "id": "95203",
-              "title": "Rinse Steel",
-              "slug": "rinse-steel"
-            }
-          ]
-        }
-      ],
-      "genreTag": [],
-      "originalEpisode": []
-    },
-    {
-      "__typename": "episode_episode_Entry",
-      "id": "2241796",
-      "slug": "dubquake-records-22-02-2026-1600",
-      "featuredImage": [
-        {
-          "__typename": "media_Asset",
-          "filename": "Dubquake-Records_Stef-O.B.F_Artwork-Zach-ODwyer.jpg",
-          "width": 3000,
-          "height": 3000,
-          "focalPoint": [
-            0.5,
-            0.5
-          ],
-          "hasFocalPoint": false
-        }
-      ],
-      "title": "Dubquake Records - 22/02/2026 - 16:00",
-      "artistTitle": null,
-      "displayTitle": "Stef O.B.F",
-      "subtitle": null,
-      "extract": null,
-      "episodeDate": "2026-02-22T00:00:00+00:00",
-      "episodeTime": "2026-10-30T16:00:00+00:00",
-      "episodeLength": 60,
-      "isRebroadcast": false,
-      "fileUrl": "https://replay.rinse.fm/france/Dubquake220226(320).mp3",
-      "youtubeStreamUrl": null,
-      "parentShow": [
-        {
-          "__typename": "show_show_Entry",
-          "id": "2071218",
-          "url": "https://admin.rinse.fm/shows/dubquake-records",
-          "slug": "dubquake-records",
-          "title": "Dubquake Records",
-          "showStatus": "hidden",
-          "featuredImage": [
-            {
-              "__typename": "media_Asset",
-              "filename": "Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg",
-              "width": 1818,
-              "height": 1228,
-              "focalPoint": [
-                0.5,
-                0.5
-              ],
-              "hasFocalPoint": false
-            }
-          ],
-          "defaultEpisodeImage": [],
-          "extract": "Cutting-edge dub and reggae powered by O.B.F Sound System.",
-          "genreTag": [
-            {
-              "__typename": "genre_Tag",
-              "slug": "reggae",
-              "title": "Reggae"
-            },
-            {
-              "__typename": "genre_Tag",
-              "slug": "dub",
-              "title": "Dub"
-            },
-            {
-              "__typename": "genre_Tag",
-              "slug": "bass",
-              "title": "Bass"
-            }
-          ],
-          "channel": [
-            {
-              "__typename": "channel_channel_Entry",
-              "slug": "france"
-            }
-          ]
-        }
-      ],
-      "channel": [
-        {
-          "__typename": "channel_channel_Entry",
-          "id": "32",
-          "lft": 4,
-          "defaultTimezoneOffset": "Europe/Paris",
-          "channelLaunchDateTime": null,
-          "channelPagePreviewDateTime": null,
-          "isPermanentChannel": true,
-          "streamerMountPoint": "https://radio10.pro-fhi.net/flux-trmqtiat/stream",
-          "title": "France",
-          "extract": "France Extract",
-          "slug": "france",
-          "channelColour": [
-            {
-              "__typename": "colour_Entry",
-              "id": "95203",
-              "title": "Rinse Steel",
-              "slug": "rinse-steel"
-            }
-          ]
-        }
-      ],
-      "genreTag": [
-        {
-          "__typename": "genre_Tag",
-          "title": "Reggae",
-          "slug": "reggae",
-          "isFeaturedTag": false,
-          "isVisibleTag": true
-        },
-        {
-          "__typename": "genre_Tag",
-          "title": "Dub",
-          "slug": "dub",
-          "isFeaturedTag": false,
-          "isVisibleTag": true
-        }
-      ],
-      "originalEpisode": []
-    },
-    {
-      "__typename": "episode_episode_Entry",
-      "id": "2101661",
-      "slug": "the-dubquake-show-24-01-2025-2000",
-      "featuredImage": [],
-      "title": "The Dubquake Show - 24/01/2025 - 20:00",
-      "artistTitle": null,
-      "displayTitle": null,
-      "subtitle": null,
-      "extract": null,
-      "episodeDate": "2025-01-24T00:00:00+00:00",
-      "episodeTime": "2026-10-30T20:00:00+00:00",
-      "episodeLength": 60,
-      "isRebroadcast": false,
-      "fileUrl": "https://replay.rinse.fm/france/",
-      "youtubeStreamUrl": null,
-      "parentShow": [
-        {
-          "__typename": "show_show_Entry",
-          "id": "2071218",
-          "url": "https://admin.rinse.fm/shows/dubquake-records",
-          "slug": "dubquake-records",
-          "title": "Dubquake Records",
-          "showStatus": "hidden",
-          "featuredImage": [
-            {
-              "__typename": "media_Asset",
-              "filename": "Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg",
-              "width": 1818,
-              "height": 1228,
-              "focalPoint": [
-                0.5,
-                0.5
-              ],
-              "hasFocalPoint": false
-            }
-          ],
-          "defaultEpisodeImage": [],
-          "extract": "Cutting-edge dub and reggae powered by O.B.F Sound System.",
-          "genreTag": [
-            {
-              "__typename": "genre_Tag",
-              "slug": "reggae",
-              "title": "Reggae"
-            },
-            {
-              "__typename": "genre_Tag",
-              "slug": "dub",
-              "title": "Dub"
-            },
-            {
-              "__typename": "genre_Tag",
-              "slug": "bass",
-              "title": "Bass"
-            }
-          ],
-          "channel": [
-            {
-              "__typename": "channel_channel_Entry",
-              "slug": "france"
-            }
-          ]
-        }
-      ],
-      "channel": [
-        {
-          "__typename": "channel_channel_Entry",
-          "id": "32",
-          "lft": 4,
-          "defaultTimezoneOffset": "Europe/Paris",
-          "channelLaunchDateTime": null,
-          "channelPagePreviewDateTime": null,
-          "isPermanentChannel": true,
-          "streamerMountPoint": "https://radio10.pro-fhi.net/flux-trmqtiat/stream",
-          "title": "France",
-          "extract": "France Extract",
-          "slug": "france",
-          "channelColour": [
-            {
-              "__typename": "colour_Entry",
-              "id": "95203",
-              "title": "Rinse Steel",
-              "slug": "rinse-steel"
-            }
-          ]
-        }
-      ],
-      "genreTag": [],
-      "originalEpisode": []
-    }
-  ]
+	"entry": {
+		"__typename": "show_show_Entry",
+		"id": "2071218",
+		"title": "Dubquake Records",
+		"extract": "Cutting-edge dub and reggae powered by O.B.F Sound System.",
+		"description": "<p>Founded by O.B.F Sound System, Dubquake Records has established itself as one of the driving forces in contemporary dub and reggae. Based in Lyon (FR), the label’s mission is to nurture and expand sound system culture through its musical output, events and documentary films.</p>\n<p>Dubquake parties are held twice a year at L’Usine in Geneva (CH), a renowned autonomous cultural center. Since 2006, these sessions have offered a unique sound system experience that draws a dedicated international audience and inspired the creation of the record label in 2014. The Dubquake experience is now expanding beyond, with events taking place in Paris and around the globe.<br />On air since 2024, Dubquake brings its cutting-edge dub and reggae to Rinse France.<br /></p>",
+		"slug": "dubquake-records",
+		"seomatic": {
+			"__typename": "SeomaticType",
+			"metaTitleContainer": "<title>Dubquake Records | Rinse FM</title>",
+			"metaTagContainer": "<meta name=\"generator\" content=\"SEOmatic\"><meta name=\"description\" content=\"Cutting-edge dub and reggae powered by O.B.F Sound System.\"><meta name=\"referrer\" content=\"no-referrer-when-downgrade\"><meta name=\"robots\" content=\"all\"><meta content=\"en_GB\" property=\"og:locale\"><meta content=\"Rinse FM\" property=\"og:site_name\"><meta content=\"website\" property=\"og:type\"><meta content=\"https://admin.rinse.fm/shows/dubquake-records\" property=\"og:url\"><meta content=\"Dubquake Records\" property=\"og:title\"><meta content=\"Cutting-edge dub and reggae powered by O.B.F Sound System.\" property=\"og:description\"><meta content=\"https://rinse-platform-assets.s3.amazonaws.com/images/_1200x630_fit_center-center_82_none/Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg?mtime=1761652112\" property=\"og:image\"><meta content=\"933\" property=\"og:image:width\"><meta content=\"630\" property=\"og:image:height\"><meta name=\"twitter:card\" content=\"summary\"><meta name=\"twitter:site\" content=\"@rinsefm\"><meta name=\"twitter:creator\" content=\"@rinsefm\"><meta name=\"twitter:title\" content=\"Dubquake Records\"><meta name=\"twitter:description\" content=\"Cutting-edge dub and reggae powered by O.B.F Sound System.\"><meta name=\"twitter:image\" content=\"https://rinse-platform-assets.s3.amazonaws.com/images/_800x800_fit_center-center_82_none/Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg?mtime=1761652112\"><meta name=\"twitter:image:width\" content=\"800\"><meta name=\"twitter:image:height\" content=\"540\">"
+		},
+		"postDate": "2024-11-14T14:33:00+00:00",
+		"featuredImage": [
+			{
+				"__typename": "media_Asset",
+				"filename": "Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg",
+				"width": 1818,
+				"height": 1228,
+				"focalPoint": [0.5, 0.5],
+				"hasFocalPoint": false
+			}
+		],
+		"defaultEpisodeImage": [],
+		"gallery": [],
+		"genreTag": [
+			{
+				"__typename": "genre_Tag",
+				"slug": "reggae",
+				"title": "Reggae"
+			},
+			{
+				"__typename": "genre_Tag",
+				"slug": "dub",
+				"title": "Dub"
+			},
+			{
+				"__typename": "genre_Tag",
+				"slug": "bass",
+				"title": "Bass"
+			}
+		],
+		"relatedShows": [],
+		"colourTheme": [],
+		"externalLinks": [],
+		"channel": [
+			{
+				"__typename": "channel_channel_Entry",
+				"slug": "france"
+			}
+		],
+		"spotifyPlaylistEmbed": null
+	},
+	"episodes": [
+		{
+			"__typename": "episode_episode_Entry",
+			"id": "2315290",
+			"slug": "dubquake-records-25-10-2026-1600",
+			"featuredImage": [
+				{
+					"__typename": "media_Asset",
+					"filename": "Dubquake-Records_O.B.F-x-Terremoto-Sao-Paolo-Special_Artwork-Zach-ODwyer.jpg",
+					"width": 1080,
+					"height": 1080,
+					"focalPoint": [0.5, 0.5],
+					"hasFocalPoint": false
+				}
+			],
+			"title": "Dubquake Records - 25/10/2026 - 16:00",
+			"artistTitle": null,
+			"displayTitle": "O.B.F x Terremoto - São Paulo Special",
+			"subtitle": null,
+			"extract": null,
+			"episodeDate": "2026-10-24T23:00:00+00:00",
+			"episodeTime": "2026-10-30T16:00:00+00:00",
+			"episodeLength": 60,
+			"isRebroadcast": false,
+			"fileUrl": "https://replay.rinse.fm/france/DubquakeRecordsO.B.FxTerremotoSãoPauloSpecial251026(VBR).mp3",
+			"youtubeStreamUrl": null,
+			"parentShow": [
+				{
+					"__typename": "show_show_Entry",
+					"id": "2071218",
+					"url": "https://admin.rinse.fm/shows/dubquake-records",
+					"slug": "dubquake-records",
+					"title": "Dubquake Records",
+					"showStatus": "hidden",
+					"featuredImage": [
+						{
+							"__typename": "media_Asset",
+							"filename": "Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg",
+							"width": 1818,
+							"height": 1228,
+							"focalPoint": [0.5, 0.5],
+							"hasFocalPoint": false
+						}
+					],
+					"defaultEpisodeImage": [],
+					"extract": "Cutting-edge dub and reggae powered by O.B.F Sound System.",
+					"genreTag": [
+						{
+							"__typename": "genre_Tag",
+							"slug": "reggae",
+							"title": "Reggae"
+						},
+						{
+							"__typename": "genre_Tag",
+							"slug": "dub",
+							"title": "Dub"
+						},
+						{
+							"__typename": "genre_Tag",
+							"slug": "bass",
+							"title": "Bass"
+						}
+					],
+					"channel": [
+						{
+							"__typename": "channel_channel_Entry",
+							"slug": "france"
+						}
+					]
+				}
+			],
+			"channel": [
+				{
+					"__typename": "channel_channel_Entry",
+					"id": "32",
+					"lft": 4,
+					"defaultTimezoneOffset": "Europe/Paris",
+					"channelLaunchDateTime": null,
+					"channelPagePreviewDateTime": null,
+					"isPermanentChannel": true,
+					"streamerMountPoint": "https://radio10.pro-fhi.net/flux-trmqtiat/stream",
+					"title": "France",
+					"extract": "France Extract",
+					"slug": "france",
+					"channelColour": [
+						{
+							"__typename": "colour_Entry",
+							"id": "95203",
+							"title": "Rinse Steel",
+							"slug": "rinse-steel"
+						}
+					]
+				}
+			],
+			"genreTag": [
+				{
+					"__typename": "genre_Tag",
+					"title": "Dub",
+					"slug": "dub",
+					"isFeaturedTag": false,
+					"isVisibleTag": true
+				},
+				{
+					"__typename": "genre_Tag",
+					"title": "Reggae",
+					"slug": "reggae",
+					"isFeaturedTag": false,
+					"isVisibleTag": true
+				}
+			],
+			"originalEpisode": []
+		},
+		{
+			"__typename": "episode_episode_Entry",
+			"id": "2284193",
+			"slug": "dubquake-records-02-07-2026-1700",
+			"featuredImage": [],
+			"title": "Dubquake Records - 02/07/2026 - 17:00",
+			"artistTitle": null,
+			"displayTitle": null,
+			"subtitle": null,
+			"extract": null,
+			"episodeDate": "2026-07-01T23:00:00+00:00",
+			"episodeTime": "2026-10-30T17:00:00+00:00",
+			"episodeLength": 60,
+			"isRebroadcast": false,
+			"fileUrl": null,
+			"youtubeStreamUrl": null,
+			"parentShow": [
+				{
+					"__typename": "show_show_Entry",
+					"id": "2071218",
+					"url": "https://admin.rinse.fm/shows/dubquake-records",
+					"slug": "dubquake-records",
+					"title": "Dubquake Records",
+					"showStatus": "hidden",
+					"featuredImage": [
+						{
+							"__typename": "media_Asset",
+							"filename": "Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg",
+							"width": 1818,
+							"height": 1228,
+							"focalPoint": [0.5, 0.5],
+							"hasFocalPoint": false
+						}
+					],
+					"defaultEpisodeImage": [],
+					"extract": "Cutting-edge dub and reggae powered by O.B.F Sound System.",
+					"genreTag": [
+						{
+							"__typename": "genre_Tag",
+							"slug": "reggae",
+							"title": "Reggae"
+						},
+						{
+							"__typename": "genre_Tag",
+							"slug": "dub",
+							"title": "Dub"
+						},
+						{
+							"__typename": "genre_Tag",
+							"slug": "bass",
+							"title": "Bass"
+						}
+					],
+					"channel": [
+						{
+							"__typename": "channel_channel_Entry",
+							"slug": "france"
+						}
+					]
+				}
+			],
+			"channel": [
+				{
+					"__typename": "channel_channel_Entry",
+					"id": "32",
+					"lft": 4,
+					"defaultTimezoneOffset": "Europe/Paris",
+					"channelLaunchDateTime": null,
+					"channelPagePreviewDateTime": null,
+					"isPermanentChannel": true,
+					"streamerMountPoint": "https://radio10.pro-fhi.net/flux-trmqtiat/stream",
+					"title": "France",
+					"extract": "France Extract",
+					"slug": "france",
+					"channelColour": [
+						{
+							"__typename": "colour_Entry",
+							"id": "95203",
+							"title": "Rinse Steel",
+							"slug": "rinse-steel"
+						}
+					]
+				}
+			],
+			"genreTag": [],
+			"originalEpisode": []
+		},
+		{
+			"__typename": "episode_episode_Entry",
+			"id": "2241796",
+			"slug": "dubquake-records-22-02-2026-1600",
+			"featuredImage": [
+				{
+					"__typename": "media_Asset",
+					"filename": "Dubquake-Records_Stef-O.B.F_Artwork-Zach-ODwyer.jpg",
+					"width": 3000,
+					"height": 3000,
+					"focalPoint": [0.5, 0.5],
+					"hasFocalPoint": false
+				}
+			],
+			"title": "Dubquake Records - 22/02/2026 - 16:00",
+			"artistTitle": null,
+			"displayTitle": "Stef O.B.F",
+			"subtitle": null,
+			"extract": null,
+			"episodeDate": "2026-02-22T00:00:00+00:00",
+			"episodeTime": "2026-10-30T16:00:00+00:00",
+			"episodeLength": 60,
+			"isRebroadcast": false,
+			"fileUrl": "https://replay.rinse.fm/france/Dubquake220226(320).mp3",
+			"youtubeStreamUrl": null,
+			"parentShow": [
+				{
+					"__typename": "show_show_Entry",
+					"id": "2071218",
+					"url": "https://admin.rinse.fm/shows/dubquake-records",
+					"slug": "dubquake-records",
+					"title": "Dubquake Records",
+					"showStatus": "hidden",
+					"featuredImage": [
+						{
+							"__typename": "media_Asset",
+							"filename": "Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg",
+							"width": 1818,
+							"height": 1228,
+							"focalPoint": [0.5, 0.5],
+							"hasFocalPoint": false
+						}
+					],
+					"defaultEpisodeImage": [],
+					"extract": "Cutting-edge dub and reggae powered by O.B.F Sound System.",
+					"genreTag": [
+						{
+							"__typename": "genre_Tag",
+							"slug": "reggae",
+							"title": "Reggae"
+						},
+						{
+							"__typename": "genre_Tag",
+							"slug": "dub",
+							"title": "Dub"
+						},
+						{
+							"__typename": "genre_Tag",
+							"slug": "bass",
+							"title": "Bass"
+						}
+					],
+					"channel": [
+						{
+							"__typename": "channel_channel_Entry",
+							"slug": "france"
+						}
+					]
+				}
+			],
+			"channel": [
+				{
+					"__typename": "channel_channel_Entry",
+					"id": "32",
+					"lft": 4,
+					"defaultTimezoneOffset": "Europe/Paris",
+					"channelLaunchDateTime": null,
+					"channelPagePreviewDateTime": null,
+					"isPermanentChannel": true,
+					"streamerMountPoint": "https://radio10.pro-fhi.net/flux-trmqtiat/stream",
+					"title": "France",
+					"extract": "France Extract",
+					"slug": "france",
+					"channelColour": [
+						{
+							"__typename": "colour_Entry",
+							"id": "95203",
+							"title": "Rinse Steel",
+							"slug": "rinse-steel"
+						}
+					]
+				}
+			],
+			"genreTag": [
+				{
+					"__typename": "genre_Tag",
+					"title": "Reggae",
+					"slug": "reggae",
+					"isFeaturedTag": false,
+					"isVisibleTag": true
+				},
+				{
+					"__typename": "genre_Tag",
+					"title": "Dub",
+					"slug": "dub",
+					"isFeaturedTag": false,
+					"isVisibleTag": true
+				}
+			],
+			"originalEpisode": []
+		},
+		{
+			"__typename": "episode_episode_Entry",
+			"id": "2101661",
+			"slug": "the-dubquake-show-24-01-2025-2000",
+			"featuredImage": [],
+			"title": "The Dubquake Show - 24/01/2025 - 20:00",
+			"artistTitle": null,
+			"displayTitle": null,
+			"subtitle": null,
+			"extract": null,
+			"episodeDate": "2025-01-24T00:00:00+00:00",
+			"episodeTime": "2026-10-30T20:00:00+00:00",
+			"episodeLength": 60,
+			"isRebroadcast": false,
+			"fileUrl": "https://replay.rinse.fm/france/",
+			"youtubeStreamUrl": null,
+			"parentShow": [
+				{
+					"__typename": "show_show_Entry",
+					"id": "2071218",
+					"url": "https://admin.rinse.fm/shows/dubquake-records",
+					"slug": "dubquake-records",
+					"title": "Dubquake Records",
+					"showStatus": "hidden",
+					"featuredImage": [
+						{
+							"__typename": "media_Asset",
+							"filename": "Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg",
+							"width": 1818,
+							"height": 1228,
+							"focalPoint": [0.5, 0.5],
+							"hasFocalPoint": false
+						}
+					],
+					"defaultEpisodeImage": [],
+					"extract": "Cutting-edge dub and reggae powered by O.B.F Sound System.",
+					"genreTag": [
+						{
+							"__typename": "genre_Tag",
+							"slug": "reggae",
+							"title": "Reggae"
+						},
+						{
+							"__typename": "genre_Tag",
+							"slug": "dub",
+							"title": "Dub"
+						},
+						{
+							"__typename": "genre_Tag",
+							"slug": "bass",
+							"title": "Bass"
+						}
+					],
+					"channel": [
+						{
+							"__typename": "channel_channel_Entry",
+							"slug": "france"
+						}
+					]
+				}
+			],
+			"channel": [
+				{
+					"__typename": "channel_channel_Entry",
+					"id": "32",
+					"lft": 4,
+					"defaultTimezoneOffset": "Europe/Paris",
+					"channelLaunchDateTime": null,
+					"channelPagePreviewDateTime": null,
+					"isPermanentChannel": true,
+					"streamerMountPoint": "https://radio10.pro-fhi.net/flux-trmqtiat/stream",
+					"title": "France",
+					"extract": "France Extract",
+					"slug": "france",
+					"channelColour": [
+						{
+							"__typename": "colour_Entry",
+							"id": "95203",
+							"title": "Rinse Steel",
+							"slug": "rinse-steel"
+						}
+					]
+				}
+			],
+			"genreTag": [],
+			"originalEpisode": []
+		}
+	]
 }

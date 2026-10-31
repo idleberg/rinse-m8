@@ -34,7 +34,7 @@
 	function moveWithArrows(event: KeyboardEvent, id: string, index: number) {
 		const step = { ArrowUp: -1, ArrowDown: 1 }[event.key];
 
-		if (!event.altKey || !step) {
+		if (!(event.altKey && step)) {
 			return;
 		}
 
@@ -72,7 +72,7 @@
 					<td>
 						<progress max="100" value={downloads.percent ?? undefined}></progress>
 						{downloads.percent === null ? 'Downloading…' : `${downloads.percent}%`}
-						<button onclick={oncancel}>Cancel</button>
+						<button type="button" onclick={oncancel}>Cancel</button>
 					</td>
 				</tr>
 			{/if}
@@ -86,7 +86,9 @@
 						dragged = episode.id;
 						event.dataTransfer?.setData('text/plain', episode.id);
 					}}
-					ondragend={() => (dragged = null)}
+					ondragend={() => {
+						dragged = null;
+					}}
 					ondragover={(event) => dragged && event.preventDefault()}
 					ondrop={(event) => {
 						event.preventDefault();
@@ -105,7 +107,7 @@
 							<span class="subtitle">{episode.displayTitle}</span>
 						{/if}
 					</td>
-					<td><button onclick={() => onremove(episode.id)}>Remove</button></td>
+					<td><button type="button" onclick={() => onremove(episode.id)}>Remove</button></td>
 				</tr>
 			{/each}
 			{#if downloads.failed}
@@ -118,7 +120,7 @@
 							<span class="subtitle">{downloads.failed.displayTitle}</span>
 						{/if}
 					</td>
-					<td>Failed <button onclick={ondismiss}>Dismiss</button></td>
+					<td>Failed <button type="button" onclick={ondismiss}>Dismiss</button></td>
 				</tr>
 			{/if}
 		</tbody>

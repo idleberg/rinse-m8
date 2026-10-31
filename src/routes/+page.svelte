@@ -5,15 +5,15 @@
 	import DownloadStatus from '../lib/DownloadStatus.svelte';
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
+	import { available, type DirectoryShow, type DownloadQueue, dead, type Episode, type Show, type ShowDetails, type ShowPage, showOf, stations } from '../lib/episodes';
 	import Player from '../lib/Player.svelte';
 	import QueueView from '../lib/QueueView.svelte';
 	import SettingsView from '../lib/SettingsView.svelte';
 	import ShowDirectory from '../lib/ShowDirectory.svelte';
 	import ShowSection from '../lib/ShowSection.svelte';
 	import ShowView from '../lib/ShowView.svelte';
-	import { type DirectoryShow, type DownloadQueue, type Episode, type Show, type ShowDetails, type ShowPage, showOf, stations } from '../lib/episodes';
 
-	type Settings = {
+	interface Settings {
 		subscriptions: Show[];
 		seen: string[];
 		downloadFolder: string | null;
@@ -21,17 +21,21 @@
 		keepRunning: boolean;
 		/** In hours. */
 		updateInterval: number;
-	};
+	}
 
 	let episodes = $state<Episode[]>([]);
-	let error = $state('');
+	/** True until the first episode fetch settles, so an empty list isn't mistaken for filtered out. */
+	let loadingEpisodes = $state(true);
+	let errorMessage = $state('');
 
 	// The checkboxes are remembered across restarts, the search isn't
 	let savedFilters: { shownStations?: string[]; mp3Only?: boolean; hideRebroadcasts?: boolean } = {};
 
 	try {
 		savedFilters = JSON.parse(localStorage.getItem('filters') ?? '{}');
-	} catch {}
+	} catch {
+		// Unreadable filters fall back to the defaults
+	}
 
 	let shownStations = $state(savedFilters.shownStations ?? [...stations]);
 	let mp3Only = $state(savedFilters.mp3Only ?? true);
@@ -53,8 +57,8 @@
 		return episodes.filter(
 			(episode) =>
 				(!stations.includes(episode.station) || shownStations.includes(episode.station)) &&
-				(!mp3Only || episode.mp3) &&
-				(!hideRebroadcasts || !episode.rebroadcast) &&
+				(!mp3Only || available(episode)) &&
+				(!(hideRebroadcasts && episode.rebroadcast)) &&
 				[episode.title, episode.showTitle, episode.displayTitle ?? '', ...episode.genres].some((text) => text.toLowerCase().includes(query)),
 		);
 	});
@@ -102,6 +106,7 @@
 	});
 
 	let player = $state<ReturnType<typeof Player>>();
+	let playing = $state<string | null>(null);
 
 	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failed: null, downloaded: [] });
 
@@ -125,22 +130,23 @@
 
 	/** Queues the episode, asking for a download folder first if none is set. */
 	async function download(episode: Episode) {
-		error = '';
+		errorMessage = '';
 
-		if (!settings.downloadFolder && !(await chooseFolder())) {
+		if (!(settings.downloadFolder || (await chooseFolder()))) {
 			return;
 		}
 
 		await invoke('download', { episode });
 	}
 
+	/** Dead episodes are dropped here, so no table shows them, whatever the filters. */
 	function setEpisodes(list: Episode[]) {
-		episodes = list.sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
+		episodes = list.filter((episode) => !dead(episode)).sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
 	}
 
 	/** Saves a checkbox bound to `settings`, and unticks it again if saving fails. */
 	async function saveCheckbox(key: 'autoDownload' | 'keepRunning') {
-		error = '';
+		errorMessage = '';
 
 		try {
 			await invoke('set_settings', { patch: { [key]: settings[key] } });
@@ -154,7 +160,7 @@
 	async function saveUpdateInterval(hours: number) {
 		const stored = settings.updateInterval;
 
-		error = '';
+		errorMessage = '';
 		settings.updateInterval = hours;
 
 		try {
@@ -174,7 +180,7 @@
 
 	/** Shows the cached episodes at once, then merges the show's fetched episodes in. */
 	async function openShow(show: Show) {
-		error = '';
+		errorMessage = '';
 		openedShow = show;
 		showDetails = null;
 
@@ -197,7 +203,7 @@
 	let subscribing = $state<string[]>([]);
 
 	async function toggleSubscription(show: Show) {
-		error = '';
+		errorMessage = '';
 
 		subscribing.push(show.slug);
 
@@ -228,7 +234,7 @@
 
 	/** Keeps the old size showing if clearing fails. */
 	async function clearImageCache() {
-		error = '';
+		errorMessage = '';
 
 		await invoke('clear_image_cache');
 		imageCacheSize = 0;
@@ -239,7 +245,7 @@
 	}
 
 	function showError(e: unknown) {
-		error = String(e);
+		errorMessage = String(e);
 	}
 
 	invoke<Settings>('get_settings')
@@ -250,7 +256,10 @@
 
 	invoke<Episode[]>('get_episodes')
 		.then(setEpisodes)
-		.catch(showError);
+		.catch(showError)
+		.finally(() => {
+			loadingEpisodes = false;
+		});
 
 	// The poller sends the whole cache after each update
 	listen<Episode[]>('episodes-updated', (event) => setEpisodes(event.payload));
@@ -285,14 +294,14 @@
 
 <nav>
 	<div>
-		{#each [['dashboard', 'My Shows'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Queue']] as const as [value, label] (value)}
-			<button aria-current={!openedShow && view === value ? 'page' : undefined} onclick={() => openView(value)}
+		{#each [['dashboard', 'My Shows'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Downloads']] as const as [value, label] (value)}
+			<button type="button" aria-current={!openedShow && view === value ? 'page' : undefined} onclick={() => openView(value)}
 				>{label}</button
 			>
 		{/each}
 	</div>
 	<!-- Feather's "sliders" icon -->
-	<button class="icon" aria-label="Settings" title="Settings" aria-current={!openedShow && view === 'settings' ? 'page' : undefined} onclick={() => openView('settings')}>
+	<button type="button" class="icon" aria-label="Settings" title="Settings" aria-current={!openedShow && view === 'settings' ? 'page' : undefined} onclick={() => openView('settings')}>
 		<svg viewBox="0 0 24 24" aria-hidden="true">
 			<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
 		</svg>
@@ -301,8 +310,8 @@
 
 <!-- Settings swap light and dark, to stand apart from the other pages -->
 <main class:inverted={view === 'settings' && !openedShow}>
-	{#if error}
-		<p role="alert">{error}</p>
+	{#if errorMessage}
+		<p role="alert">{errorMessage}</p>
 	{/if}
 
 	{#if openedShow}
@@ -316,11 +325,15 @@
 				{subscribed}
 				{downloads}
 				{subscribing}
+				{playing}
 				onplay={(episode) => player?.play(episode).catch(showError)}
+				onpause={() => player?.pause()}
 				ondownload={(episode) => download(episode).catch(showError)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
 				ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
-				onback={() => (openedShow = null)}
+				onback={() => {
+					openedShow = null;
+				}}
 			/>
 		{/key}
 	{:else if view === 'queue'}
@@ -337,7 +350,7 @@
 			bind:autoDownload={settings.autoDownload}
 			bind:keepRunning={settings.keepRunning}
 			onchoosefolder={() => {
-				error = '';
+				errorMessage = '';
 				chooseFolder().catch(showError);
 			}}
 			onautodownloadchange={() => saveCheckbox('autoDownload').catch(showError)}
@@ -377,12 +390,16 @@
 							{subscribed}
 							{downloads}
 							{subscribing}
+							{playing}
 							onplay={(episode) => player?.play(episode).catch(showError)}
+							onpause={() => player?.pause()}
 							ondownload={(episode) => download(episode).catch(showError)}
 							onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
 							onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
 							ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
 						/>
+					{:else if loadingEpisodes}
+						<p role="status">Loading episodes…</p>
 					{:else}
 						<p>No episodes match the filters</p>
 					{/if}
@@ -398,7 +415,9 @@
 						{subscribed}
 						{downloads}
 						{subscribing}
+						{playing}
 						onplay={(episode) => player?.play(episode).catch(showError)}
+						onpause={() => player?.pause()}
 						ondownload={(episode) => download(episode).catch(showError)}
 						onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
 						onopenshow={(show) => openShow(show).catch(showError)}
@@ -426,17 +445,23 @@
 					to see its episodes here
 				</p>
 			{/each}
-		{:else}
+		{:else if scheduleEpisodes.length}
 			<EpisodeTable
 				episodes={scheduleEpisodes}
 				{subscribed}
 				{downloads}
 				{subscribing}
+				{playing}
 				onplay={(episode) => player?.play(episode).catch(showError)}
+				onpause={() => player?.pause()}
 				ondownload={(episode) => download(episode).catch(showError)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
 				ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
 			/>
+		{:else if loadingEpisodes}
+			<p class="empty" role="status">Loading episodes…</p>
+		{:else}
+			<p class="empty">No episodes match the filters</p>
 		{/if}
 	{/if}
 </main>
@@ -447,17 +472,22 @@
 		ondismiss={() => dismissFailure().catch(showError)}
 		onviewqueue={() => openView('queue')}
 	/>
-	<Player bind:this={player} {episodes} onerror={showError} />
+	<Player bind:this={player} bind:playing {episodes} onerror={showError} />
 </div>
 
 <style>
+	/* Pinned to the top of the window while the page scrolls under it */
 	nav {
+		position: sticky;
+		top: 0;
+		z-index: 1;
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: space-between;
 		gap: 0.5rem;
 		border-bottom: 1px solid currentColor;
 		padding: 0.5rem 1rem;
+		background: var(--paper);
 	}
 
 	main {
@@ -491,7 +521,8 @@
 		text-transform: uppercase;
 	}
 
-	.latest p {
+	.latest p,
+	.empty {
 		text-transform: uppercase;
 		color: var(--muted);
 	}
@@ -500,6 +531,6 @@
 		margin: 0 0 1rem;
 		padding: 0.5rem 1rem;
 		background: var(--accent);
-		color: #fff;
+		color: white;
 	}
 </style>

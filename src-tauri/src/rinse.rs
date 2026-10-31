@@ -1,4 +1,4 @@
-use chrono::DateTime;
+use chrono::{DateTime, Months, NaiveDate};
 use chrono_tz::Europe::London;
 use futures_util::StreamExt;
 use reqwest::header::{CONTENT_RANGE, RANGE};
@@ -33,16 +33,39 @@ pub struct Episode {
     /// Whether the episode has ever appeared in the schedule feed. Cache entries from before the mark count as scheduled.
     #[serde(default = "scheduled_by_default")]
     pub scheduled: bool,
+    /// Whether the last check of `mp3` found it: `Some(false)` for a 404, `None` until a check gets a 200 or 404.
+    pub mp3_found: Option<bool>,
 }
 
 fn scheduled_by_default() -> bool {
     true
 }
 
-/// The episode to store for `fetched`: its fresh fields, keeping the schedule mark of the `cached` copy.
+impl Episode {
+    /// Whether the episode has an mp3 that wasn't missing at its last check.
+    pub fn available(&self) -> bool {
+        self.mp3.is_some() && self.mp3_found != Some(false)
+    }
+
+    /// Whether the update on London date `today` checks the mp3: on every update while the episode is under a month
+    /// old, since Rinse still fixes or removes files then, and after that only until a check gets an answer.
+    pub fn check_due(&self, today: NaiveDate) -> bool {
+        let cutoff = today.checked_sub_months(Months::new(1));
+        let recent = NaiveDate::parse_from_str(&self.date, "%Y-%m-%d")
+            .is_ok_and(|date| cutoff.is_none_or(|cutoff| date > cutoff));
+
+        self.mp3.is_some() && (recent || self.mp3_found.is_none())
+    }
+}
+
+/// The episode to store for `fetched`: its fresh fields, keeping the schedule mark of the `cached` copy
+/// and its check result while the mp3 link stays the same.
 pub fn merge_episode(cached: Option<Episode>, fetched: Episode) -> Episode {
     Episode {
-        scheduled: fetched.scheduled || cached.is_some_and(|e| e.scheduled),
+        scheduled: fetched.scheduled || cached.as_ref().is_some_and(|e| e.scheduled),
+        mp3_found: cached
+            .filter(|e| e.mp3 == fetched.mp3)
+            .and_then(|e| e.mp3_found),
         ..fetched
     }
 }
@@ -101,7 +124,7 @@ impl Settings {
         self.seen.extend(
             episodes
                 .iter()
-                .filter(|e| e.mp3.is_some())
+                .filter(|e| e.available())
                 .map(|e| e.id.clone()),
         );
     }
@@ -121,7 +144,7 @@ pub fn new_episodes(
     episodes
         .into_iter()
         .filter(|e| {
-            e.mp3.is_some()
+            e.available()
                 && !seen.contains(&e.id)
                 && subscriptions.iter().any(|s| s.slug == e.show_slug)
         })
@@ -431,6 +454,7 @@ fn map_episode(raw: RawEpisode) -> Option<Episode> {
         genres: raw.genre_tag.into_iter().map(|t| t.title).collect(),
         mp3: raw.file_url.filter(|url| url.ends_with(".mp3")),
         scheduled: false,
+        mp3_found: None,
     })
 }
 
@@ -552,6 +576,29 @@ async fn fetch_text(url: &str) -> Result<String, String> {
         .text()
         .await
         .map_err(|e| e.to_string())
+}
+
+/// Asks Rinse for the episode's mp3 without transferring it. A network error counts as available, like any status
+/// but 404, so only a missing file hides an episode.
+pub async fn check_mp3(episode: &Episode) -> Option<bool> {
+    let url = episode.mp3.as_deref()?;
+    let response = reqwest::Client::new()
+        .head(url)
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .ok()?;
+
+    check_result(response.status())
+}
+
+/// What a check that got `status` records as the episode's `mp3_found`.
+fn check_result(status: StatusCode) -> Option<bool> {
+    match status {
+        StatusCode::OK => Some(true),
+        StatusCode::NOT_FOUND => Some(false),
+        _ => None,
+    }
 }
 
 /// Streams the episode's mp3 into a `.part` file in `folder` chunk by chunk and renames it to `.mp3` once it's whole,
@@ -1038,6 +1085,74 @@ mod tests {
         let e: Episode = serde_json::from_value(value).unwrap();
 
         assert!(e.scheduled);
+    }
+
+    fn day(date: &str) -> NaiveDate {
+        NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap()
+    }
+
+    /// 2315290 is from 2026-10-25.
+    fn checked(found: Option<bool>) -> Episode {
+        Episode {
+            mp3_found: found,
+            ..episode("2315290")
+        }
+    }
+
+    #[test]
+    fn an_episode_under_a_month_old_is_checked_on_every_update() {
+        for found in [None, Some(true), Some(false)] {
+            assert!(checked(found).check_due(day("2026-11-24")));
+        }
+    }
+
+    #[test]
+    fn an_episode_over_a_month_old_is_checked_only_until_a_check_succeeds() {
+        assert!(checked(None).check_due(day("2026-11-25")));
+        assert!(!checked(Some(true)).check_due(day("2026-11-25")));
+        assert!(!checked(Some(false)).check_due(day("2026-11-25")));
+    }
+
+    #[test]
+    fn an_episode_without_an_mp3_is_never_checked() {
+        assert!(!episode("2319625").check_due(day("2026-10-31")));
+    }
+
+    #[test]
+    fn only_a_404_makes_an_mp3_missing() {
+        assert_eq!(check_result(StatusCode::OK), Some(true));
+        assert_eq!(check_result(StatusCode::NOT_FOUND), Some(false));
+        assert_eq!(check_result(StatusCode::FORBIDDEN), None);
+        assert_eq!(check_result(StatusCode::INTERNAL_SERVER_ERROR), None);
+        assert!(checked(None).available());
+        assert!(checked(Some(true)).available());
+        assert!(!checked(Some(false)).available());
+        assert!(!episode("2319625").available());
+    }
+
+    #[test]
+    fn a_fetch_keeps_the_check_result_of_an_unchanged_link() {
+        let merged = merge_episode(Some(checked(Some(false))), episode("2315290"));
+
+        assert_eq!(merged.mp3_found, Some(false));
+    }
+
+    #[test]
+    fn a_changed_link_throws_away_the_check_result() {
+        let fetched = Episode {
+            mp3: Some("https://replay.rinse.fm/france/fixed.mp3".into()),
+            ..episode("2315290")
+        };
+        let merged = merge_episode(Some(checked(Some(false))), fetched);
+
+        assert_eq!(merged.mp3_found, None);
+    }
+
+    #[test]
+    fn new_episodes_excludes_missing_mp3s() {
+        let episodes = vec![checked(Some(false))];
+
+        assert_eq!(new_episodes(&dubquake(), &BTreeSet::new(), episodes), []);
     }
 
     fn queued(id: &str, folder: &str) -> Download {

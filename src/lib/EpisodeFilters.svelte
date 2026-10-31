@@ -46,16 +46,12 @@
 </fieldset>
 
 <style>
-	/* Pinned to the top of the window while the episodes scroll under it */
 	fieldset {
-		position: sticky;
-		top: 0;
 		display: grid;
 		gap: 0.5rem;
 		margin: 0 0 0.5rem;
 		border: none;
 		padding: 0.5rem 0;
-		background: var(--paper);
 		text-transform: uppercase;
 	}
 
@@ -65,10 +61,8 @@
 		gap: 0.5rem 1rem;
 	}
 
-	/* The margin keeps the focus outline clear of the fieldset, which paints over it */
 	input[type='search'] {
 		width: 100%;
-		margin-bottom: 3px;
 		text-transform: uppercase;
 	}
 

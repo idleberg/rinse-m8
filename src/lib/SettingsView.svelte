@@ -29,6 +29,10 @@
 		onclearimagecache: () => void;
 	} = $props();
 
+	/** In hours. */
+	// biome-ignore lint/style/noMagicNumbers: the list is the menu's choices
+	const updateIntervals = [1, 6, 12, 24, 48];
+	const bytesPerMegabyte = 1e6;
 	const megabytes = new Intl.NumberFormat(undefined, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1, maximumSignificantDigits: 1, roundingPriority: 'morePrecision' });
 </script>
 
@@ -44,7 +48,7 @@
 		{:else}
 			<span class="muted">None set</span>
 		{/if}
-		<button onclick={onchoosefolder}>Change…</button>
+		<button type="button" onclick={onchoosefolder}>Change…</button>
 	</dd>
 	<dt>Downloads</dt>
 	<dd>
@@ -63,7 +67,7 @@
 	<dt>Updates</dt>
 	<dd>
 		<select aria-label="Update interval" value={updateInterval} onchange={(e) => onupdateintervalchange(Number(e.currentTarget.value))}>
-			{#each [1, 6, 12, 24, 48] as hours}
+			{#each updateIntervals as hours}
 				<option value={hours}>every {hours === 1 ? 'hour' : `${hours} hours`}</option>
 			{/each}
 		</select>
@@ -71,11 +75,11 @@
 	<dt>Image cache</dt>
 	<dd>
 		{#if imageCacheSize}
-			{megabytes.format(imageCacheSize / 1e6)}
+			{megabytes.format(imageCacheSize / bytesPerMegabyte)}
 		{:else if imageCacheSize === 0}
 			<span class="muted">Empty</span>
 		{/if}
-		<button onclick={onclearimagecache} disabled={!imageCacheSize}>Clear</button>
+		<button type="button" onclick={onclearimagecache} disabled={!imageCacheSize}>Clear</button>
 	</dd>
 </dl>
 

@@ -33,16 +33,16 @@
 {#if status}
 	<span>{status}</span>
 {:else if failed}
-	<button onclick={() => ondownload(episode)}>Failed</button>
+	<button type="button" onclick={() => ondownload(episode)}>Failed</button>
 {:else}
 	<!-- A downloaded episode can be downloaded again, e.g. after its file was deleted -->
-	<button class="icon" aria-label={label} title={label} onclick={() => ondownload(episode)}>
+	<button type="button" class="icon" aria-label={label} title={label} onclick={() => ondownload(episode)}>
 		<svg viewBox="0 0 16 16" aria-hidden="true">
 			<path d={downloaded ? 'M3 8l3.5 3.5L13 4' : 'M8 2v11M3 8l5 5 5-5'} />
 		</svg>
 	</button>
 	{#if onmark}
-		<button
+		<button type="button"
 			class="icon"
 			aria-label="Mark as downloaded"
 			title="Mark as downloaded"

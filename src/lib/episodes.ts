@@ -1,4 +1,4 @@
-export type Episode = {
+export interface Episode {
 	id: string;
 	title: string;
 	showId: string;
@@ -17,22 +17,35 @@ export type Episode = {
 	mp3: string | null;
 	/** Whether the episode has ever appeared in the schedule feed. */
 	scheduled: boolean;
-};
+	/** Whether the last check of `mp3` found it: false for a 404, null until a check gets a 200 or 404. */
+	mp3Found: boolean | null;
+}
 
-export type Show = { slug: string; title: string };
+export interface Show {
+	slug: string;
+	title: string;
+}
 
 /** A show in the show directory. `station` is empty for a show without a channel. */
-export type DirectoryShow = Show & { station: string; genres: string[] };
+export interface DirectoryShow extends Show {
+	station: string;
+	genres: string[];
+}
 
 /** What Rinse says about a show besides its episodes. */
-export type ShowDetails = {
+export interface ShowDetails {
 	image: string | null;
 	/** HTML from Rinse; render it through `paragraphs`, never as markup. */
 	description: string | null;
-};
+}
 
 /** A show's details with the episode cache, as `refresh_show` returns them. */
-export type ShowPage = { details: ShowDetails; episodes: Episode[] };
+export interface ShowPage {
+	details: ShowDetails;
+	episodes: Episode[];
+}
+
+const blankLine = /\n\s*\n/u;
 
 /** The text of each block in `html`, line breaks kept as `\n`. Parsed into an inert document, so nothing in it runs or loads. */
 export function paragraphs(html: string): string[] {
@@ -47,9 +60,31 @@ export function paragraphs(html: string): string[] {
 	}
 
 	return doc.body.textContent
-		.split(/\n\s*\n/)
+		.split(blankLine)
 		.map((text) => text.trim())
 		.filter(Boolean);
+}
+
+/** Whether the episode has an mp3 that wasn't missing at its last check. */
+export function available(episode: Episode): boolean {
+	return episode.mp3 !== null && episode.mp3Found !== false;
+}
+
+/** Whether the episode's mp3 is missing and it's over a month old, by when Rinse no longer fixes it. Such an episode is hidden everywhere. */
+export function dead(episode: Episode, now = new Date()): boolean {
+	// en-CA formats as `YYYY-MM-DD`, in London like the episode dates
+	const [year, month, day] = now
+		.toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+		.split('-')
+		.map(Number);
+
+	// Day 0 is the last of the month before, so 31 October goes back to 30 September, as in the backend
+	const lastDay = new Date(Date.UTC(year, month - 1, 0)).getUTCDate();
+	const cutoff = new Date(Date.UTC(year, month - 2, Math.min(day, lastDay)))
+		.toISOString()
+		.slice(0, 10);
+
+	return episode.mp3Found === false && episode.date <= cutoff;
 }
 
 export function showOf(episode: Episode): Show {
@@ -59,7 +94,7 @@ export function showOf(episode: Episode): Show {
 export const stations = ['Rinse FM', 'Rinse FR', 'Kool FM', 'SWU FM'];
 
 /** The backend's download queue, as sent with every `download-queue` event. */
-export type DownloadQueue = {
+export interface DownloadQueue {
 	current: Episode | null;
 	/** Of `current`, once the server has reported a size. */
 	percent: number | null;
@@ -68,11 +103,14 @@ export type DownloadQueue = {
 	failed: Episode | null;
 	/** Ids of every episode the app has finished downloading. */
 	downloaded: string[];
-};
+}
 
 export type SortColumn = 'date' | 'time' | 'station' | 'show';
 
-export type Sort = { column: SortColumn; ascending: boolean };
+export interface Sort {
+	column: SortColumn;
+	ascending: boolean;
+}
 
 /** Newest first. */
 export const defaultSort: Sort = { column: 'date', ascending: false };
@@ -94,7 +132,9 @@ export function sortEpisodes(episodes: Episode[], sort: Sort): Episode[] {
 
 /** The sort after clicking `column`: the same column reverses, another one ascends. */
 export function toggleSort(sort: Sort, column: SortColumn): Sort {
-	return sort.column === column ? { column, ascending: !sort.ascending } : { column, ascending: true };
+	return sort.column === column
+		? { column, ascending: !sort.ascending }
+		: { column, ascending: true };
 }
 
 /** `YYYY-MM-DD` as `YYYY/MM/DD`. */

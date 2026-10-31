@@ -5,18 +5,20 @@
     <link rel="icon" href="%sveltekit.assets%/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Rinse M8</title>
-    <script>
+    <script>'use strict';
       try {
         const theme = localStorage.getItem('theme');
 
         if (theme === 'light' || theme === 'dark') {
           document.documentElement.dataset.theme = theme;
         }
-      } catch {}
+      } catch {
+        // No storage: follow the system appearance
+      }
     </script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
-    <div style="display: contents">%sveltekit.body%</div>
+    <div>%sveltekit.body%</div>
   </body>
 </html>

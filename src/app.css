@@ -5,27 +5,32 @@
 /* Declared again on .inverted, since WebKit resolves light-dark() where a custom property is declared, not where it's used */
 :root,
 .inverted {
-	--paper: light-dark(#f2efe8, #141414);
-	--ink: light-dark(#141414, #e9e5dc);
-	--muted: light-dark(#6b675f, #8f8a80);
-	--accent: light-dark(#d9381e, #ff5a3c);
+	--paper: light-dark(rgb(242 239 232), rgb(20 20 20));
+	--ink: light-dark(rgb(20 20 20), rgb(233 229 220));
+	--muted: light-dark(rgb(107 103 95), rgb(143 138 128));
+	--accent: light-dark(rgb(217 56 30), rgb(255 90 60));
+}
+
+.inverted {
+	background: var(--paper);
+	color: var(--ink);
 }
 
 /* Set from localStorage by the inline script in app.html, so the first paint is already right */
-:root[data-theme='light'] {
+:root[data-theme="light"] {
 	color-scheme: light;
 }
 
-:root[data-theme='dark'] {
+:root[data-theme="dark"] {
 	color-scheme: dark;
 }
 
 /* The Settings page's content shows the opposite theme */
-:root[data-theme='light'] .inverted {
+:root[data-theme="light"] .inverted {
 	color-scheme: dark;
 }
 
-:root[data-theme='dark'] .inverted {
+:root[data-theme="dark"] .inverted {
 	color-scheme: light;
 }
 
@@ -41,11 +46,6 @@
 	}
 }
 
-.inverted {
-	background: var(--paper);
-	color: var(--ink);
-}
-
 body {
 	display: flex;
 	flex-direction: column;
@@ -53,7 +53,15 @@ body {
 	margin: 0;
 	background: var(--paper);
 	color: var(--ink);
-	font: 14px/1.5 'IBM Plex Mono', ui-monospace, monospace;
+	font:
+		14px / 1.5 "IBM Plex Mono",
+		ui-monospace,
+		monospace;
+}
+
+/* SvelteKit's wrapper around the app, in app.html */
+body > div {
+	display: contents;
 }
 
 a {
@@ -80,8 +88,8 @@ button:disabled {
 	cursor: default;
 }
 
-button[aria-pressed='true'],
-button[aria-current='page'] {
+button[aria-pressed="true"],
+button[aria-current="page"] {
 	border-color: var(--ink);
 	background: var(--ink);
 	color: var(--paper);
@@ -94,8 +102,20 @@ select {
 	border-radius: 0;
 	padding: 0 calc(1em + 1ch) 0 0.5ch;
 	background:
-		linear-gradient(45deg, transparent calc(50% - 0.5px), currentColor calc(50% - 0.5px) calc(50% + 0.5px), transparent calc(50% + 0.5px)) calc(100% - 0.5ch - 0.3em) 55% / 0.3em 0.3em no-repeat,
-		linear-gradient(-45deg, transparent calc(50% - 0.5px), currentColor calc(50% - 0.5px) calc(50% + 0.5px), transparent calc(50% + 0.5px)) calc(100% - 0.5ch) 55% / 0.3em 0.3em no-repeat;
+		linear-gradient(
+			45deg,
+			transparent calc(50% - 0.5px),
+			currentColor calc(50% - 0.5px) calc(50% + 0.5px),
+			transparent calc(50% + 0.5px)
+		)
+		calc(100% - 0.5ch - 0.3em) 55% / 0.3em 0.3em no-repeat,
+		linear-gradient(
+			-45deg,
+			transparent calc(50% - 0.5px),
+			currentColor calc(50% - 0.5px) calc(50% + 0.5px),
+			transparent calc(50% + 0.5px)
+		)
+		calc(100% - 0.5ch) 55% / 0.3em 0.3em no-repeat;
 	text-transform: uppercase;
 	cursor: pointer;
 }
@@ -118,7 +138,7 @@ button.icon svg {
 
 /* Still a native checkbox, drawn as `[ ]` / `[×]` */
 /* Exactly one line of text tall, so `[ ]` sits on the label's baseline */
-input[type='checkbox'] {
+input[type="checkbox"] {
 	appearance: none;
 	display: inline-block;
 	width: 3ch;
@@ -128,16 +148,16 @@ input[type='checkbox'] {
 	cursor: pointer;
 }
 
-input[type='checkbox']::before {
-	content: '[ ]';
+input[type="checkbox"]::before {
+	content: "[ ]";
 	white-space: pre;
 }
 
-input[type='checkbox']:checked::before {
-	content: '[×]';
+input[type="checkbox"]:checked::before {
+	content: "[×]";
 }
 
-input[type='search'] {
+input[type="search"] {
 	border: none;
 	border-bottom: 1px solid currentColor;
 	padding: 0;

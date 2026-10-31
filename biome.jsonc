@@ -21,11 +21,26 @@
 				"noHeadElement": "off"
 			},
 			"correctness": {
+				// No Qwik here; `preset: all` turns its rules on anyway.
+				"useQwikValidLexicalScope": "off",
 				"noUnresolvedImports": "off",
 				"useImportExtensions": "off"
 			},
 			"complexity": {
 				"noExcessiveLinesPerFunction": "off"
+			},
+			"suspicious": {
+				// For failures with nowhere to show them.
+				"noConsole": { "level": "on", "options": { "allow": ["error"] } },
+				// Tauri ships a current WebKit, so newly available features are fine.
+				"useBaseline": {
+					"level": "on",
+					"options": {
+						"available": "newly",
+						// Limited only by old bugs on semantic elements; it's used on a plain wrapper div.
+						"allowPropertyValues": { "display": ["contents"] }
+					}
+				}
 			},
 			"performance": {
 				// Svelte components run once; inline handlers aren't re-created.
@@ -36,7 +51,7 @@
 	},
 	"overrides": [
 		{
-			"includes": ["src/lib/server/**", "src/hooks.server.ts", "vite.config.ts"],
+			"includes": ["src/lib/server/**", "src/hooks.server.ts", "vite.config.js"],
 			"linter": {
 				"rules": {
 					"correctness": { "noNodejsModules": "off" },

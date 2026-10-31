@@ -1,15 +1,16 @@
 <script lang="ts">
 	import DownloadButton from './DownloadButton.svelte';
-	import SubscribeButton from './SubscribeButton.svelte';
 	import {
+		available,
 		type DownloadQueue,
-		type Episode,
-		type SortColumn,
 		defaultSort,
+		type Episode,
 		formatDate,
+		type SortColumn,
 		sortEpisodes,
 		toggleSort,
 	} from './episodes';
+	import SubscribeButton from './SubscribeButton.svelte';
 
 	let {
 		episodes,
@@ -17,7 +18,9 @@
 		subscribed,
 		downloads,
 		subscribing,
+		playing,
 		onplay,
+		onpause,
 		ondownload,
 		onmark,
 		onopenshow,
@@ -31,7 +34,10 @@
 		downloads: DownloadQueue;
 		/** Show slugs. */
 		subscribing: string[];
+		/** The id of the episode while it's playing. */
+		playing: string | null;
 		onplay: (episode: Episode) => void;
+		onpause: () => void;
 		ondownload: (episode: Episode) => void;
 		/** Adds a "Mark as downloaded" button next to each download button. */
 		onmark?: (episode: Episode) => void;
@@ -48,6 +54,7 @@
 	];
 
 	let sort = $state(defaultSort);
+	const direction = $derived(sort.ascending ? 'ascending' : 'descending');
 
 	const rows = $derived(sortEpisodes(episodes, sort).slice(0, limit));
 </script>
@@ -56,8 +63,10 @@
 	<thead>
 		<tr>
 			{#each columns as [column, label]}
-				<th class={column} aria-sort={sort.column === column ? (sort.ascending ? 'ascending' : 'descending') : undefined}>
-					<button class="sort" onclick={() => (sort = toggleSort(sort, column))}>
+				<th class={column} aria-sort={sort.column === column ? direction : undefined}>
+					<button type="button" class="sort" onclick={() => {
+						sort = toggleSort(sort, column);
+					}}>
 						{label}
 						{#if sort.column === column}
 							<span aria-hidden="true">{sort.ascending ? '↑' : '↓'}</span>
@@ -76,7 +85,7 @@
 				<td>{episode.time}</td>
 				<td>{episode.station}</td>
 				<td>
-					<button class="link" onclick={() => onopenshow(episode)}>{episode.showTitle}</button>
+					<button type="button" class="link" onclick={() => onopenshow(episode)}>{episode.showTitle}</button>
 					{#if episode.displayTitle}
 						<span class="subtitle">{episode.displayTitle}</span>
 					{/if}
@@ -88,12 +97,20 @@
 				</td>
 				<td>
 					<div class="actions">
-						{#if episode.mp3}
-							<button class="icon" aria-label="Play" title="Play" onclick={() => onplay(episode)}>
-								<svg viewBox="0 0 16 16" aria-hidden="true">
-									<path d="M4 2.5l9 5.5-9 5.5z" />
-								</svg>
-							</button>
+						{#if available(episode)}
+							{#if playing === episode.id}
+								<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={onpause}>
+									<svg viewBox="0 0 16 16" aria-hidden="true">
+										<path d="M5 3v10M11 3v10" />
+									</svg>
+								</button>
+							{:else}
+								<button type="button" class="icon" aria-label="Play" title="Play" onclick={() => onplay(episode)}>
+									<svg viewBox="0 0 16 16" aria-hidden="true">
+										<path d="M4 2.5l9 5.5-9 5.5z" />
+									</svg>
+								</button>
+							{/if}
 							<DownloadButton {episode} {downloads} {ondownload} {onmark} />
 						{/if}
 						{#if ontogglesubscription}

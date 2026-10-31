@@ -43,7 +43,7 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
 27. As a listener, I want the next episode in the play queue to start when the current one ends, so that playback continues hands-free.
 28. As a listener, I want to reorder and remove play queue items, so that I can change my mind.
 29. As a listener, I want the play queue to persist across restarts, so that my session survives quitting the app.
-30. As a listener, I want my position in each episode remembered, so that I can resume a long mix where I left off.
+30. As a listener, I want my position in the episode I'm playing remembered, so that I can resume a long mix where I left off. Playing another episode starts it from the beginning.
 31. As a listener, I want the last-played episode restored (paused, at its saved position) when I launch the app, so that I can just press play.
 32. As a user, I want the window and app to be called "Rinse M8", so that it's recognizable in my dock and task switcher.
 33. As a user, I want settings (download folder, auto-download, subscriptions) to persist, so that I configure them once.
@@ -93,7 +93,7 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
 **Persistence (tauri store plugin, four files)**
 - The episode cache maps id → Episode, and every fetch merges into it. Each entry records whether it has appeared in the schedule feed; a show fetch never clears that mark, and entries from before the mark existed count as schedule episodes. It's unbounded on purpose; prune by age if it grows large.
 - Settings hold the subscriptions (slug and title), the seen episode ids, the download folder (optional) and the auto-download flag.
-- Player state holds the play queue (a list of episodes), the per-episode playback positions (id → seconds) and the last-played id.
+- Player state holds the play queue (a list of episodes), the last-played id and its playback position (seconds).
 - The download queue holds the pending downloads in order, each with the download folder it was queued with, including the one in progress.
 
 **Tauri command surface**
@@ -125,7 +125,7 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
 **Player (one Svelte component, bottom bar)**
 - A native `<audio>` element pointed at the remote mp3.
 - The play queue appends, auto-advances when a track ends, and supports reorder and remove.
-- The position is saved on `timeupdate`, throttled to about 5 s, and restored when an episode loads. At launch the last-played episode is restored paused.
+- The position is saved on `timeupdate`, throttled to about 5 s, and restored when the last-played episode loads; switching to another episode resets it to 0. At launch the last-played episode is restored paused.
 
 **Capabilities**
 - The default capability grants core, opener, notification, dialog and store permissions.
@@ -139,7 +139,7 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
   - show id, slug and title are populated;
   - `2026-10-13T23:00Z`-style dates come out as the London date (14 Oct);
   - the time comes from `episodeTime`, not from its junk date.
-  A small show-response fixture covers the show mapping.
+    A small show-response fixture covers the show mapping.
 - **Seam 2, new-episode check:** the input is built in the test. The tests assert that:
   - an unseen available episode of a subscribed show is returned;
   - seen episodes, unavailable episodes and episodes of unsubscribed shows are not returned.

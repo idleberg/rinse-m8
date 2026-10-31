@@ -36,15 +36,20 @@
 	];
 </script>
 
-<div role="group" aria-label="Appearance">
+<fieldset aria-label="Appearance">
 	{#each options as [label, value] (label)}
-		<button aria-pressed={theme === value} onclick={() => (theme = value)}>{label}</button>
+		<button type="button" aria-pressed={theme === value} onclick={() => {
+			theme = value;
+		}}>{label}</button>
 	{/each}
-</div>
+</fieldset>
 
 <style>
-	div {
+	fieldset {
 		display: flex;
+		margin: 0;
+		border: none;
+		padding: 0;
 	}
 
 	button + button {
