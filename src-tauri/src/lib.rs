@@ -509,7 +509,7 @@ fn load_lastfm_session(app: &tauri::AppHandle) -> Result<Option<lastfm::Session>
 fn image_cache(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
     app.path()
         .app_cache_dir()
-        .map(|dir| dir.join(format!("images-{}", rinse::IMAGE_MAX_SIDE)))
+        .map(|dir| rinse::image_cache_dir(&dir))
         .map_err(|e| e.to_string())
 }
 
@@ -915,9 +915,9 @@ pub fn run() {
                 }
             })?;
 
-            if let Ok(cache) = image_cache(app.handle()) {
+            if let Ok(root) = app.path().app_cache_dir() {
                 tauri::async_runtime::spawn_blocking(move || {
-                    rinse::remove_stale_image_caches(&cache)
+                    rinse::remove_stale_image_caches(&root)
                 });
             }
 

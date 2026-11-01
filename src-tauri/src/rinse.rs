@@ -562,9 +562,9 @@ pub async fn cached_image(name: &str, cache: &Path) -> Result<Vec<u8>, String> {
 }
 
 /// The largest shorter side a cached image keeps: the Player tab's 280px square cover at 2×.
-pub const IMAGE_MAX_SIDE: u32 = 560;
+pub const IMAGE_MAX_SHORT_SIDE: u32 = 560;
 
-/// Scales an image down, keeping its format and aspect ratio, until its shorter side is at most `IMAGE_MAX_SIDE`.
+/// Scales an image down, keeping its format and aspect ratio, until its shorter side is at most `IMAGE_MAX_SHORT_SIDE`.
 /// Bytes that don't decode, or an image already within the limit, come back as they were.
 pub fn shrink_image(bytes: Vec<u8>) -> Vec<u8> {
     let Ok(format) = image::guess_format(&bytes) else {
@@ -576,11 +576,11 @@ pub fn shrink_image(bytes: Vec<u8>) -> Vec<u8> {
     let (width, height) = (decoded.width() as u64, decoded.height() as u64);
     let shorter = width.min(height);
 
-    if shorter <= IMAGE_MAX_SIDE as u64 {
+    if shorter <= IMAGE_MAX_SHORT_SIDE as u64 {
         return bytes;
     }
 
-    let scale = |side: u64| ((side * IMAGE_MAX_SIDE as u64 + shorter / 2) / shorter) as u32;
+    let scale = |side: u64| ((side * IMAGE_MAX_SHORT_SIDE as u64 + shorter / 2) / shorter) as u32;
     let resized = decoded.resize_exact(
         scale(width),
         scale(height),
@@ -604,18 +604,28 @@ pub fn image_cache_size(cache: &Path) -> u64 {
         .sum()
 }
 
-/// Deletes the image caches beside `cache` that hold images shrunk to another limit, or none at all.
-pub fn remove_stale_image_caches(cache: &Path) {
-    let (Some(root), Some(current)) = (cache.parent(), cache.file_name()) else {
-        return;
-    };
+const IMAGE_CACHE_PREFIX: &str = "images";
+
+/// The image cache inside the app's cache folder `root`, named after the size limit its images are shrunk to.
+pub fn image_cache_dir(root: &Path) -> PathBuf {
+    root.join(format!("{IMAGE_CACHE_PREFIX}-{IMAGE_MAX_SHORT_SIDE}"))
+}
+
+/// Deletes the image caches in `root` that hold images shrunk to another limit, or none at all.
+pub fn remove_stale_image_caches(root: &Path) {
+    let current = image_cache_dir(root);
 
     for entry in std::fs::read_dir(root).into_iter().flatten().flatten() {
-        let name = entry.file_name();
+        let path = entry.path();
 
-        if name != current && name.to_string_lossy().starts_with("images") {
-            if let Err(e) = clear_image_cache(&entry.path()) {
-                eprintln!("removing the stale image cache {name:?} failed: {e}");
+        if path != current
+            && entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with(IMAGE_CACHE_PREFIX)
+        {
+            if let Err(e) = clear_image_cache(&path) {
+                eprintln!("removing the stale image cache {path:?} failed: {e}");
             }
         }
     }

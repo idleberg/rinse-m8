@@ -18,4 +18,4 @@
 
 - `rinse::shrink_image` decodes with the `image` crate (JPEG, PNG and WebP codecs only), resizes with Lanczos3 and re-encodes in the source format. Encoding failures fall back to the original bytes.
 - WebP is re-encoded lossless, since `image` has no lossy WebP encoder. A shrunk WebP can come out larger than the lossy original, but Rinse serves JPEGs.
-- The cache folder is now `images-560`. At launch, `rinse::remove_stale_image_caches` deletes every sibling folder whose name starts with `images` and isn't the current one.
+- The cache folder is now `images-560`. At launch, `rinse::remove_stale_image_caches` deletes every folder in the app cache whose name starts with `images` and isn't the current one. `rinse::image_cache_dir` owns the folder name.
