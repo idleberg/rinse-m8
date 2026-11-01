@@ -9,6 +9,8 @@
 		"notification:default",
 		"store:default",
 		"dialog:default",
+		"updater:default",
+		"process:allow-restart",
 		"core:window:allow-set-theme",
 		"core:webview:allow-set-webview-zoom"
 	]

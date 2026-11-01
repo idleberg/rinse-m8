@@ -855,6 +855,8 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .register_asynchronous_uri_scheme_protocol("image", |ctx, request, responder| {
             let app = ctx.app_handle().clone();
             let name = request.uri().path().trim_start_matches('/').to_owned();

@@ -6,13 +6,13 @@
 
 **Status:** done
 
-- [ ] With the fake-update switch on in dev, the banner shows above the tabs, full width, blue
-- [ ] Update and Dismiss are spaced like the existing button groups
-- [ ] Update shows simulated progress up to 100%
-- [ ] Dismiss hides the banner until the next launch
+- [x] With the fake-update switch on in dev, the banner shows above the tabs, full width, blue
+- [x] Update and Dismiss are spaced like the existing button groups
+- [x] Update shows simulated progress up to 100%
+- [x] Dismiss hides the banner until the next launch
 - [x] A blue colour token is defined for the light and dark themes
 - [x] The fake is absent from a release build
-- [ ] Manual check: review the design in both themes and at narrow width, try the × variant, and pick one
+- [x] Manual check: review the design in both themes and at narrow width, try the × variant, and pick one
 
 ## Comments
 

@@ -2,6 +2,8 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
 	import { open } from '@tauri-apps/plugin-dialog';
+	import { relaunch } from '@tauri-apps/plugin-process';
+	import { check, type Update } from '@tauri-apps/plugin-updater';
 	import DownloadStatus from '../lib/DownloadStatus.svelte';
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
@@ -284,17 +286,26 @@
 	// `mise run dev:update` fakes an update for design review; release builds drop this, since DEV is false there
 	const fakeUpdate = import.meta.env.DEV && Boolean(import.meta.env.VITE_FAKE_UPDATE);
 
+	let foundUpdate: Update | null = null;
+
 	if (fakeUpdate) {
 		update = { version: '9.9.9', percent: null };
+	} else {
+		// Being offline is normal, so a failed check stays silent
+		check()
+			.then((found) => {
+				foundUpdate = found;
+
+				if (found) {
+					update = { version: found.version, percent: null };
+				}
+			})
+			.catch(() => {});
 	}
 
 	/** The fake download stops at 100% rather than relaunching. */
-	function startUpdate() {
-		if (!(fakeUpdate && update)) {
-			return;
-		}
-
-		const progress = { version: update.version, percent: 0 };
+	function fakeDownload(version: string) {
+		const progress = { version, percent: 0 };
 
 		update = progress;
 
@@ -306,6 +317,47 @@
 				clearInterval(timer);
 			}
 		}, 100);
+	}
+
+	/** A failed download or install brings the buttons back, so the user can retry or dismiss. */
+	async function startUpdate() {
+		if (!update) {
+			return;
+		}
+
+		const { version } = update;
+
+		if (fakeUpdate) {
+			fakeDownload(version);
+
+			return;
+		}
+
+		if (!foundUpdate) {
+			return;
+		}
+
+		let total = 0;
+		let received = 0;
+
+		errorMessage = '';
+		update = { version, percent: 0 };
+
+		try {
+			await foundUpdate.downloadAndInstall((event) => {
+				if (event.event === 'Started') {
+					total = event.data.contentLength ?? 0;
+				} else if (event.event === 'Progress' && total) {
+					received += event.data.chunkLength;
+					update = { version, percent: Math.floor((received / total) * 100) };
+				}
+			});
+
+			await relaunch();
+		} catch (e) {
+			showError(e);
+			update = { version, percent: null };
+		}
 	}
 
 	function showError(e: unknown) {
