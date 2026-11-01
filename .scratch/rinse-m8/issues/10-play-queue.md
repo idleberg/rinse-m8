@@ -14,4 +14,4 @@
 
 ## Comments
 
-Cancelled before implementation; a follow-up ticket will replace it.
+Cancelled before implementation; replaced by [54](54-play-queue.md).

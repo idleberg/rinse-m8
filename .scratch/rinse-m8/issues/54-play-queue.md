@@ -10,14 +10,14 @@
 
 **Blocked by:** 53 (Player tab with cover and controls)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] Every episode table has an enqueue button next to Play, disabled for queued episodes
-- [ ] The enqueue icon is list lines with a play triangle, in the same stroke style as the other icons
-- [ ] The Player tab lists the queue below the controls, or "The play queue is empty"
-- [ ] Playing a queued episode removes only that one; the rest keep their order
-- [ ] Remove takes an episode out of the queue without playing it
-- [ ] When an episode ends, the first queued episode starts and leaves the queue
-- [ ] The queue survives a restart
-- [ ] Ticket 10's comment points to this ticket; the glossary's **Play queue** entry still fits and gains a **Player tab** entry
+- [x] Every episode table has an enqueue button next to Play, disabled for queued episodes
+- [x] The enqueue icon is list lines with a play triangle, in the same stroke style as the other icons
+- [x] The Player tab lists the queue below the controls, or "The play queue is empty"
+- [x] Playing a queued episode removes only that one; the rest keep their order
+- [x] Remove takes an episode out of the queue without playing it
+- [x] When an episode ends, the first queued episode starts and leaves the queue
+- [x] The queue survives a restart
+- [x] Ticket 10's comment points to this ticket; the glossary's **Play queue** entry still fits and gains a **Player tab** entry
 - [ ] Manual check: queue three episodes, play the middle one, then seek near its end. The first one starts by itself and the third stays queued.

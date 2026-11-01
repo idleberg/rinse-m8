@@ -39,3 +39,9 @@ _Avoid_: Queue, downloads
 **Queue view**:
 The view listing the download queue: the running download with its progress, the waiting ones, and the last failure.
 _Avoid_: Downloads view, queue page
+
+### Listening
+
+**Player tab**:
+The tab showing the loaded episode's cover, the same controls as the bottom bar, and the play queue below them.
+_Avoid_: Now playing, player page

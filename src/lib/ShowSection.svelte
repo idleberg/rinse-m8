@@ -10,8 +10,10 @@
 		downloads,
 		subscribing,
 		playing,
+		queued,
 		onplay,
 		onpause,
+		onenqueue,
 		ondownload,
 		onmark,
 		onopenshow,
@@ -26,8 +28,10 @@
 		/** Show slugs. */
 		subscribing: string[];
 		playing: string | null;
+		queued: string[];
 		onplay: (episode: Episode) => void;
 		onpause: () => void;
+		onenqueue: (episode: Episode) => void;
 		ondownload: (episode: Episode) => void;
 		onmark: (episode: Episode) => void;
 		onopenshow: (show: Show) => void;
@@ -54,8 +58,10 @@
 		{downloads}
 		{subscribing}
 		{playing}
+		{queued}
 		{onplay}
 		{onpause}
+		{onenqueue}
 		{ondownload}
 		{onmark}
 		onopenshow={(episode) => onopenshow(showOf(episode))}

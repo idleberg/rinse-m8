@@ -1,12 +1,21 @@
 <script lang="ts">
 	import type { ComponentProps } from 'svelte';
+	import { type Episode, formatDate } from './episodes';
 	import PlayerControls from './PlayerControls.svelte';
 
 	let {
 		controls,
+		queue,
+		onplay,
+		onremove,
 	}: {
 		/** The player's own, so this tab and the bottom bar show and change the same playback. */
 		controls: ComponentProps<typeof PlayerControls>;
+		/** Listed below the controls, in play order. */
+		queue: Episode[];
+		onplay: (episode: Episode) => void;
+		/** Takes an episode id out of the queue without playing it. */
+		onremove: (id: string) => void;
 	} = $props();
 
 	/** Images that failed to load, so the cover falls back past them. */
@@ -33,6 +42,49 @@
 		<p class="empty">Nothing playing</p>
 	{/if}
 </section>
+
+<h2>Play Queue</h2>
+
+{#if queue.length}
+	<table>
+		<thead>
+			<tr>
+				<th>Date</th>
+				<th>Show</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			{#each queue as episode (episode.id)}
+				<tr>
+					<td>{formatDate(episode.date)}</td>
+					<td>
+						{episode.showTitle}
+						{#if episode.displayTitle}
+							<span class="subtitle">{episode.displayTitle}</span>
+						{/if}
+					</td>
+					<td>
+						<div class="actions">
+							<button type="button" class="icon" aria-label="Play" title="Play" onclick={() => onplay(episode)}>
+								<svg viewBox="0 0 16 16" aria-hidden="true">
+									<path d="M4 2.5l9 5.5-9 5.5z" />
+								</svg>
+							</button>
+							<button type="button" class="icon" aria-label="Remove" title="Remove" onclick={() => onremove(episode.id)}>
+								<svg viewBox="0 0 16 16" aria-hidden="true">
+									<path d="M4 4l8 8M12 4l-8 8" />
+								</svg>
+							</button>
+						</div>
+					</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+{:else}
+	<p class="empty">The play queue is empty</p>
+{/if}
 
 <style>
 	section {
@@ -77,6 +129,55 @@
 	.empty {
 		margin: 0;
 		text-transform: uppercase;
+		color: var(--muted);
+	}
+
+	h2 {
+		margin: 2rem 0 0.5rem;
+		font-size: 1.25rem;
+		text-transform: uppercase;
+	}
+
+	/* The table styles follow the queue view's */
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		text-transform: uppercase;
+	}
+
+	th,
+	td {
+		padding: 0.25rem 1ch;
+		text-align: left;
+		white-space: nowrap;
+	}
+
+	th {
+		border-bottom: 1px solid currentColor;
+		font-weight: 700;
+	}
+
+	/* A row of `-` characters, as in the episode tables */
+	td {
+		background: linear-gradient(to right, var(--muted) 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+	}
+
+	td:first-child {
+		width: 1%;
+		font-variant-numeric: tabular-nums;
+	}
+
+	td:last-child {
+		width: 1%;
+	}
+
+	.actions {
+		display: flex;
+		gap: 0.5ch;
+		justify-content: flex-end;
+	}
+
+	.subtitle {
 		color: var(--muted);
 	}
 </style>

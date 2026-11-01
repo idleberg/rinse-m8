@@ -19,8 +19,10 @@
 		downloads,
 		subscribing,
 		playing,
+		queued,
 		onplay,
 		onpause,
+		onenqueue,
 		ondownload,
 		onmark,
 		onopenshow,
@@ -37,8 +39,11 @@
 		subscribing: string[];
 		/** The id of the episode while it's playing. */
 		playing: string | null;
+		/** Ids of the episodes in the play queue. */
+		queued: string[];
 		onplay: (episode: Episode) => void;
 		onpause: () => void;
+		onenqueue: (episode: Episode) => void;
 		ondownload: (episode: Episode) => void;
 		/** Adds a "Mark as downloaded" button next to each download button. */
 		onmark?: (episode: Episode) => void;
@@ -123,6 +128,17 @@
 									</svg>
 								</button>
 							{/if}
+							<button type="button"
+								class="icon"
+								aria-label="Add to play queue"
+								title="Add to play queue"
+								disabled={queued.includes(episode.id)}
+								onclick={() => onenqueue(episode)}
+							>
+								<svg viewBox="0 0 16 16" aria-hidden="true">
+									<path d="M2 3.5h12M2 7.5h12M2 11.5h6M10 9.5l4 2.5-4 2.5z" />
+								</svg>
+							</button>
 							<DownloadButton {episode} {downloads} {ondownload} {onmark} />
 						{/if}
 						{#if ontogglesubscription && !subscribeOnHover}

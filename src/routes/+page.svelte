@@ -111,6 +111,8 @@
 
 	let player = $state<ReturnType<typeof Player>>();
 	let playing = $state<string | null>(null);
+	let queue = $state<Episode[]>([]);
+	const queuedIds = $derived(queue.map((episode) => episode.id));
 
 	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failed: null, downloaded: [] });
 
@@ -477,8 +479,10 @@
 				{downloads}
 				{subscribing}
 				{playing}
+				queued={queuedIds}
 				onplay={(episode) => player?.play(episode).catch(showError)}
 				onpause={() => player?.pause()}
+				onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
 				ondownload={(episode) => download(episode).catch(showError)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
 				ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
@@ -489,7 +493,12 @@
 		{/key}
 	{:else if view === 'player'}
 		{#if player}
-			<PlayerView controls={player.controls} />
+			<PlayerView
+				controls={player.controls}
+				{queue}
+				onplay={(episode) => player?.play(episode).catch(showError)}
+				onremove={(id) => player?.dequeue(id)}
+			/>
 		{/if}
 	{:else if view === 'queue'}
 		<QueueView
@@ -553,8 +562,10 @@
 							{downloads}
 							{subscribing}
 							{playing}
+							queued={queuedIds}
 							onplay={(episode) => player?.play(episode).catch(showError)}
 							onpause={() => player?.pause()}
+							onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
 							ondownload={(episode) => download(episode).catch(showError)}
 							onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
 							onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
@@ -579,8 +590,10 @@
 						{downloads}
 						{subscribing}
 						{playing}
+						queued={queuedIds}
 						onplay={(episode) => player?.play(episode).catch(showError)}
 						onpause={() => player?.pause()}
+						onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
 						ondownload={(episode) => download(episode).catch(showError)}
 						onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
 						onopenshow={(show) => openShow(show).catch(showError)}
@@ -615,8 +628,10 @@
 				{downloads}
 				{subscribing}
 				{playing}
+				queued={queuedIds}
 				onplay={(episode) => player?.play(episode).catch(showError)}
 				onpause={() => player?.pause()}
+				onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
 				ondownload={(episode) => download(episode).catch(showError)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
 				ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
@@ -637,7 +652,7 @@
 		ondismiss={() => dismissFailure().catch(showError)}
 		onviewqueue={() => openView('queue')}
 	/>
-	<Player bind:this={player} bind:playing {episodes} onerror={showError} />
+	<Player bind:this={player} bind:playing bind:queue {episodes} onerror={showError} />
 </div>
 
 <style>

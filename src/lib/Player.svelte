@@ -9,12 +9,15 @@
 	let {
 		episodes,
 		playing = $bindable(null),
+		queue = $bindable([]),
 		onerror,
 	}: {
 		/** The episode cache, where the last-played episode is looked up at launch. */
 		episodes: Episode[];
 		/** The id of the episode while it's playing, not paused. */
 		playing?: string | null;
+		/** The play queue, played from the front once the current episode ends. */
+		queue?: Episode[];
 		onerror: (e: unknown) => void;
 	} = $props();
 
@@ -41,6 +44,7 @@
 	const ready = load('player.json').then(async (store) => {
 		position = (await store.get<number>('position')) ?? 0;
 		lastPlayed = (await store.get<string>('lastPlayed')) ?? null;
+		queue = (await store.get<Episode[]>('queue')) ?? [];
 
 		return store;
 	});
@@ -57,6 +61,8 @@
 	/** Resumes the current episode, or starts another from the beginning. */
 	export async function play(next: Episode) {
 		const store = await ready;
+
+		dequeue(next.id);
 
 		if (next.id === episode?.id) {
 			savePosition(false);
@@ -77,6 +83,24 @@
 			if (!(e instanceof DOMException && e.name === 'AbortError')) {
 				throw e;
 			}
+		}
+	}
+
+	/** Waits for the stored queue, so loading it can't drop the new episode. */
+	export async function enqueue(added: Episode) {
+		await ready;
+
+		if (!queue.some((e) => e.id === added.id)) {
+			queue.push(added);
+			persistQueue();
+		}
+	}
+
+	/** Takes an episode out of the play queue, leaving the rest in order. */
+	export function dequeue(id: string) {
+		if (queue.some((e) => e.id === id)) {
+			queue = queue.filter((e) => e.id !== id);
+			persistQueue();
 		}
 	}
 
@@ -114,6 +138,10 @@
 
 	function persistPosition() {
 		ready.then((store) => store.set('position', position)).catch((e) => onerror(e));
+	}
+
+	function persistQueue() {
+		ready.then((store) => store.set('queue', $state.snapshot(queue))).catch((e) => onerror(e));
 	}
 
 	function restorePosition() {
@@ -199,6 +227,10 @@
 			onended={() => {
 				forgetPosition();
 				endListen();
+
+				if (queue[0]) {
+					play(queue[0]).catch(onerror);
+				}
 			}}
 			onerror={() => episode && invoke('recheck_mp3', { id: episode.id }).catch(onerror)}
 		></audio>
