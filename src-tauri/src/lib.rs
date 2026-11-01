@@ -4,9 +4,10 @@ mod rinse;
 use chrono::Timelike;
 use futures_util::StreamExt;
 use std::collections::BTreeSet;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
-use tauri::menu::MenuBuilder;
+use tauri::menu::{MenuBuilder, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager};
 use tauri_plugin_notification::{Action, ActionPerformed, ActionType, NotificationExt};
@@ -15,6 +16,12 @@ use tauri_plugin_store::StoreExt;
 
 /// Serialises settings read-modify-writes between commands and the poller.
 static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
+
+/// Whether the player is playing, so a rebuilt tray menu offers the right toggle.
+static PLAYING: AtomicBool = AtomicBool::new(false);
+
+/// The tray menu's play/pause item, relabelled as playback starts and stops.
+static TOGGLE_ITEM: Mutex<Option<MenuItem<tauri::Wry>>> = Mutex::new(None);
 
 /// The download queue and the signals that wake its worker and stop its running download.
 struct Downloads {
@@ -530,6 +537,7 @@ fn clear_image_cache(app: tauri::AppHandle) -> Result<(), String> {
 fn sync_tray(app: &tauri::AppHandle, enable: bool) -> Result<(), String> {
     if !enable {
         app.remove_tray_by_id("main");
+        *TOGGLE_ITEM.lock().unwrap_or_else(|e| e.into_inner()) = None;
 
         return Ok(());
     }
@@ -538,8 +546,20 @@ fn sync_tray(app: &tauri::AppHandle, enable: bool) -> Result<(), String> {
         return Ok(());
     }
 
+    let toggle = MenuItem::with_id(
+        app,
+        "toggle",
+        toggle_label(PLAYING.load(Ordering::Relaxed)),
+        true,
+        None::<&str>,
+    )
+    .map_err(|e| e.to_string())?;
+
     let menu = MenuBuilder::new(app)
-        .text("show", "Show")
+        .item(&toggle)
+        .separator()
+        .text("show", "Show window")
+        .text("settings", "Settings")
         .text("quit", "Quit")
         .build()
         .map_err(|e| e.to_string())?;
@@ -560,7 +580,19 @@ fn sync_tray(app: &tauri::AppHandle, enable: bool) -> Result<(), String> {
         .menu(&menu)
         .show_menu_on_left_click(cfg!(target_os = "macos"))
         .on_menu_event(|app, event| match event.id().as_ref() {
+            "toggle" => {
+                if let Err(e) = app.emit("toggle-playback", ()) {
+                    eprintln!("toggling playback failed: {e}");
+                }
+            }
             "show" => show_window(app),
+            "settings" => {
+                show_window(app);
+
+                if let Err(e) = app.emit("open-settings", ()) {
+                    eprintln!("opening the settings failed: {e}");
+                }
+            }
             "quit" => app.exit(0),
             _ => {}
         })
@@ -578,6 +610,30 @@ fn sync_tray(app: &tauri::AppHandle, enable: bool) -> Result<(), String> {
         })
         .build(app)
         .map_err(|e| e.to_string())?;
+
+    *TOGGLE_ITEM.lock().unwrap_or_else(|e| e.into_inner()) = Some(toggle);
+
+    Ok(())
+}
+
+/// The text-style variation selector keeps macOS from drawing the symbols as emoji.
+fn toggle_label(playing: bool) -> &'static str {
+    if playing {
+        "\u{23F8}\u{FE0E} Pause"
+    } else {
+        "\u{25B6}\u{FE0E} Play"
+    }
+}
+
+/// Relabels the tray's play/pause item as playback starts and stops.
+#[tauri::command]
+fn set_tray_playing(playing: bool) -> Result<(), String> {
+    PLAYING.store(playing, Ordering::Relaxed);
+
+    if let Some(item) = &*TOGGLE_ITEM.lock().unwrap_or_else(|e| e.into_inner()) {
+        item.set_text(toggle_label(playing))
+            .map_err(|e| e.to_string())?;
+    }
 
     Ok(())
 }
@@ -977,6 +1033,7 @@ pub fn run() {
             scrobble,
             get_image_cache_size,
             clear_image_cache,
+            set_tray_playing,
             subscribe,
             unsubscribe,
             get_show_directory

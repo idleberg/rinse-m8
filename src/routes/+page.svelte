@@ -412,6 +412,14 @@
 	// A click on a new-episode notification opens its show, refetched so the new episode is listed
 	listen<Show>('open-show', (event) => openShow(event.payload).catch(showError));
 
+	// The tray menu's play/pause item and its Settings item, which has already shown the window
+	listen('toggle-playback', () => (playing ? player?.pause() : player?.controls.onplay()));
+	listen('open-settings', () => openView('settings'));
+
+	$effect(() => {
+		invoke('set_tray_playing', { playing: playing !== null }).catch(showError);
+	});
+
 	// The background refresh sends the whole directory once it has every page
 	listen<DirectoryShow[]>('show-directory', (event) => {
 		directory = event.payload;
