@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { load } from '@tauri-apps/plugin-store';
-	import { tick } from 'svelte';
+	import { type ComponentProps, tick } from 'svelte';
 	import type { Episode } from './episodes';
-	import { heardBetween, scrobbleAfter } from './listen';
+	import { heardBetween, millisecondsPerSecond, scrobbleAfter } from './listen';
 	import PlayerControls from './PlayerControls.svelte';
 
 	let {
@@ -37,7 +37,6 @@
 
 	/** How often a playing episode's position is saved, in milliseconds. */
 	const saveInterval = 5000;
-	const millisecondsPerSecond = 1000;
 
 	const ready = load('player.json').then(async (store) => {
 		position = (await store.get<number>('position')) ?? 0;
@@ -86,7 +85,7 @@
 	}
 
 	/** The props for a set of `PlayerControls`, so every set shows and changes the same playback. */
-	export const controls = {
+	export const controls: ComponentProps<typeof PlayerControls> = {
 		get episode() {
 			return episode;
 		},
@@ -170,7 +169,7 @@
 
 {#if episode?.mp3}
 	<footer>
-		<PlayerControls {...controls} {episode} />
+		<PlayerControls {...controls} />
 		<!-- biome-ignore lint/a11y/useMediaCaption: Rinse has no captions for its mixes -->
 		<audio
 			bind:this={audio}

@@ -15,3 +15,14 @@ const scrobbleLimit = 240;
 export function scrobbleAfter(duration: number) {
 	return Number.isFinite(duration) ? Math.min(duration / 2, scrobbleLimit) : scrobbleLimit;
 }
+
+export const millisecondsPerSecond = 1000;
+
+/** Where `h:mm:ss` sits in an ISO timestamp, past the hours' leading digit. */
+const isoTimeStart = 12;
+const isoTimeEnd = 19;
+
+/** As `h:mm:ss`, which fits mixes up to ten hours. */
+export function formatTime(seconds: number) {
+	return new Date(seconds * millisecondsPerSecond).toISOString().slice(isoTimeStart, isoTimeEnd);
+}

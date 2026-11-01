@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 
 import { expect, test as it } from 'bun:test';
-import { heardBetween, scrobbleAfter } from './listen';
+import { formatTime, heardBetween, scrobbleAfter } from './listen';
 
 it('counts the playhead moving on as heard', () => {
 	expect(heardBetween(10, 10.25)).toBe(0.25);
@@ -25,4 +25,8 @@ it('scrobbles a short episode halfway through', () => {
 
 it('scrobbles an episode of unknown length after 4 minutes', () => {
 	expect(scrobbleAfter(Number.NaN)).toBe(240);
+});
+
+it('formats a playhead as hours, minutes and seconds', () => {
+	expect(formatTime(3725.9)).toBe('1:02:05');
 });

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { type Episode, episodeLabel } from './episodes';
+	import { formatTime } from './listen';
 
 	let {
 		episode,
@@ -12,7 +13,8 @@
 		onseek,
 		ontoggletime,
 	}: {
-		episode: Episode;
+		/** Null until an episode is loaded, which leaves the label empty. */
+		episode: Episode | null;
 		paused: boolean;
 		/** The playhead, in seconds. */
 		currentTime: number;
@@ -25,16 +27,6 @@
 		onseek: (time: number) => void;
 		ontoggletime: () => void;
 	} = $props();
-
-	const millisecondsPerSecond = 1000;
-	/** Where `h:mm:ss` sits in an ISO timestamp, past the hours' leading digit. */
-	const isoTimeStart = 12;
-	const isoTimeEnd = 19;
-
-	/** As `h:mm:ss`, which fits mixes up to ten hours. */
-	function formatTime(seconds: number) {
-		return new Date(seconds * millisecondsPerSecond).toISOString().slice(isoTimeStart, isoTimeEnd);
-	}
 </script>
 
 <div>
@@ -51,7 +43,7 @@
 			</svg>
 		</button>
 	{/if}
-	<span>{episodeLabel(episode)}</span>
+	<span>{episode && episodeLabel(episode)}</span>
 	<input
 		type="range"
 		aria-label="Seek"
