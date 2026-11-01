@@ -151,9 +151,13 @@
 		margin: 0 0 1rem;
 	}
 
+	/* The player's cover: a square cropped to fit */
 	img {
-		width: 12rem;
-		height: auto;
+		flex: none;
+		width: min(20rem, 50%);
+		aspect-ratio: 1;
+		object-fit: cover;
+		background: black;
 	}
 
 	.description {
