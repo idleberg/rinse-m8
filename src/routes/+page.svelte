@@ -4,6 +4,7 @@
 	import { open } from '@tauri-apps/plugin-dialog';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { check, type Update } from '@tauri-apps/plugin-updater';
+	import ConfirmDialog from '../lib/ConfirmDialog.svelte';
 	import DownloadStatus from '../lib/DownloadStatus.svelte';
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
@@ -25,6 +26,8 @@
 		keepRunning: boolean;
 		/** In hours. */
 		updateInterval: number;
+		/** In hours, or 0 to check only at launch. */
+		appUpdateInterval: number;
 	}
 
 	let episodes = $state<Episode[]>([]);
@@ -51,7 +54,7 @@
 		localStorage.setItem('filters', JSON.stringify({ shownStations, mp3Only, hideRebroadcasts }));
 	});
 
-	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null, autoDownload: false, keepRunning: true, updateInterval: 6 });
+	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null, autoDownload: false, keepRunning: true, updateInterval: 6, appUpdateInterval: 24 });
 	const subscribed = $derived(settings.subscriptions.map((s) => s.slug));
 
 	const filteredEpisodes = $derived.by(() => {
@@ -110,6 +113,7 @@
 	});
 
 	let player = $state<ReturnType<typeof Player>>();
+	let confirmDialog = $state<ReturnType<typeof ConfirmDialog>>();
 	let playing = $state<string | null>(null);
 	let queue = $state<Episode[]>([]);
 
@@ -161,17 +165,17 @@
 		}
 	}
 
-	/** Saves the update interval, and puts the stored one back if saving fails. */
-	async function saveUpdateInterval(hours: number) {
-		const stored = settings.updateInterval;
+	/** Saves an interval, and puts the stored one back if saving fails. */
+	async function saveInterval(key: 'updateInterval' | 'appUpdateInterval', hours: number) {
+		const stored = settings[key];
 
 		errorMessage = '';
-		settings.updateInterval = hours;
+		settings[key] = hours;
 
 		try {
-			await invoke('set_settings', { patch: { updateInterval: hours } });
+			await invoke('set_settings', { patch: { [key]: hours } });
 		} catch (e) {
-			settings.updateInterval = stored;
+			settings[key] = stored;
 			throw e;
 		}
 	}
@@ -215,10 +219,24 @@
 	async function toggleSubscription(show: Show) {
 		errorMessage = '';
 
+		// Read before the dialog, so what the user confirmed is what happens
+		const unsubscribing = subscribed.includes(show.slug);
+
+		if (
+			unsubscribing &&
+			!(await confirmDialog?.confirm({
+				title: 'Unsubscribe',
+				message: `Unsubscribe from ${show.title}?`,
+				action: 'Unsubscribe',
+			}))
+		) {
+			return;
+		}
+
 		subscribing.push(show.slug);
 
 		try {
-			settings = subscribed.includes(show.slug)
+			settings = unsubscribing
 				? await invoke<Settings>('unsubscribe', { slug: show.slug })
 				: await invoke<Settings>('subscribe', { slug: show.slug, title: show.title });
 		} finally {
@@ -282,28 +300,51 @@
 		await dismissFailure();
 	}
 
-	/** Dismissing it clears it until the next launch. */
+	/** Dismissing it hides that version until the next launch. */
 	let update = $state<{ version: string; percent: number | null } | null>(null);
 
 	// `mise run dev:update` fakes an update for design review; release builds drop this, since DEV is false there
 	const fakeUpdate = import.meta.env.DEV && Boolean(import.meta.env.VITE_FAKE_UPDATE);
 
 	let foundUpdate: Update | null = null;
+	let dismissedVersion: string | null = null;
+	const millisecondsPerHour = 3_600_000;
 
-	if (fakeUpdate) {
-		update = { version: '9.9.9', percent: null };
-	} else {
-		// Being offline is normal, so a failed check stays silent
+	function checkForUpdate() {
+		// A running download keeps the update it started with
+		if (update && update.percent !== null) {
+			return;
+		}
+
 		check()
 			.then((found) => {
 				foundUpdate = found;
 
-				if (found) {
+				if (found && found.version !== dismissedVersion) {
 					update = { version: found.version, percent: null };
 				}
 			})
-			.catch(() => {});
+			.catch(() => {
+				// Being offline is normal, so a failed check stays silent
+			});
 	}
+
+	if (fakeUpdate) {
+		update = { version: '9.9.9', percent: null };
+	} else {
+		checkForUpdate();
+	}
+
+	// The launch check above runs regardless, so 0 only skips the repeats
+	$effect(() => {
+		if (fakeUpdate || !settings.appUpdateInterval) {
+			return;
+		}
+
+		const timer = setInterval(checkForUpdate, settings.appUpdateInterval * millisecondsPerHour);
+
+		return () => clearInterval(timer);
+	});
 
 	/** The fake download stops at 100% rather than relaunching. */
 	function fakeDownload(version: string) {
@@ -438,6 +479,7 @@
 		percent={update.percent}
 		onupdate={startUpdate}
 		ondismiss={() => {
+			dismissedVersion = update?.version ?? null;
 			update = null;
 		}}
 	/>
@@ -505,7 +547,11 @@
 				onplay={(index) => player?.playFromQueue(index).catch(showError)}
 				onremove={(index) => player?.dequeue(index)}
 				onmove={(from, to) => player?.move(from, to)}
-				onclear={() => player?.clearQueue()}
+				onclear={async () => {
+					if (await confirmDialog?.confirm({ title: 'Clear Queue', message: 'Clear the play queue?', action: 'Clear' })) {
+						player?.clearQueue();
+					}
+				}}
 			/>
 		{/if}
 	{:else if view === 'queue'}
@@ -517,7 +563,17 @@
 			onretry={(episode) => retryFailure(episode).catch(showError)}
 			ondismiss={() => dismissFailure().catch(showError)}
 			onunmark={(id) => invoke('unmark_downloaded', { id }).catch(showError)}
-			onclear={() => invoke('clear_downloaded').catch(showError)}
+			onclear={async () => {
+				if (
+					await confirmDialog?.confirm({
+						title: 'Clear Downloads',
+						message: 'Clear the list of previous downloads?',
+						action: 'Clear',
+					})
+				) {
+					invoke('clear_downloaded').catch(showError);
+				}
+			}}
 			onerror={showError}
 		/>
 	{:else if view === 'settings'}
@@ -532,7 +588,9 @@
 			onautodownloadchange={() => saveCheckbox('autoDownload').catch(showError)}
 			onkeeprunningchange={() => saveCheckbox('keepRunning').catch(showError)}
 			updateInterval={settings.updateInterval}
-			onupdateintervalchange={(hours) => saveUpdateInterval(hours).catch(showError)}
+			onupdateintervalchange={(hours) => saveInterval('updateInterval', hours).catch(showError)}
+			appUpdateInterval={settings.appUpdateInterval}
+			onappupdateintervalchange={(hours) => saveInterval('appUpdateInterval', hours).catch(showError)}
 			{imageCacheSize}
 			onclearimagecache={() => clearImageCache().catch(showError)}
 			{lastfm}
@@ -660,6 +718,8 @@
 	/>
 	<Player bind:this={player} bind:playing bind:queue {episodes} onerror={showError} />
 </div>
+
+<ConfirmDialog bind:this={confirmDialog} />
 
 <style>
 	/* Pinned to the top of the window while the page scrolls under it */
