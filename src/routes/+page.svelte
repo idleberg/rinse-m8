@@ -497,6 +497,7 @@
 				onplay={(index) => player?.playFromQueue(index).catch(showError)}
 				onremove={(index) => player?.dequeue(index)}
 				onmove={(from, to) => player?.move(from, to)}
+				onclear={() => player?.clearQueue()}
 			/>
 		{/if}
 	{:else if view === 'queue'}
@@ -508,6 +509,7 @@
 			onretry={(episode) => retryFailure(episode).catch(showError)}
 			ondismiss={() => dismissFailure().catch(showError)}
 			onunmark={(id) => invoke('unmark_downloaded', { id }).catch(showError)}
+			onclear={() => invoke('clear_downloaded').catch(showError)}
 			onerror={showError}
 		/>
 	{:else if view === 'settings'}

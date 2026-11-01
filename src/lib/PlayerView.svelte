@@ -9,6 +9,7 @@
 		onplay,
 		onremove,
 		onmove,
+		onclear,
 	}: {
 		/** The player's own, so this tab and the bottom bar show and change the same playback. */
 		controls: ComponentProps<typeof PlayerControls>;
@@ -20,6 +21,7 @@
 		onremove: (index: number) => void;
 		/** Takes a queue index and the index to move that row's episode to. */
 		onmove: (from: number, to: number) => void;
+		onclear: () => void;
 	} = $props();
 
 	/** Images that failed to load, so the cover falls back past them. */
@@ -70,7 +72,12 @@
 	{/if}
 </section>
 
-<h2>Play Queue</h2>
+<header>
+	<h2>Play Queue</h2>
+	{#if queue.length}
+		<button type="button" onclick={onclear}>Clear Queue</button>
+	{/if}
+</header>
 
 {#if queue.length}
 	<table>
@@ -192,8 +199,16 @@
 		color: var(--muted);
 	}
 
-	h2 {
+	/* The clear button sits on the right edge, as the actions do */
+	header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 		margin: 2rem 0 0.5rem;
+	}
+
+	h2 {
+		margin: 0;
 		font-size: 1.25rem;
 		text-transform: uppercase;
 	}

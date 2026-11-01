@@ -11,6 +11,7 @@
 		onretry,
 		ondismiss,
 		onunmark,
+		onclear,
 		onerror,
 	}: {
 		downloads: DownloadQueue;
@@ -25,6 +26,8 @@
 		ondismiss: () => void;
 		/** Takes an episode id to drop from the previous downloads. */
 		onunmark: (id: string) => void;
+		/** Empties the previous downloads. */
+		onclear: () => void;
 		onerror: (error: unknown) => void;
 	} = $props();
 
@@ -182,7 +185,12 @@
 	<p>The download queue is empty</p>
 {/if}
 
-<h2>Previous Downloads</h2>
+<header>
+	<h2>Previous Downloads</h2>
+	{#if previous.length}
+		<button type="button" onclick={onclear}>Clear Downloads</button>
+	{/if}
+</header>
 
 {#if previous.length}
 	<table>
@@ -246,10 +254,16 @@
 		text-transform: uppercase;
 	}
 
-	/* Spaces the sections like the dashboard's */
-	table + h2,
-	p + h2 {
-		margin-top: 2rem;
+	/* Spaces the sections like the dashboard's, with the clear button on the right edge as the actions are */
+	header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin: 2rem 0 0.5rem;
+	}
+
+	header h2 {
+		margin: 0;
 	}
 
 	table {

@@ -107,6 +107,11 @@
 		persistQueue();
 	}
 
+	export function clearQueue() {
+		queue = [];
+		persistQueue();
+	}
+
 	export function playFromQueue(index: number) {
 		return play(dequeue(index));
 	}
