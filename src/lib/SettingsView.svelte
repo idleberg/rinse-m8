@@ -49,7 +49,7 @@
 	const updateIntervals = [1, 6, 12, 24, 48];
 	/** In hours, where 0 checks only at launch. */
 	// biome-ignore lint/style/noMagicNumbers: the list is the menu's choices
-	const appUpdateIntervals = [0, 1, 6, 24];
+	const appUpdateIntervals = [1, 6, 24];
 	const bytesPerMegabyte = 1e6;
 	const megabytes = new Intl.NumberFormat(undefined, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1, maximumSignificantDigits: 1, roundingPriority: 'morePrecision' });
 </script>
@@ -94,7 +94,7 @@
 	<dd>
 		<select aria-label="App update check" value={appUpdateInterval} onchange={(e) => onappupdateintervalchange(Number(e.currentTarget.value))}>
 			{#each appUpdateIntervals as hours}
-				<option value={hours}>{hours === 0 ? 'check at launch only' : `check every ${hours === 1 ? 'hour' : `${hours} hours`}`}</option>
+				<option value={hours}>check every {hours === 1 ? 'hour' : `${hours} hours`}</option>
 			{/each}
 		</select>
 	</dd>
