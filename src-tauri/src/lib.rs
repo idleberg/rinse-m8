@@ -46,22 +46,15 @@ async fn refresh_show(app: tauri::AppHandle, slug: String) -> Result<rinse::Show
     })
 }
 
-/// Adds `episodes` to the cache, replacing any with the same id but keeping its schedule mark, and returns the whole cache.
+/// Merges `episodes` into the cache with `rinse::merge_episodes` and returns the whole cache.
 fn merge(
     app: &tauri::AppHandle,
     episodes: Vec<rinse::Episode>,
 ) -> Result<Vec<rinse::Episode>, String> {
     let cache = app.store("episodes.json").map_err(|e| e.to_string())?;
-    let merged = episodes
-        .into_iter()
-        .map(|episode| {
-            let cached = cache
-                .get(&episode.id)
-                .and_then(|v| serde_json::from_value(v).ok());
-
-            rinse::merge_episode(cached, episode)
-        })
-        .collect();
+    let merged = rinse::merge_episodes(episodes, |id| {
+        cache.get(id).and_then(|v| serde_json::from_value(v).ok())
+    });
 
     save_episodes(app, merged)
 }

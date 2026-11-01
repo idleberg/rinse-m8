@@ -4,7 +4,7 @@ use futures_util::StreamExt;
 use reqwest::header::{CONTENT_RANGE, RANGE};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::path::{Path, PathBuf};
 use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
@@ -63,15 +63,36 @@ impl Episode {
 }
 
 /// The episode to store for `fetched`: its fresh fields, keeping the schedule mark of the `cached` copy
-/// and its check result while the mp3 link stays the same.
+/// and its check result while the mp3 link stays the same. A fetch without an mp3 keeps the cached link, since
+/// Rinse's show feed sometimes sends a placeholder; if the file is really gone, its check fails.
 pub fn merge_episode(cached: Option<Episode>, fetched: Episode) -> Episode {
+    let mp3 = fetched
+        .mp3
+        .or_else(|| cached.as_ref().and_then(|e| e.mp3.clone()));
+
     Episode {
         scheduled: fetched.scheduled || cached.as_ref().is_some_and(|e| e.scheduled),
-        mp3_found: cached
-            .filter(|e| e.mp3 == fetched.mp3)
-            .and_then(|e| e.mp3_found),
+        mp3_found: cached.filter(|e| e.mp3 == mp3).and_then(|e| e.mp3_found),
+        mp3,
         ..fetched
     }
+}
+
+/// Merges each of `fetched` into its copy from `cached`, or into an earlier copy in `fetched`, so the schedule and
+/// show copies of one episode combine instead of the later replacing the earlier.
+pub fn merge_episodes(
+    fetched: Vec<Episode>,
+    cached: impl Fn(&str) -> Option<Episode>,
+) -> Vec<Episode> {
+    let mut merged = BTreeMap::new();
+
+    for episode in fetched {
+        let earlier = merged.remove(&episode.id).or_else(|| cached(&episode.id));
+
+        merged.insert(episode.id.clone(), merge_episode(earlier, episode));
+    }
+
+    merged.into_values().collect()
 }
 
 /// Everything kept in the settings store, one store key per field.
@@ -1371,6 +1392,35 @@ mod tests {
         let merged = merge_episode(Some(checked(Some(false))), fetched);
 
         assert_eq!(merged.mp3_found, None);
+    }
+
+    #[test]
+    fn a_fetch_without_an_mp3_keeps_the_cached_link_and_check_result() {
+        let fetched = Episode {
+            mp3: None,
+            ..episode("2315290")
+        };
+        let merged = merge_episode(Some(checked(Some(true))), fetched);
+
+        assert_eq!(merged.mp3, episode("2315290").mp3);
+        assert_eq!(merged.mp3_found, Some(true));
+    }
+
+    #[test]
+    fn copies_in_one_update_merge_with_each_other() {
+        let schedule = Episode {
+            scheduled: true,
+            ..episode("2315290")
+        };
+        let show = Episode {
+            mp3: None,
+            ..episode("2315290")
+        };
+        let merged = merge_episodes(vec![schedule, show], |_| None);
+
+        assert_eq!(merged.len(), 1);
+        assert_eq!(merged[0].mp3, episode("2315290").mp3);
+        assert!(merged[0].scheduled);
     }
 
     #[test]
