@@ -541,6 +541,9 @@ pub async fn cached_image(name: &str, cache: &Path) -> Result<Vec<u8>, String> {
         .bytes()
         .await
         .map_err(|e| e.to_string())?;
+    let bytes = tokio::task::spawn_blocking(move || shrink_image(bytes.into()))
+        .await
+        .map_err(|e| e.to_string())?;
 
     // Written aside and renamed, so a crash never leaves a truncated image behind.
     let part = cache.join(format!("{name}.part"));
@@ -555,7 +558,40 @@ pub async fn cached_image(name: &str, cache: &Path) -> Result<Vec<u8>, String> {
         .await
         .map_err(|e| e.to_string())?;
 
-    Ok(bytes.into())
+    Ok(bytes)
+}
+
+/// The largest shorter side a cached image keeps: the Player tab's 280px square cover at 2×.
+pub const IMAGE_MAX_SIDE: u32 = 560;
+
+/// Scales an image down, keeping its format and aspect ratio, until its shorter side is at most `IMAGE_MAX_SIDE`.
+/// Bytes that don't decode, or an image already within the limit, come back as they were.
+pub fn shrink_image(bytes: Vec<u8>) -> Vec<u8> {
+    let Ok(format) = image::guess_format(&bytes) else {
+        return bytes;
+    };
+    let Ok(decoded) = image::load_from_memory_with_format(&bytes, format) else {
+        return bytes;
+    };
+    let (width, height) = (decoded.width() as u64, decoded.height() as u64);
+    let shorter = width.min(height);
+
+    if shorter <= IMAGE_MAX_SIDE as u64 {
+        return bytes;
+    }
+
+    let scale = |side: u64| ((side * IMAGE_MAX_SIDE as u64 + shorter / 2) / shorter) as u32;
+    let resized = decoded.resize_exact(
+        scale(width),
+        scale(height),
+        image::imageops::FilterType::Lanczos3,
+    );
+    let mut shrunk = Vec::new();
+
+    match resized.write_to(&mut std::io::Cursor::new(&mut shrunk), format) {
+        Ok(()) => shrunk,
+        Err(_) => bytes,
+    }
 }
 
 /// The bytes the image cache takes up on disk, or 0 if it doesn't exist yet.
@@ -566,6 +602,23 @@ pub fn image_cache_size(cache: &Path) -> u64 {
         .filter_map(|entry| entry.ok()?.metadata().ok())
         .map(|metadata| metadata.len())
         .sum()
+}
+
+/// Deletes the image caches beside `cache` that hold images shrunk to another limit, or none at all.
+pub fn remove_stale_image_caches(cache: &Path) {
+    let (Some(root), Some(current)) = (cache.parent(), cache.file_name()) else {
+        return;
+    };
+
+    for entry in std::fs::read_dir(root).into_iter().flatten().flatten() {
+        let name = entry.file_name();
+
+        if name != current && name.to_string_lossy().starts_with("images") {
+            if let Err(e) = clear_image_cache(&entry.path()) {
+                eprintln!("removing the stale image cache {name:?} failed: {e}");
+            }
+        }
+    }
 }
 
 /// Deletes every cached image. An image downloading meanwhile fails to land and is fetched again next time.
@@ -742,6 +795,36 @@ mod tests {
 
     fn episode(id: &str) -> Episode {
         fixture().into_iter().find(|e| e.id == id).unwrap()
+    }
+
+    fn png(width: u32, height: u32) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        image::RgbImage::new(width, height)
+            .write_to(
+                &mut std::io::Cursor::new(&mut bytes),
+                image::ImageFormat::Png,
+            )
+            .unwrap();
+
+        bytes
+    }
+
+    #[test]
+    fn shrinks_an_image_to_its_shorter_side_limit() {
+        let shrunk = image::load_from_memory(&shrink_image(png(2000, 1000))).unwrap();
+
+        assert_eq!((shrunk.width(), shrunk.height()), (1120, 560));
+    }
+
+    #[test]
+    fn leaves_a_small_image_untouched() {
+        assert_eq!(shrink_image(png(300, 200)), png(300, 200));
+    }
+
+    #[test]
+    fn leaves_non_image_bytes_untouched() {
+        assert_eq!(shrink_image(b"not an image".to_vec()), b"not an image");
     }
 
     #[test]
