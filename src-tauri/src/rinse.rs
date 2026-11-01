@@ -296,7 +296,17 @@ struct RawEpisode {
     file_url: Option<String>,
     channel: Vec<RawChannel>,
     parent_show: Vec<RawShow>,
+    #[serde(default, deserialize_with = "null_as_empty")]
     featured_image: Vec<RawImage>,
+}
+
+/// Reads `null` as an empty list, so artwork Rinse sends as `null` or leaves out never fails the whole response.
+fn null_as_empty<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<Vec<T>>::deserialize(deserializer).map(Option::unwrap_or_default)
 }
 
 /// The show response's `entry`, the show itself.
@@ -323,6 +333,7 @@ struct RawShow {
     id: String,
     slug: String,
     title: String,
+    #[serde(default, deserialize_with = "null_as_empty")]
     featured_image: Vec<RawImage>,
 }
 
@@ -905,6 +916,24 @@ mod tests {
 
         assert_eq!(e.image, None);
         assert_eq!(e.show_image, None);
+    }
+
+    #[test]
+    fn a_null_or_missing_featured_image_counts_as_none() {
+        let mut json: serde_json::Value =
+            serde_json::from_str(include_str!("../tests/fixtures/show.json")).unwrap();
+
+        json["episodes"][0]["featuredImage"] = serde_json::json!(null);
+        json["episodes"][0]["parentShow"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("featuredImage");
+
+        let episodes = map_episodes(&json.to_string()).unwrap();
+
+        assert_eq!(episodes.len(), show_fixture().len());
+        assert_eq!(episodes[0].image, None);
+        assert_eq!(episodes[0].show_image, None);
     }
 
     #[test]
