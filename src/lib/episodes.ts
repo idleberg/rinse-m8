@@ -150,3 +150,12 @@ export function formatDate(date: string): string {
 export function episodeLabel(episode: Episode): string {
 	return `${episode.showTitle} – ${formatDate(episode.date)}`;
 }
+
+/** A copy of `list` with the item at `from` moved to `to`. Either index out of range leaves the order as it was. */
+export function moveItem<T>(list: T[], from: number, to: number): T[] {
+	if (!(from in list && to in list)) {
+		return list.slice();
+	}
+
+	return list.toSpliced(from, 1).toSpliced(to, 0, list[from]);
+}

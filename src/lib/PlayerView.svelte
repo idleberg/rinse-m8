@@ -8,6 +8,7 @@
 		queue,
 		onplay,
 		onremove,
+		onmove,
 	}: {
 		/** The player's own, so this tab and the bottom bar show and change the same playback. */
 		controls: ComponentProps<typeof PlayerControls>;
@@ -17,6 +18,8 @@
 		onplay: (index: number) => void;
 		/** Takes a queue index out of the queue without playing it. */
 		onremove: (index: number) => void;
+		/** Takes a queue index and the index to move that row's episode to. */
+		onmove: (from: number, to: number) => void;
 	} = $props();
 
 	/** Images that failed to load, so the cover falls back past them. */
@@ -24,6 +27,29 @@
 
 	const playable = $derived(controls.episode?.mp3 ? controls.episode : null);
 	const cover = $derived([playable?.image, playable?.showImage].find((src) => src && !failed.includes(src)));
+
+	/** The index of the row being dragged, and of the row it's over. */
+	let dragged = $state<number | null>(null);
+	let over = $state<number | null>(null);
+	let rows: HTMLTableRowElement[] = [];
+
+	// The rows are unkeyed, so a moved episode shows in another row's element and focus follows it there
+	function moveWithArrows(event: KeyboardEvent, index: number) {
+		const step = { ArrowUp: -1, ArrowDown: 1 }[event.key];
+
+		if (!(event.altKey && step)) {
+			return;
+		}
+
+		event.preventDefault();
+
+		const target = index + step;
+
+		if (target >= 0 && target < queue.length) {
+			onmove(index, target);
+			rows[target]?.focus();
+		}
+	}
 </script>
 
 <section>
@@ -58,7 +84,39 @@
 		<tbody>
 			<!-- Unkeyed, since an episode can be queued more than once -->
 			{#each queue as episode, index}
-				<tr>
+				<tr
+					bind:this={rows[index]}
+					class={{
+						dragging: dragged === index,
+						'drop-above': dragged !== null && over === index && dragged > index,
+						'drop-below': dragged !== null && over === index && dragged < index,
+					}}
+					draggable="true"
+					tabindex="0"
+					aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+					ondragstart={(event) => {
+						dragged = index;
+						event.dataTransfer?.setData('text/plain', String(index));
+					}}
+					ondragend={() => {
+						dragged = null;
+						over = null;
+					}}
+					ondragover={(event) => {
+						if (dragged !== null) {
+							event.preventDefault();
+							over = index;
+						}
+					}}
+					ondrop={(event) => {
+						event.preventDefault();
+
+						if (dragged !== null) {
+							onmove(dragged, index);
+						}
+					}}
+					onkeydown={(event) => moveWithArrows(event, index)}
+				>
 					<td>{formatDate(episode.date)}</td>
 					<td>
 						{episode.showTitle}

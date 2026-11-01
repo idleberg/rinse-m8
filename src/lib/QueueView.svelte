@@ -49,7 +49,9 @@
 			.catch(onerror);
 	});
 
-	let dragged: string | null = null;
+	/** The row being dragged, and the index of the row it's over. */
+	let dragged = $state<{ id: string; index: number } | null>(null);
+	let over = $state<number | null>(null);
 	let rows: Record<string, HTMLTableRowElement> = {};
 	/** A keyboard move waiting for the queue to come back, so its row can get focus again. */
 	let moved: { id: string; index: number } | null = null;
@@ -115,22 +117,33 @@
 			{#each downloads.waiting as episode, index (episode.id)}
 				<tr
 					bind:this={rows[episode.id]}
+					class={{
+						dragging: dragged?.index === index,
+						'drop-above': dragged && over === index && dragged.index > index,
+						'drop-below': dragged && over === index && dragged.index < index,
+					}}
 					draggable="true"
 					tabindex="0"
 					aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
 					ondragstart={(event) => {
-						dragged = episode.id;
+						dragged = { id: episode.id, index };
 						event.dataTransfer?.setData('text/plain', episode.id);
 					}}
 					ondragend={() => {
 						dragged = null;
+						over = null;
 					}}
-					ondragover={(event) => dragged && event.preventDefault()}
+					ondragover={(event) => {
+						if (dragged) {
+							event.preventDefault();
+							over = index;
+						}
+					}}
 					ondrop={(event) => {
 						event.preventDefault();
 
 						if (dragged) {
-							onmove(dragged, index);
+							onmove(dragged.id, index);
 						}
 					}}
 					onkeydown={(event) => moveWithArrows(event, episode.id, index)}
@@ -284,10 +297,6 @@
 		display: flex;
 		gap: 0.5ch;
 		justify-content: flex-end;
-	}
-
-	[draggable='true'] {
-		cursor: grab;
 	}
 
 	.failed,

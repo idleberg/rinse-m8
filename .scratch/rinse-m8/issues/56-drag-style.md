@@ -14,11 +14,15 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] While dragging, the dragged row is muted
-- [ ] The accent line shows below the hovered row when dragging down and above it when dragging up, and the row lands exactly there on drop
-- [ ] Dropping, or cancelling with Escape or by dropping outside the table, clears all drag styling
-- [ ] The dashed row lines and the Alt+↑/↓ keyboard move are unchanged
-- [ ] The drag styles live with the app's shared styles, ready for other tables
+- [x] While dragging, the dragged row is muted
+- [x] The accent line shows below the hovered row when dragging down and above it when dragging up, and the row lands exactly there on drop
+- [x] Dropping, or cancelling with Escape or by dropping outside the table, clears all drag styling
+- [x] The dashed row lines and the Alt+↑/↓ keyboard move are unchanged
+- [x] The drag styles live with the app's shared styles, ready for other tables
 - [ ] Manual check: queue three downloads, drag the first to the bottom and back up, and watch the line track the drop position in both directions, in light and dark theme
+
+## Comments
+
+The drag styles live in `src/app.css` (`.dragging`, `.drop-above`, `.drop-below`). The drop line is an inset shadow on the hovered row's cells, so it draws over that row's dashed line while it shows instead of replacing it. Leaving the table mid-drag keeps the line on the last hovered row until the drag ends.

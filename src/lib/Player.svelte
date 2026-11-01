@@ -2,7 +2,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { load } from '@tauri-apps/plugin-store';
 	import { type ComponentProps, tick } from 'svelte';
-	import type { Episode } from './episodes';
+	import { type Episode, moveItem } from './episodes';
 	import { heardBetween, millisecondsPerSecond, scrobbleAfter } from './listen';
 	import PlayerControls from './PlayerControls.svelte';
 
@@ -99,6 +99,12 @@
 		persistQueue();
 
 		return removed;
+	}
+
+	/** Moves the episode at `from` in the play queue to `to`, which is the order auto-advance follows. */
+	export function move(from: number, to: number) {
+		queue = moveItem(queue, from, to);
+		persistQueue();
 	}
 
 	export function playFromQueue(index: number) {

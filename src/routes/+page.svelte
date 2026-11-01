@@ -496,6 +496,7 @@
 				{queue}
 				onplay={(index) => player?.playFromQueue(index).catch(showError)}
 				onremove={(index) => player?.dequeue(index)}
+				onmove={(from, to) => player?.move(from, to)}
 			/>
 		{/if}
 	{:else if view === 'queue'}

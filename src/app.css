@@ -189,3 +189,21 @@ input[type="search"] {
 	outline: 1px solid var(--accent);
 	outline-offset: 2px;
 }
+
+/* Reorderable rows. The drop line is an inset shadow, so it sits over the dashed row line instead of replacing it. */
+[draggable="true"] {
+	cursor: grab;
+}
+
+/* Mutes the row's text to match its subtitle, which is muted already */
+.dragging {
+	color: var(--muted);
+}
+
+.drop-above td {
+	box-shadow: inset 0 2px var(--accent);
+}
+
+.drop-below td {
+	box-shadow: inset 0 -2px var(--accent);
+}
