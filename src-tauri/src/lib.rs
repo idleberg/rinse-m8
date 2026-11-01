@@ -558,7 +558,7 @@ fn sync_tray(app: &tauri::AppHandle, enable: bool) -> Result<(), String> {
     let menu = MenuBuilder::new(app)
         .item(&toggle)
         .separator()
-        .text("show", "Show window")
+        .text("show", "Show Window")
         .text("settings", "Settings")
         .text("quit", "Quit")
         .build()
