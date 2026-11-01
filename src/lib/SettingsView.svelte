@@ -82,7 +82,7 @@
 			keep running in menu bar
 		</label>
 	</dd>
-	<dt>Updates</dt>
+	<dt>Show Updates</dt>
 	<dd>
 		<select aria-label="Update interval" value={updateInterval} onchange={(e) => onupdateintervalchange(Number(e.currentTarget.value))}>
 			{#each updateIntervals as hours}
