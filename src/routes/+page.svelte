@@ -9,6 +9,7 @@
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
 	import { available, type DirectoryShow, type DownloadQueue, dead, type Episode, type Show, type ShowDetails, type ShowPage, showOf, stations } from '../lib/episodes';
 	import Player from '../lib/Player.svelte';
+	import PlayerView from '../lib/PlayerView.svelte';
 	import QueueView from '../lib/QueueView.svelte';
 	import SettingsView from '../lib/SettingsView.svelte';
 	import ShowDirectory from '../lib/ShowDirectory.svelte';
@@ -174,7 +175,7 @@
 		}
 	}
 
-	let view = $state<'dashboard' | 'schedule' | 'shows' | 'queue' | 'settings'>('dashboard');
+	let view = $state<'dashboard' | 'player' | 'schedule' | 'shows' | 'queue' | 'settings'>('dashboard');
 	let openedShow = $state<Show | null>(null);
 
 	/** Of `openedShow`, once its fetch has returned. */
@@ -435,7 +436,7 @@
 
 <nav>
 	<div>
-		{#each [['dashboard', 'My Shows'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Downloads']] as const as [value, label] (value)}
+		{#each [['dashboard', 'My Shows'], ['player', 'Player'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Downloads']] as const as [value, label] (value)}
 			<button type="button" aria-current={!openedShow && view === value ? 'page' : undefined} onclick={() => openView(value)}
 				>{label}</button
 			>
@@ -486,6 +487,10 @@
 				}}
 			/>
 		{/key}
+	{:else if view === 'player'}
+		{#if player}
+			<PlayerView controls={player.controls} />
+		{/if}
 	{:else if view === 'queue'}
 		<QueueView
 			{downloads}

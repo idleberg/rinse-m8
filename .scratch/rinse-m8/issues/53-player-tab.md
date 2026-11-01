@@ -8,10 +8,10 @@
 
 **Blocked by:** 51 (Episode artwork in the episode cache), 52 (Shared player controls)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] The nav shows "Player" right after "My Shows", highlighted like the other tabs when open
-- [ ] The cover shows the episode image, falls back to the show image, then to the black "No artwork for this show" square
-- [ ] The cover is square and fully covered by the image, with no margins
-- [ ] Play, pause, seek and the time toggle on the tab and in the bar stay in sync
+- [x] The nav shows "Player" right after "My Shows", highlighted like the other tabs when open
+- [x] The cover shows the episode image, falls back to the show image, then to the black "No artwork for this show" square
+- [x] The cover is square and fully covered by the image, with no margins
+- [x] Play, pause, seek and the time toggle on the tab and in the bar stay in sync
 - [ ] Manual check: play an episode with artwork, one with only show artwork and one with none, and confirm each cover
