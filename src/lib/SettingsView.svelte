@@ -6,6 +6,7 @@
 		autoDownload = $bindable(),
 		keepRunning = $bindable(),
 		updateInterval,
+		appUpdateInterval,
 		imageCacheSize,
 		lastfm,
 		connectingLastfm,
@@ -13,6 +14,7 @@
 		onautodownloadchange,
 		onkeeprunningchange,
 		onupdateintervalchange,
+		onappupdateintervalchange,
 		onclearimagecache,
 		onconnectlastfm,
 		ondisconnectlastfm,
@@ -22,6 +24,8 @@
 		keepRunning: boolean;
 		/** In hours. */
 		updateInterval: number;
+		/** In hours, or 0 to check only at launch. */
+		appUpdateInterval: number;
 		/** In bytes, or null until it has loaded. */
 		imageCacheSize: number | null;
 		/** Null in a build without a Last.fm API key, which leaves the row out. */
@@ -34,6 +38,7 @@
 		/** Called after the bound checkbox has changed. */
 		onkeeprunningchange: () => void;
 		onupdateintervalchange: (hours: number) => void;
+		onappupdateintervalchange: (hours: number) => void;
 		onclearimagecache: () => void;
 		onconnectlastfm: () => void;
 		ondisconnectlastfm: () => void;
@@ -42,6 +47,9 @@
 	/** In hours. */
 	// biome-ignore lint/style/noMagicNumbers: the list is the menu's choices
 	const updateIntervals = [1, 6, 12, 24, 48];
+	/** In hours, where 0 checks only at launch. */
+	// biome-ignore lint/style/noMagicNumbers: the list is the menu's choices
+	const appUpdateIntervals = [0, 1, 6, 24];
 	const bytesPerMegabyte = 1e6;
 	const megabytes = new Intl.NumberFormat(undefined, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1, maximumSignificantDigits: 1, roundingPriority: 'morePrecision' });
 </script>
@@ -79,6 +87,14 @@
 		<select aria-label="Update interval" value={updateInterval} onchange={(e) => onupdateintervalchange(Number(e.currentTarget.value))}>
 			{#each updateIntervals as hours}
 				<option value={hours}>every {hours === 1 ? 'hour' : `${hours} hours`}</option>
+			{/each}
+		</select>
+	</dd>
+	<dt>App updates</dt>
+	<dd>
+		<select aria-label="App update check" value={appUpdateInterval} onchange={(e) => onappupdateintervalchange(Number(e.currentTarget.value))}>
+			{#each appUpdateIntervals as hours}
+				<option value={hours}>{hours === 0 ? 'check at launch only' : `check every ${hours === 1 ? 'hour' : `${hours} hours`}`}</option>
 			{/each}
 		</select>
 	</dd>

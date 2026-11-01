@@ -109,6 +109,8 @@ pub struct Settings {
     pub keep_running: bool,
     /// Hours between updates of the schedule and the subscribed shows.
     pub update_interval: u32,
+    /// Hours between checks for a new app version, or 0 to check only at launch.
+    pub app_update_interval: u32,
 }
 
 impl Default for Settings {
@@ -120,6 +122,7 @@ impl Default for Settings {
             auto_download: false,
             keep_running: true,
             update_interval: 6,
+            app_update_interval: 24,
         }
     }
 }
@@ -1172,6 +1175,13 @@ mod tests {
         let settings: Settings = serde_json::from_str("{}").unwrap();
 
         assert_eq!(settings.update_interval, 6);
+    }
+
+    #[test]
+    fn an_empty_store_checks_for_app_updates_every_24_hours() {
+        let settings: Settings = serde_json::from_str("{}").unwrap();
+
+        assert_eq!(settings.app_update_interval, 24);
     }
 
     const HOUR: i64 = 60 * 60;
