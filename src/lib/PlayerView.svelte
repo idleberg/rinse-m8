@@ -13,9 +13,10 @@
 		controls: ComponentProps<typeof PlayerControls>;
 		/** Listed below the controls, in play order. */
 		queue: Episode[];
-		onplay: (episode: Episode) => void;
-		/** Takes an episode id out of the queue without playing it. */
-		onremove: (id: string) => void;
+		/** Takes a queue index, and plays that row's episode. */
+		onplay: (index: number) => void;
+		/** Takes a queue index out of the queue without playing it. */
+		onremove: (index: number) => void;
 	} = $props();
 
 	/** Images that failed to load, so the cover falls back past them. */
@@ -55,7 +56,8 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each queue as episode (episode.id)}
+			<!-- Unkeyed, since an episode can be queued more than once -->
+			{#each queue as episode, index}
 				<tr>
 					<td>{formatDate(episode.date)}</td>
 					<td>
@@ -66,12 +68,12 @@
 					</td>
 					<td>
 						<div class="actions">
-							<button type="button" class="icon" aria-label="Play" title="Play" onclick={() => onplay(episode)}>
+							<button type="button" class="icon" aria-label="Play" title="Play" onclick={() => onplay(index)}>
 								<svg viewBox="0 0 16 16" aria-hidden="true">
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>
-							<button type="button" class="icon" aria-label="Remove" title="Remove" onclick={() => onremove(episode.id)}>
+							<button type="button" class="icon" aria-label="Remove" title="Remove" onclick={() => onremove(index)}>
 								<svg viewBox="0 0 16 16" aria-hidden="true">
 									<path d="M4 4l8 8M12 4l-8 8" />
 								</svg>

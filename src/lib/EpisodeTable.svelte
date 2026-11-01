@@ -19,7 +19,6 @@
 		downloads,
 		subscribing,
 		playing,
-		queued,
 		onplay,
 		onpause,
 		onenqueue,
@@ -39,8 +38,6 @@
 		subscribing: string[];
 		/** The id of the episode while it's playing. */
 		playing: string | null;
-		/** Ids of the episodes in the play queue. */
-		queued: string[];
 		onplay: (episode: Episode) => void;
 		onpause: () => void;
 		onenqueue: (episode: Episode) => void;
@@ -132,7 +129,6 @@
 								class="icon"
 								aria-label="Add to play queue"
 								title="Add to play queue"
-								disabled={queued.includes(episode.id)}
 								onclick={() => onenqueue(episode)}
 							>
 								<svg viewBox="0 0 16 16" aria-hidden="true">

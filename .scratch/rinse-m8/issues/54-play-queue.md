@@ -2,7 +2,7 @@
 
 **What to build:** This replaces ticket 10.
 
-- **Enqueue:** an "Add to play queue" icon button sits right next to Play on every available row in every episode table. It's disabled while the episode is already queued. Its icon is three list lines with a small outlined play triangle after the last one. It doesn't use `+`, which belongs to subscribe.
+- **Enqueue:** an "Add to play queue" icon button sits right next to Play on every available row in every episode table. An episode can be queued more than once. Its icon is three list lines with a small outlined play triangle after the last one. It doesn't use `+`, which belongs to subscribe.
 - **Queue table:** under the controls on the Player tab, a table of the play queue in the style of the app's other tables. Each row has Play and Remove.
 - **Playing from the queue:** it removes that episode from the queue and keeps the others in order, both the ones before it and the ones after.
 - **Auto-advance:** when the playing episode ends, the first episode in the queue starts and leaves the queue.
@@ -12,10 +12,10 @@
 
 **Status:** ready-for-human
 
-- [x] Every episode table has an enqueue button next to Play, disabled for queued episodes
+- [x] Every episode table has an enqueue button next to Play, which can queue an episode more than once
 - [x] The enqueue icon is list lines with a play triangle, in the same stroke style as the other icons
 - [x] The Player tab lists the queue below the controls, or "The play queue is empty"
-- [x] Playing a queued episode removes only that one; the rest keep their order
+- [x] Playing a queued episode removes only that row; the rest keep their order
 - [x] Remove takes an episode out of the queue without playing it
 - [x] When an episode ends, the first queued episode starts and leaves the queue
 - [x] The queue survives a restart

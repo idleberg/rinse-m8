@@ -13,7 +13,6 @@
 		downloads,
 		subscribing,
 		playing,
-		queued,
 		onplay,
 		onpause,
 		onenqueue,
@@ -34,7 +33,6 @@
 		/** Show slugs. */
 		subscribing: string[];
 		playing: string | null;
-		queued: string[];
 		onplay: (episode: Episode) => void;
 		onpause: () => void;
 		onenqueue: (episode: Episode) => void;
@@ -120,7 +118,6 @@
 	{downloads}
 	{subscribing}
 	{playing}
-	{queued}
 	{onplay}
 	{onpause}
 	{onenqueue}

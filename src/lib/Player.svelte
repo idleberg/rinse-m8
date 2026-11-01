@@ -62,8 +62,6 @@
 	export async function play(next: Episode) {
 		const store = await ready;
 
-		dequeue(next.id);
-
 		if (next.id === episode?.id) {
 			savePosition(false);
 		} else {
@@ -86,22 +84,25 @@
 		}
 	}
 
-	/** Waits for the stored queue, so loading it can't drop the new episode. */
+	/** Waits for the stored queue, so loading it can't drop the new episode. An episode can be queued more than once. */
 	export async function enqueue(added: Episode) {
 		await ready;
 
-		if (!queue.some((e) => e.id === added.id)) {
-			queue.push(added);
-			persistQueue();
-		}
+		queue.push(added);
+		persistQueue();
 	}
 
-	/** Takes an episode out of the play queue, leaving the rest in order. */
-	export function dequeue(id: string) {
-		if (queue.some((e) => e.id === id)) {
-			queue = queue.filter((e) => e.id !== id);
-			persistQueue();
-		}
+	/** Takes the episode at `index` out of the play queue, leaving the rest in order. */
+	export function dequeue(index: number) {
+		const [removed] = queue.splice(index, 1);
+
+		persistQueue();
+
+		return removed;
+	}
+
+	export function playFromQueue(index: number) {
+		return play(dequeue(index));
 	}
 
 	export function pause() {
@@ -228,8 +229,8 @@
 				forgetPosition();
 				endListen();
 
-				if (queue[0]) {
-					play(queue[0]).catch(onerror);
+				if (queue.length > 0) {
+					playFromQueue(0).catch(onerror);
 				}
 			}}
 			onerror={() => episode && invoke('recheck_mp3', { id: episode.id }).catch(onerror)}

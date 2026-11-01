@@ -112,7 +112,6 @@
 	let player = $state<ReturnType<typeof Player>>();
 	let playing = $state<string | null>(null);
 	let queue = $state<Episode[]>([]);
-	const queuedIds = $derived(queue.map((episode) => episode.id));
 
 	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failed: null, downloaded: [] });
 
@@ -479,7 +478,6 @@
 				{downloads}
 				{subscribing}
 				{playing}
-				queued={queuedIds}
 				onplay={(episode) => player?.play(episode).catch(showError)}
 				onpause={() => player?.pause()}
 				onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
@@ -496,8 +494,8 @@
 			<PlayerView
 				controls={player.controls}
 				{queue}
-				onplay={(episode) => player?.play(episode).catch(showError)}
-				onremove={(id) => player?.dequeue(id)}
+				onplay={(index) => player?.playFromQueue(index).catch(showError)}
+				onremove={(index) => player?.dequeue(index)}
 			/>
 		{/if}
 	{:else if view === 'queue'}
@@ -562,7 +560,6 @@
 							{downloads}
 							{subscribing}
 							{playing}
-							queued={queuedIds}
 							onplay={(episode) => player?.play(episode).catch(showError)}
 							onpause={() => player?.pause()}
 							onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
@@ -590,7 +587,6 @@
 						{downloads}
 						{subscribing}
 						{playing}
-						queued={queuedIds}
 						onplay={(episode) => player?.play(episode).catch(showError)}
 						onpause={() => player?.pause()}
 						onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
@@ -628,7 +624,6 @@
 				{downloads}
 				{subscribing}
 				{playing}
-				queued={queuedIds}
 				onplay={(episode) => player?.play(episode).catch(showError)}
 				onpause={() => player?.pause()}
 				onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
