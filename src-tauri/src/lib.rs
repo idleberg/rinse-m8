@@ -262,6 +262,16 @@ fn mark_downloaded(app: tauri::AppHandle, id: String) -> Result<(), String> {
     })
 }
 
+/// Drops the episode from the downloaded record, leaving any file in the download folder as it is.
+#[tauri::command]
+fn unmark_downloaded(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    update_downloads(&app, |queue| {
+        queue.downloaded.remove(&id);
+
+        save_downloads(&app, queue)
+    })
+}
+
 #[tauri::command]
 fn dismiss_download_failure(app: tauri::AppHandle) {
     update_downloads(&app, |queue| queue.failed = None);
@@ -943,6 +953,7 @@ pub fn run() {
             move_download,
             cancel_download,
             mark_downloaded,
+            unmark_downloaded,
             dismiss_download_failure,
             recheck_mp3,
             get_settings,

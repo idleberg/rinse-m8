@@ -10,6 +10,7 @@
 		oncancel,
 		onretry,
 		ondismiss,
+		onunmark,
 		onerror,
 	}: {
 		downloads: DownloadQueue;
@@ -22,6 +23,8 @@
 		/** Takes the failed episode. */
 		onretry: (episode: Episode) => void;
 		ondismiss: () => void;
+		/** Takes an episode id to drop from the previous downloads. */
+		onunmark: (id: string) => void;
 		onerror: (error: unknown) => void;
 	} = $props();
 
@@ -34,6 +37,8 @@
 	// Fetched when the view opens and again whenever a download is recorded
 	$effect(() => {
 		if (!downloadedKey) {
+			previous = [];
+
 			return;
 		}
 
@@ -186,20 +191,32 @@
 						{/if}
 					</td>
 					<td>
-						{#if episode.file}
-							{@const file = episode.file}
+						<div class="actions">
+							{#if episode.file}
+								{@const file = episode.file}
+								<button type="button"
+									class="icon"
+									aria-label="Show in folder"
+									title="Show in folder"
+									onclick={() => revealItemInDir(file).catch(onerror)}
+								>
+									<svg viewBox="0 0 16 16" aria-hidden="true">
+										<circle cx="7" cy="7" r="4.5" />
+										<path d="M10.5 10.5L14 14" />
+									</svg>
+								</button>
+							{/if}
 							<button type="button"
 								class="icon"
-								aria-label="Show in folder"
-								title="Show in folder"
-								onclick={() => revealItemInDir(file).catch(onerror)}
+								aria-label="Remove"
+								title="Remove"
+								onclick={() => onunmark(episode.id)}
 							>
 								<svg viewBox="0 0 16 16" aria-hidden="true">
-									<circle cx="7" cy="7" r="4.5" />
-									<path d="M10.5 10.5L14 14" />
+									<path d="M4 4l8 8M12 4l-8 8" />
 								</svg>
 							</button>
-						{/if}
+						</div>
 					</td>
 				</tr>
 			{/each}
@@ -261,6 +278,12 @@
 	.status {
 		width: 1%;
 		text-align: right;
+	}
+
+	.actions {
+		display: flex;
+		gap: 0.5ch;
+		justify-content: flex-end;
 	}
 
 	[draggable='true'] {

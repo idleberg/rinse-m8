@@ -400,6 +400,7 @@
 			oncancel={() => invoke('cancel_download').catch(showError)}
 			onretry={(episode) => retryFailure(episode).catch(showError)}
 			ondismiss={() => dismissFailure().catch(showError)}
+			onunmark={(id) => invoke('unmark_downloaded', { id }).catch(showError)}
 			onerror={showError}
 		/>
 	{:else if view === 'settings'}
