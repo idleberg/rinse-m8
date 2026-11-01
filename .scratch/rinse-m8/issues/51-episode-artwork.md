@@ -9,10 +9,10 @@ Either one is missing when Rinse sends none (Rinse often sends `[]`). Episode ca
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Episodes from the schedule and from a show's episodes include the episode image and the show image when Rinse provides them
-- [ ] An episode without artwork has no image, rather than a broken URL
-- [ ] An episode cache from before this change loads without errors
-- [ ] The frontend's episode type has both fields
-- [ ] Unit test: mapping the schedule fixture yields the expected episode image and show image URLs
+- [x] Episodes from the schedule and from a show's episodes include the episode image and the show image when Rinse provides them
+- [x] An episode without artwork has no image, rather than a broken URL
+- [x] An episode cache from before this change loads without errors
+- [x] The frontend's episode type has both fields
+- [x] Unit test: mapping the schedule fixture yields the expected episode image and show image URLs

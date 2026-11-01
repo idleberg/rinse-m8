@@ -251,6 +251,8 @@ mod tests {
             mp3: None,
             scheduled: true,
             mp3_found: None,
+            image: None,
+            show_image: None,
         }
     }
 

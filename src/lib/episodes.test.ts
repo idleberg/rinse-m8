@@ -20,6 +20,8 @@ function episode(id: string, date: string, show: string): Episode {
 		mp3: null,
 		scheduled: true,
 		mp3Found: null,
+		image: null,
+		showImage: null,
 	};
 }
 

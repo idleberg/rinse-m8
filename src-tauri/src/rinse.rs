@@ -35,6 +35,10 @@ pub struct Episode {
     pub scheduled: bool,
     /// Whether the last check of `mp3` found it: `Some(false)` for a 404, `None` until a check gets a 200 or 404.
     pub mp3_found: Option<bool>,
+    /// The episode's own artwork, served through the `image` scheme. Missing from cache entries saved before it existed.
+    pub image: Option<String>,
+    /// The show's artwork, served through the `image` scheme. Missing from cache entries saved before it existed.
+    pub show_image: Option<String>,
 }
 
 fn scheduled_by_default() -> bool {
@@ -292,6 +296,7 @@ struct RawEpisode {
     file_url: Option<String>,
     channel: Vec<RawChannel>,
     parent_show: Vec<RawShow>,
+    featured_image: Vec<RawImage>,
 }
 
 /// The show response's `entry`, the show itself.
@@ -313,10 +318,12 @@ struct RawShowResponse {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct RawShow {
     id: String,
     slug: String,
     title: String,
+    featured_image: Vec<RawImage>,
 }
 
 /// One page of the show index.
@@ -370,15 +377,7 @@ pub struct ShowPage {
 pub fn map_show(json: &str) -> serde_json::Result<ShowPage> {
     let details = serde_json::from_str::<RawShowResponse>(json)
         .map(|raw| ShowDetails {
-            image: raw.entry.featured_image.into_iter().next().map(|i| {
-                let mut url = reqwest::Url::parse(IMAGE_SCHEME_BASE).expect("valid base url");
-
-                url.path_segments_mut()
-                    .expect("base url has a path")
-                    .push(&i.filename);
-
-                url.into()
-            }),
+            image: image_url(raw.entry.featured_image),
             description: raw.entry.description.filter(|d| !d.trim().is_empty()),
         })
         .unwrap_or_default();
@@ -387,6 +386,18 @@ pub fn map_show(json: &str) -> serde_json::Result<ShowPage> {
         details,
         episodes: map_episodes(json)?,
     })
+}
+
+/// The first of Rinse's `featuredImage` list as an `image` scheme URL, or `None` when the list is empty.
+fn image_url(images: Vec<RawImage>) -> Option<String> {
+    let image = images.into_iter().next()?;
+    let mut url = reqwest::Url::parse(IMAGE_SCHEME_BASE).expect("valid base url");
+
+    url.path_segments_mut()
+        .expect("base url has a path")
+        .push(&image.filename);
+
+    Some(url.into())
 }
 
 /// A show in the show directory, every show Rinse lists.
@@ -467,6 +478,8 @@ fn map_episode(raw: RawEpisode) -> Option<Episode> {
         mp3: raw.file_url.filter(|url| url.ends_with(".mp3")),
         scheduled: false,
         mp3_found: None,
+        image: image_url(raw.featured_image),
+        show_image: image_url(show.featured_image),
     })
 }
 
@@ -868,6 +881,43 @@ mod tests {
         assert_eq!(e.show_slug, "dubquake-records");
         assert_eq!(e.show_title, "Dubquake Records");
         assert_eq!(e.genres, ["Dub", "Reggae"]);
+    }
+
+    #[test]
+    fn maps_the_episode_and_show_images() {
+        let e = episode("2315290");
+
+        assert_eq!(
+            e.image,
+            Some(format!("{IMAGE_SCHEME_BASE}/Dubquake-Records_O.B.F-x-Terremoto-Sao-Paolo-Special_Artwork-Zach-ODwyer.jpg"))
+        );
+        assert_eq!(
+            e.show_image,
+            Some(format!(
+                "{IMAGE_SCHEME_BASE}/Dubquake-Records-Rinse-FR-Class-Of-2025_Original.jpg"
+            ))
+        );
+    }
+
+    #[test]
+    fn an_episode_without_artwork_has_no_images() {
+        let e = episode("2319504");
+
+        assert_eq!(e.image, None);
+        assert_eq!(e.show_image, None);
+    }
+
+    #[test]
+    fn cache_entries_without_images_load_without_them() {
+        let mut value = serde_json::to_value(episode("2315290")).unwrap();
+
+        value.as_object_mut().unwrap().remove("image");
+        value.as_object_mut().unwrap().remove("showImage");
+
+        let e: Episode = serde_json::from_value(value).unwrap();
+
+        assert_eq!(e.image, None);
+        assert_eq!(e.show_image, None);
     }
 
     #[test]

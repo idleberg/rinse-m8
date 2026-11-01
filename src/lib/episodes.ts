@@ -19,6 +19,10 @@ export interface Episode {
 	scheduled: boolean;
 	/** Whether the last check of `mp3` found it: false for a 404, null until a check gets a 200 or 404. */
 	mp3Found: boolean | null;
+	/** The episode's own artwork, served through the `image` scheme; null when Rinse sends none. */
+	image: string | null;
+	/** The show's artwork, served through the `image` scheme; null when Rinse sends none. */
+	showImage: string | null;
 }
 
 export interface Show {
