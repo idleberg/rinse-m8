@@ -12,6 +12,7 @@
 	import ShowDirectory from '../lib/ShowDirectory.svelte';
 	import ShowSection from '../lib/ShowSection.svelte';
 	import ShowView from '../lib/ShowView.svelte';
+	import UpdateBanner from '../lib/UpdateBanner.svelte';
 
 	interface Settings {
 		subscriptions: Show[];
@@ -277,6 +278,36 @@
 		await dismissFailure();
 	}
 
+	/** Dismissing it clears it until the next launch. */
+	let update = $state<{ version: string; percent: number | null } | null>(null);
+
+	// `mise run dev:update` fakes an update for design review; release builds drop this, since DEV is false there
+	const fakeUpdate = import.meta.env.DEV && Boolean(import.meta.env.VITE_FAKE_UPDATE);
+
+	if (fakeUpdate) {
+		update = { version: '9.9.9', percent: null };
+	}
+
+	/** The fake download stops at 100% rather than relaunching. */
+	function startUpdate() {
+		if (!(fakeUpdate && update)) {
+			return;
+		}
+
+		const progress = { version: update.version, percent: 0 };
+
+		update = progress;
+
+		const timer = setInterval(() => {
+			progress.percent += 5;
+			update = { ...progress };
+
+			if (progress.percent === 100) {
+				clearInterval(timer);
+			}
+		}, 100);
+	}
+
 	function showError(e: unknown) {
 		errorMessage = String(e);
 	}
@@ -338,6 +369,17 @@
 	ondragover={(event) => event.dataTransfer?.types.includes('Files') && event.preventDefault()}
 	ondrop={(event) => event.dataTransfer?.types.includes('Files') && event.preventDefault()}
 />
+
+{#if update}
+	<UpdateBanner
+		version={update.version}
+		percent={update.percent}
+		onupdate={startUpdate}
+		ondismiss={() => {
+			update = null;
+		}}
+	/>
+{/if}
 
 <nav>
 	<div>

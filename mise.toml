@@ -18,6 +18,11 @@ postinstall = "hk install --mise && bun install"
 description = "Run the app in development mode"
 run = "bun tauri dev"
 
+[tasks."dev:update"]
+description = "Run the app in development mode with a fake update available"
+env = { VITE_FAKE_UPDATE = "1" }
+run = "bun tauri dev"
+
 [tasks.build]
 description = "Build the app for the host platform"
 run = "bun tauri build"

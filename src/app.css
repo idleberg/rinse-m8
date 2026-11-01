@@ -9,6 +9,7 @@
 	--ink: light-dark(rgb(20 20 20), rgb(233 229 220));
 	--muted: light-dark(rgb(107 103 95), rgb(143 138 128));
 	--accent: light-dark(rgb(217 56 30), rgb(255 90 60));
+	--info: light-dark(rgb(30 80 200), rgb(45 105 215));
 }
 
 .inverted {
