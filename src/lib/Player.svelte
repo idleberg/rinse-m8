@@ -2,8 +2,9 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { load } from '@tauri-apps/plugin-store';
 	import { tick } from 'svelte';
-	import { type Episode, episodeLabel } from './episodes';
+	import type { Episode } from './episodes';
 	import { heardBetween, scrobbleAfter } from './listen';
+	import PlayerControls from './PlayerControls.svelte';
 
 	let {
 		episodes,
@@ -37,9 +38,6 @@
 	/** How often a playing episode's position is saved, in milliseconds. */
 	const saveInterval = 5000;
 	const millisecondsPerSecond = 1000;
-	/** Where `h:mm:ss` sits in an ISO timestamp, past the hours' leading digit. */
-	const isoTimeStart = 12;
-	const isoTimeEnd = 19;
 
 	const ready = load('player.json').then(async (store) => {
 		position = (await store.get<number>('position')) ?? 0;
@@ -87,10 +85,33 @@
 		audio?.pause();
 	}
 
-	/** As `h:mm:ss`, which fits mixes up to ten hours. */
-	function formatTime(seconds: number) {
-		return new Date(seconds * millisecondsPerSecond).toISOString().slice(isoTimeStart, isoTimeEnd);
-	}
+	/** The props for a set of `PlayerControls`, so every set shows and changes the same playback. */
+	export const controls = {
+		get episode() {
+			return episode;
+		},
+		get paused() {
+			return paused;
+		},
+		get currentTime() {
+			return currentTime;
+		},
+		get duration() {
+			return duration;
+		},
+		get showRemaining() {
+			return showRemaining;
+		},
+		onplay: () => episode && play(episode).catch(onerror),
+		onpause: pause,
+		onseek: (time: number) => {
+			currentTime = time;
+		},
+		ontoggletime: () => {
+			showRemaining = !showRemaining;
+			localStorage.setItem('showRemaining', String(showRemaining));
+		},
+	};
 
 	function persistPosition() {
 		ready.then((store) => store.set('position', position)).catch((e) => onerror(e));
@@ -149,42 +170,7 @@
 
 {#if episode?.mp3}
 	<footer>
-		{#if paused}
-			<button type="button" class="icon" aria-label="Play" title="Play" onclick={() => episode && play(episode).catch(onerror)}>
-				<svg viewBox="0 0 16 16" aria-hidden="true">
-					<path d="M4 2.5l9 5.5-9 5.5z" />
-				</svg>
-			</button>
-		{:else}
-			<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={pause}>
-				<svg viewBox="0 0 16 16" aria-hidden="true">
-					<path d="M5 3v10M11 3v10" />
-				</svg>
-			</button>
-		{/if}
-		<span>{episodeLabel(episode)}</span>
-		<input
-			type="range"
-			aria-label="Seek"
-			min="0"
-			max={duration || 0}
-			step="any"
-			disabled={!duration}
-			style:--progress={duration ? currentTime / duration : 0}
-			bind:value={currentTime}
-		/>
-		<button
-			type="button"
-			class="time"
-			title={showRemaining ? 'Show elapsed time' : 'Show remaining time'}
-			onclick={() => {
-				showRemaining = !showRemaining;
-				localStorage.setItem('showRemaining', String(showRemaining));
-			}}
-			><span class:hidden={!showRemaining}>-</span>{showRemaining
-				? formatTime((duration || 0) - currentTime)
-				: formatTime(currentTime)}</button
-		>
+		<PlayerControls {...controls} {episode} />
 		<!-- biome-ignore lint/a11y/useMediaCaption: Rinse has no captions for its mixes -->
 		<audio
 			bind:this={audio}
@@ -222,52 +208,8 @@
 
 <style>
 	footer {
-		display: flex;
-		gap: 1rem;
-		align-items: center;
 		border-top: 1px solid currentColor;
 		padding: 0.5rem 1rem;
 		background: var(--paper);
-		text-transform: uppercase;
-	}
-
-	span {
-		white-space: nowrap;
-	}
-
-	/* Reads as plain text */
-	.time {
-		border: none;
-		padding: 0;
-		font-variant-numeric: tabular-nums;
-	}
-
-	/* Keeps the minus's width, so toggling to remaining time doesn't resize the seek bar */
-	.hidden {
-		visibility: hidden;
-	}
-
-	/* Drawn like a button, filled up to the playhead */
-	input {
-		flex: 1;
-		appearance: none;
-		box-sizing: border-box;
-		height: 1.5em;
-		margin: 0;
-		border: 1px solid currentColor;
-		background: linear-gradient(var(--ink), var(--ink)) 0 0 / calc(var(--progress) * 100%) 100% no-repeat;
-		cursor: pointer;
-	}
-
-	input:disabled {
-		color: var(--muted);
-		cursor: default;
-	}
-
-	input::-webkit-slider-thumb {
-		appearance: none;
-		width: 2px;
-		height: calc(1.5em - 2px);
-		background: var(--accent);
 	}
 </style>
