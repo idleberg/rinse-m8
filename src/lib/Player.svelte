@@ -27,6 +27,8 @@
 	let episode = $state<Episode | null>(null);
 	let audio = $state<HTMLAudioElement>();
 	let paused = $state(true);
+	/** The bar stays hidden at launch, until something plays. */
+	let shown = $state(false);
 	let currentTime = $state(0);
 	let duration = $state(0);
 	let showRemaining = $state(localStorage.getItem('showRemaining') === 'true');
@@ -208,7 +210,7 @@
 </script>
 
 {#if episode?.mp3}
-	<footer>
+	<footer hidden={!shown}>
 		<PlayerControls {...controls} />
 		<!-- biome-ignore lint/a11y/useMediaCaption: Rinse has no captions for its mixes -->
 		<audio
@@ -225,6 +227,7 @@
 			}}
 			onseeked={() => savePosition(false)}
 			onplay={() => {
+				shown = true;
 				playing = episode?.id ?? null;
 				started ??= Math.floor(Date.now() / millisecondsPerSecond);
 
