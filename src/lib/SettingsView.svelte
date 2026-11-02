@@ -119,7 +119,7 @@
 		{/if}
 		<button type="button" onclick={onclearimagecache} disabled={!imageCacheSize}>Clear</button>
 	</dd>
-	<dt>Show data</dt>
+	<dt>Subscriptions</dt>
 	<dd>
 		<button type="button" onclick={onimport} disabled={importing}>Import…</button>
 		<button type="button" onclick={onexport} disabled={importing || !canExport}>Export…</button>
