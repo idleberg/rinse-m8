@@ -6,6 +6,7 @@ import {
 	dead,
 	defaultSort,
 	type Episode,
+	episodeLabel,
 	moveItem,
 	sortEpisodes,
 	toggleSort,
@@ -82,4 +83,13 @@ it('moving an item to an index reorders the list, and an out-of-range index chan
 	expect(moveItem(list, -1, 0)).toEqual(list);
 	expect(moveItem(list, 0, 3)).toEqual(list);
 	expect(list).toEqual(['a', 'b', 'c']);
+});
+
+it('the label reads show, then subtitle if there is one, then date', () => {
+	const plain = episode('a', '2026-10-01', 'Beta');
+
+	expect(episodeLabel(plain)).toBe('Beta – 2026/10/01');
+	expect(episodeLabel({ ...plain, displayTitle: 'Guest Mix' })).toBe(
+		'Beta – Guest Mix – 2026/10/01',
+	);
 });

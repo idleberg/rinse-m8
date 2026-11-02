@@ -146,9 +146,11 @@ export function formatDate(date: string): string {
 	return date.replaceAll('-', '/');
 }
 
-/** `<Show> – <YYYY/MM/DD>`. */
+/** `<Show> – <Subtitle> – <YYYY/MM/DD>`, leaving out the subtitle when there is none. */
 export function episodeLabel(episode: Episode): string {
-	return `${episode.showTitle} – ${formatDate(episode.date)}`;
+	return [episode.showTitle, episode.displayTitle, formatDate(episode.date)]
+		.filter(Boolean)
+		.join(' – ');
 }
 
 /** A copy of `list` with the item at `from` moved to `to`. Either index out of range leaves the order as it was. */

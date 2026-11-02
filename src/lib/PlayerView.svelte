@@ -193,6 +193,11 @@
 		flex: 1;
 	}
 
+	/* Lets it shrink below the title's width, so a long title scrolls instead of widening it */
+	.controls {
+		min-width: 0;
+	}
+
 	.empty {
 		margin: 0;
 		text-transform: uppercase;

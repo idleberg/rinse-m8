@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { prefersReducedMotion } from 'svelte/motion';
 	import { type Episode, episodeLabel } from './episodes';
 	import { formatTime } from './listen';
 
@@ -30,10 +31,74 @@
 		/** The Player tab puts the label on a line of its own, and adds the full length to the time. */
 		layout?: 'bar' | 'tab';
 	} = $props();
+
+	/** How fast a title too long for its space scrolls, in pixels per second. */
+	const scrollSpeed = 25;
+
+	const label = $derived(episode ? episodeLabel(episode) : '');
+
+	let box: HTMLElement | undefined = $state();
+	let text: HTMLElement | undefined = $state();
+	let trackElement: HTMLElement | undefined = $state();
+	let overflows = $state(false);
+	let scrollDuration = $state(0);
+	/** Whether the listener clicked a scrolling title to stop it, so it reads from the start. */
+	let stopped = $state(false);
+	const scrollable = $derived(overflows && !prefersReducedMotion.current);
+	const scrolling = $derived(scrollable && !stopped);
+
+	$effect(() => {
+		if (!(box && text && trackElement)) {
+			return;
+		}
+
+		const observer = new ResizeObserver(() => {
+			if (!(box && text && trackElement)) {
+				return;
+			}
+
+			overflows = text.scrollWidth > box.clientWidth;
+
+			// The track holds two passes, so one pass is half of it
+			scrollDuration = trackElement.scrollWidth / 2 / scrollSpeed;
+		});
+
+		observer.observe(box);
+		observer.observe(trackElement);
+
+		return () => observer.disconnect();
+	});
+
+	function toggleScrolling() {
+		stopped = !stopped;
+	}
 </script>
 
-{#snippet label()}
-	<span>{episode && episodeLabel(episode)}</span>
+<!-- Scrolls when it doesn't fit, with a copy after it so the end runs into the start -->
+{#snippet track()}
+	<div class="track" class:scrolling style:--duration="{scrollDuration}s" bind:this={trackElement}>
+		<span class="text" bind:this={text}>{label}</span>
+		{#if scrolling}
+			<span class="dot" aria-hidden="true">&nbsp;•&nbsp;</span>
+			<span aria-hidden="true">{label}</span>
+			<span class="dot" aria-hidden="true">&nbsp;•&nbsp;</span>
+		{/if}
+	</div>
+{/snippet}
+
+<!-- A title that doesn't fit is a button, which stops or restarts the scrolling. Keyed, so a new label measures again. -->
+{#snippet title()}
+	{#key label}
+		{#if scrollable}
+			<button type="button" class="title" title={stopped ? 'Scroll title' : 'Stop scrolling'} bind:this={box} onclick={toggleScrolling}>
+				{@render track()}
+			</button>
+		{:else}
+			<div class="title" bind:this={box}>
+				{@render track()}
+			</div>
+		{/if}
+	{/key}
 {/snippet}
 
 <div class="row">
@@ -51,7 +116,7 @@
 		</button>
 	{/if}
 	{#if layout === 'bar'}
-		{@render label()}
+		{@render title()}
 	{/if}
 	<input
 		type="range"
@@ -73,7 +138,7 @@
 
 {#if layout === 'tab'}
 	<div class="label">
-		{@render label()}
+		{@render title()}
 	</div>
 {/if}
 
@@ -93,8 +158,56 @@
 		margin-top: 0.5rem;
 	}
 
-	span {
+	.title {
+		display: block;
+		overflow: hidden;
 		white-space: nowrap;
+	}
+
+	/* Reads as plain text, like the time */
+	button.title {
+		width: 100%;
+		border: none;
+		padding: 0;
+		text-align: inherit;
+	}
+
+	/* Capped, so the seek bar keeps most of the row */
+	.row .title {
+		flex: 0 1 auto;
+		min-width: 0;
+		max-width: 40%;
+	}
+
+	.track {
+		display: flex;
+	}
+
+	/* Shrinks to the box when still, so the ellipsis shows */
+	.text {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.scrolling {
+		width: max-content;
+		animation: scroll var(--duration) linear infinite;
+	}
+
+	.scrolling .text {
+		flex-shrink: 0;
+	}
+
+	.dot {
+		font-weight: bold;
+		color: var(--accent);
+	}
+
+	@keyframes scroll {
+		to {
+			transform: translateX(-50%);
+		}
 	}
 
 	/* Reads as plain text */
