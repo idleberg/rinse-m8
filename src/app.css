@@ -121,11 +121,11 @@ select {
 	cursor: pointer;
 }
 
-/* Drawn like the player's seek bar: a square box filled up to the value */
+/* Drawn like the player's seek bar: a thin outlined bar filled up to the value */
 progress {
 	appearance: none;
 	box-sizing: border-box;
-	height: 1.5em;
+	height: 0.5em;
 	border: 1px solid currentColor;
 	border-radius: 0;
 	background: none;
