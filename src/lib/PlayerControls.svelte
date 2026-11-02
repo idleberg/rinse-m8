@@ -279,7 +279,7 @@
 		height: 0.5em;
 		margin: 0;
 		border: 1px solid currentColor;
-		background: linear-gradient(var(--accent), var(--accent)) 0 0 / calc(var(--progress) * 100%) 100% no-repeat;
+		background: linear-gradient(var(--ink), var(--ink)) 0 0 / calc(var(--progress) * 100%) 100% no-repeat;
 		cursor: pointer;
 	}
 
