@@ -1,6 +1,6 @@
 [package]
 name = "rinse-m8"
-version = "0.6.0"
+version = "0.0.0"
 authors = ["Jan T. Sott"]
 license = "MIT"
 edition = "2021"
