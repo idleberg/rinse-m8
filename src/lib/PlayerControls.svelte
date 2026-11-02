@@ -9,8 +9,11 @@
 		currentTime,
 		duration,
 		showRemaining,
+		queued,
 		onplay,
 		onpause,
+		onprevious,
+		onnext,
 		onseek,
 		ontoggletime,
 		layout = 'bar',
@@ -24,8 +27,12 @@
 		duration: number;
 		/** Whether the time reads as remaining rather than elapsed. */
 		showRemaining: boolean;
+		/** Whether the play queue holds an episode for NEXT to play. */
+		queued: boolean;
 		onplay: () => void;
 		onpause: () => void;
+		onprevious: () => void;
+		onnext: () => void;
 		onseek: (time: number) => void;
 		ontoggletime: () => void;
 		/** The Player tab puts the label on a line of its own, and adds the full length to the time. */
@@ -102,19 +109,35 @@
 {/snippet}
 
 <div class="row">
-	{#if paused}
-		<button type="button" class="icon" aria-label="Play" title="Play" onclick={onplay}>
-			<svg viewBox="0 0 16 16" aria-hidden="true">
-				<path d="M4 2.5l9 5.5-9 5.5z" />
-			</svg>
-		</button>
-	{:else}
-		<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={onpause}>
-			<svg viewBox="0 0 16 16" aria-hidden="true">
-				<path d="M5 3v10M11 3v10" />
-			</svg>
-		</button>
-	{/if}
+	<div class="buttons">
+		{#if layout === 'tab'}
+			<button type="button" class="icon" aria-label="Previous" title="Previous" onclick={onprevious}>
+				<svg viewBox="0 0 16 16" aria-hidden="true">
+					<path d="M3 3v10M13 3l-8 5 8 5z" />
+				</svg>
+			</button>
+		{/if}
+		{#if paused}
+			<button type="button" class="icon" aria-label="Play" title="Play" onclick={onplay}>
+				<svg viewBox="0 0 16 16" aria-hidden="true">
+					<path d="M4 2.5l9 5.5-9 5.5z" />
+				</svg>
+			</button>
+		{:else}
+			<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={onpause}>
+				<svg viewBox="0 0 16 16" aria-hidden="true">
+					<path d="M5 3v10M11 3v10" />
+				</svg>
+			</button>
+		{/if}
+		{#if layout === 'tab'}
+			<button type="button" class="icon" aria-label="Next" title="Next" disabled={!queued} onclick={onnext}>
+				<svg viewBox="0 0 16 16" aria-hidden="true">
+					<path d="M3 3l8 5-8 5zM13 3v10" />
+				</svg>
+			</button>
+		{/if}
+	</div>
 	{#if layout === 'bar'}
 		{@render title()}
 	{/if}
@@ -147,6 +170,12 @@
 		display: flex;
 		gap: 1rem;
 		align-items: center;
+	}
+
+	/* Spaced like the episode table's buttons */
+	.buttons {
+		display: flex;
+		gap: 0.5ch;
 	}
 
 	.row,

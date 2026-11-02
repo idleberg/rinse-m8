@@ -35,6 +35,9 @@
 	let showRemaining = $state(localStorage.getItem('showRemaining') === 'true');
 	let savedAt = 0;
 
+	/** The episodes played this session, latest last, which PREV goes back through. Not saved. */
+	let history: Episode[] = [];
+
 	/** The current listen, which runs until another episode plays or this one ends: seconds heard, the playhead at the last count, and when it started in Unix seconds. */
 	let heard = 0;
 	let heardTo = 0;
@@ -43,6 +46,9 @@
 
 	/** How often a playing episode's position is saved, in milliseconds. */
 	const saveInterval = 5000;
+
+	/** How far into an episode PREV restarts it rather than going back, in seconds. */
+	const restartAfter = 3;
 
 	const ready = load('player.json').then(async (store) => {
 		position = (await store.get<number>('position')) ?? 0;
@@ -61,13 +67,18 @@
 		}
 	});
 
-	/** Resumes the current episode, or starts another from the beginning. */
-	export async function play(next: Episode) {
+	/** Resumes the current episode, or starts another from the beginning. Going back doesn't add the current episode to the history. */
+	export async function play(next: Episode, back = false) {
 		const store = await ready;
 
 		if (next.id === episode?.id) {
 			savePosition(false);
 		} else {
+			// Only once something has played, so the episode restored at launch isn't history
+			if (episode && shown && !back) {
+				history.push(episode);
+			}
+
 			forgetPosition();
 			endListen();
 		}
@@ -123,6 +134,22 @@
 		audio?.pause();
 	}
 
+	/** Restarts the episode, or within its first seconds goes back to the one played before it and queues it first. */
+	function previous() {
+		const last = history.at(-1);
+
+		if (!(episode && last) || currentTime > restartAfter) {
+			currentTime = 0;
+
+			return;
+		}
+
+		history.pop();
+		queue.unshift(episode);
+		persistQueue();
+		play(last, true).catch(onerror);
+	}
+
 	/** The props for a set of `PlayerControls`, so every set shows and changes the same playback. */
 	export const controls: ComponentProps<typeof PlayerControls> = {
 		get episode() {
@@ -140,8 +167,13 @@
 		get showRemaining() {
 			return showRemaining;
 		},
+		get queued() {
+			return queue.length > 0;
+		},
 		onplay: () => episode && play(episode).catch(onerror),
 		onpause: pause,
+		onprevious: previous,
+		onnext: () => queue.length > 0 && playFromQueue(0).catch(onerror),
 		onseek: (time: number) => {
 			currentTime = time;
 		},
