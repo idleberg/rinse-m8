@@ -365,6 +365,18 @@
 			});
 	}
 
+	/** Set while the settings' Check now button waits out its cooldown. */
+	let checkedUpdateManually = $state(false);
+	const manualCheckCooldown = 60_000;
+
+	function checkForUpdateNow() {
+		checkedUpdateManually = true;
+		checkForUpdate();
+		setTimeout(() => {
+			checkedUpdateManually = false;
+		}, manualCheckCooldown);
+	}
+
 	if (fakeUpdate) {
 		update = { version: '9.9.9', percent: null };
 	} else {
@@ -619,6 +631,8 @@
 			onupdateintervalchange={(hours) => saveInterval('updateInterval', hours).catch(showError)}
 			appUpdateInterval={settings.appUpdateInterval}
 			onappupdateintervalchange={(hours) => saveInterval('appUpdateInterval', hours).catch(showError)}
+			canCheckAppUpdate={!checkedUpdateManually}
+			oncheckappupdate={checkForUpdateNow}
 			{imageCacheSize}
 			onclearimagecache={() => clearImageCache().catch(showError)}
 			{importing}

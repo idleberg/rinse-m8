@@ -15,6 +15,8 @@
 		onkeeprunningchange,
 		onupdateintervalchange,
 		onappupdateintervalchange,
+		canCheckAppUpdate,
+		oncheckappupdate,
 		onclearimagecache,
 		importing,
 		canExport,
@@ -44,6 +46,9 @@
 		onkeeprunningchange: () => void;
 		onupdateintervalchange: (hours: number) => void;
 		onappupdateintervalchange: (hours: number) => void;
+		/** False for a minute after a manual check. */
+		canCheckAppUpdate: boolean;
+		oncheckappupdate: () => void;
 		onclearimagecache: () => void;
 		/** While an import subscribes to the file's shows. */
 		importing: boolean;
@@ -109,6 +114,7 @@
 				<option value={hours}>check every {hours === 1 ? 'hour' : `${hours} hours`}</option>
 			{/each}
 		</select>
+		<button type="button" onclick={oncheckappupdate} disabled={!canCheckAppUpdate}>Check now</button>
 	</dd>
 	<dt>Image cache</dt>
 	<dd>
