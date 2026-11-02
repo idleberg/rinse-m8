@@ -27,6 +27,7 @@
 	let episode = $state<Episode | null>(null);
 	let audio = $state<HTMLAudioElement>();
 	let paused = $state(true);
+
 	/** The bar stays hidden at launch, until something plays. */
 	let shown = $state(false);
 	let currentTime = $state(0);
