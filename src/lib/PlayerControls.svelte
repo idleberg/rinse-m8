@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { type Episode, episodeLabel } from './episodes';
-	import { formatTime } from './listen';
+	import { formatTime, type Repeat } from './listen';
 
 	let {
 		episode,
@@ -10,12 +10,14 @@
 		duration,
 		showRemaining,
 		queued,
+		repeat,
 		onplay,
 		onpause,
 		onprevious,
 		onnext,
 		onseek,
 		ontoggletime,
+		onrepeat,
 		layout = 'bar',
 	}: {
 		/** Null until an episode is loaded, which leaves the label empty. */
@@ -27,20 +29,25 @@
 		duration: number;
 		/** Whether the time reads as remaining rather than elapsed. */
 		showRemaining: boolean;
-		/** Whether the play queue holds an episode for NEXT to play. */
+		/** Whether NEXT has an episode to play: one in the play queue, or the current one under repeat all. */
 		queued: boolean;
+		/** Repeats the play queue (`all`), the current episode (`one`), or nothing. */
+		repeat: Repeat;
 		onplay: () => void;
 		onpause: () => void;
 		onprevious: () => void;
 		onnext: () => void;
 		onseek: (time: number) => void;
 		ontoggletime: () => void;
+		onrepeat: () => void;
 		/** The Player tab puts the label on a line of its own, and adds the full length to the time. */
 		layout?: 'bar' | 'tab';
 	} = $props();
 
 	/** How fast a title too long for its space scrolls, in pixels per second. */
 	const scrollSpeed = 25;
+
+	const repeatTitles: Record<Repeat, string> = { off: 'Repeat off', all: 'Repeat all', one: 'Repeat one' };
 
 	const label = $derived(episode ? episodeLabel(episode) : '');
 
@@ -157,6 +164,14 @@
 			? formatTime((duration || 0) - currentTime)
 			: formatTime(currentTime)}{#if layout === 'tab'}{` / ${formatTime(duration || 0)}`}{/if}</button
 	>
+	{#if layout === 'tab'}
+		<!-- Pressed in both repeat states, in the accent colour for repeat one -->
+		<button type="button" class="icon" class:one={repeat === 'one'} aria-label="Repeat" title={repeatTitles[repeat]} aria-pressed={repeat !== 'off'} onclick={onrepeat}>
+			<svg viewBox="0 0 16 16" aria-hidden="true">
+				<path d="M2 9V4h11M10.5 1.5L13 4M14 7v5H3M5.5 14.5L3 12" />
+			</svg>
+		</button>
+	{/if}
 </div>
 
 {#if layout === 'tab'}
@@ -237,6 +252,11 @@
 		to {
 			transform: translateX(-50%);
 		}
+	}
+
+	.one {
+		border-color: var(--accent);
+		background: var(--accent);
 	}
 
 	/* Reads as plain text */

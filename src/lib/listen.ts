@@ -26,3 +26,8 @@ const isoTimeEnd = 19;
 export function formatTime(seconds: number) {
 	return new Date(seconds * millisecondsPerSecond).toISOString().slice(isoTimeStart, isoTimeEnd);
 }
+
+/** The repeat button's states, in the order clicking it cycles through them. */
+export const repeatModes = ['off', 'all', 'one'] as const;
+
+export type Repeat = (typeof repeatModes)[number];

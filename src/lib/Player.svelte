@@ -3,7 +3,7 @@
 	import { load } from '@tauri-apps/plugin-store';
 	import { type ComponentProps, tick } from 'svelte';
 	import { type Episode, moveItem } from './episodes';
-	import { heardBetween, millisecondsPerSecond, scrobbleAfter } from './listen';
+	import { heardBetween, millisecondsPerSecond, type Repeat, repeatModes, scrobbleAfter } from './listen';
 	import PlayerControls from './PlayerControls.svelte';
 
 	let {
@@ -33,6 +33,7 @@
 	let currentTime = $state(0);
 	let duration = $state(0);
 	let showRemaining = $state(localStorage.getItem('showRemaining') === 'true');
+	let repeat = $state<Repeat>(repeatModes.find((mode) => mode === localStorage.getItem('repeat')) ?? 'off');
 	let savedAt = 0;
 
 	/** The episodes played this session, latest last, which PREV goes back through. Not saved. */
@@ -145,9 +146,34 @@
 		}
 
 		history.pop();
+
+		// Repeat all queued it last when it ended or was skipped
+		if (repeat === 'all' && queue.at(-1)?.id === last.id) {
+			queue.pop();
+		}
+
 		queue.unshift(episode);
 		persistQueue();
 		play(last, true).catch(onerror);
+	}
+
+	/** Plays the first queued episode, from the start even if it's the current one. Repeat all queues the current episode last, so the queue loops. */
+	async function skip() {
+		if (repeat === 'all' && episode) {
+			queue.push(episode);
+		}
+
+		if (queue.length === 0) {
+			return;
+		}
+
+		const first = dequeue(0);
+
+		if (first.id === episode?.id) {
+			currentTime = 0;
+		}
+
+		await play(first);
 	}
 
 	/** The props for a set of `PlayerControls`, so every set shows and changes the same playback. */
@@ -168,18 +194,25 @@
 			return showRemaining;
 		},
 		get queued() {
-			return queue.length > 0;
+			return queue.length > 0 || (repeat === 'all' && episode !== null);
+		},
+		get repeat() {
+			return repeat;
 		},
 		onplay: () => episode && play(episode).catch(onerror),
 		onpause: pause,
 		onprevious: previous,
-		onnext: () => queue.length > 0 && playFromQueue(0).catch(onerror),
+		onnext: () => skip().catch(onerror),
 		onseek: (time: number) => {
 			currentTime = time;
 		},
 		ontoggletime: () => {
 			showRemaining = !showRemaining;
 			localStorage.setItem('showRemaining', String(showRemaining));
+		},
+		onrepeat: () => {
+			repeat = repeatModes[(repeatModes.indexOf(repeat) + 1) % repeatModes.length];
+			localStorage.setItem('repeat', repeat);
 		},
 	};
 
@@ -276,8 +309,11 @@
 				forgetPosition();
 				endListen();
 
-				if (queue.length > 0) {
-					playFromQueue(0).catch(onerror);
+				// Starting over counts as a new listen
+				if (repeat === 'one' && episode) {
+					play(episode).catch(onerror);
+				} else {
+					skip().catch(onerror);
 				}
 			}}
 			onerror={() => episode && invoke('recheck_mp3', { id: episode.id }).catch(onerror)}
