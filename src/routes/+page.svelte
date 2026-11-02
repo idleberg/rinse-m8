@@ -810,6 +810,8 @@
 
 	/* Fills the window below the nav, so the swapped background doesn't stop short */
 	main.inverted {
+		display: flex;
+		flex-direction: column;
 		flex: 1;
 	}
 
