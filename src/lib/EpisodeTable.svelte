@@ -89,7 +89,7 @@
 				<td>{formatDate(episode.date)}</td>
 				<td>{episode.time}</td>
 				<td>{episode.station}</td>
-				<td>
+				<td class="show">
 					<button type="button" class="link" onclick={() => onopenshow(episode)}>{episode.showTitle}</button>
 					{#if episode.displayTitle}
 						<span class="subtitle">{episode.displayTitle}</span>
@@ -192,6 +192,13 @@
 		width: 100%;
 	}
 
+	/* max-width: 0 stops a long title from widening the table, so it truncates instead of pushing out the actions */
+	td.show {
+		max-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
 	.sort {
 		border: none;
 		padding: 0;
@@ -203,6 +210,11 @@
 		padding: 0;
 		text-align: left;
 		text-decoration: underline;
+		/* A button is an atomic inline, so it truncates its own text */
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		vertical-align: bottom;
 	}
 
 	.actions {
