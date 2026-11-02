@@ -6,11 +6,11 @@ The bar keeps its current height, which matches the player bar (40px including t
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human (needs a look in the app: bar height vs. player bar, lines, narrow width, focus ring)
 
-- [ ] Tabs fill the bar's full height and start at the left window edge, with **Settings** at the right edge.
-- [ ] One 1px line between each pair of tabs and to the left of **Settings**, none at the window edges, no doubled lines.
-- [ ] **Settings** is a text tab reading SETTINGS, with no icon.
-- [ ] The tab bar is exactly as tall as the player bar.
-- [ ] The active tab is filled across its whole cell, with no gap at the top or bottom.
-- [ ] Tabs don't wrap at narrow window widths, and keyboard focus stays visible.
+- [x] Tabs fill the bar's full height and start at the left window edge, with **Settings** at the right edge.
+- [x] One 1px line between each pair of tabs and to the left of **Settings**, none at the window edges, no doubled lines.
+- [x] **Settings** is a text tab reading SETTINGS, with no icon.
+- [x] The tab bar is exactly as tall as the player bar.
+- [x] The active tab is filled across its whole cell, with no gap at the top or bottom.
+- [x] Tabs don't wrap at narrow window widths, and keyboard focus stays visible.

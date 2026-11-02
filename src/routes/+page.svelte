@@ -522,19 +522,11 @@
 {/if}
 
 <nav>
-	<div>
-		{#each [['dashboard', 'My Shows'], ['player', 'Player'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Downloads']] as const as [value, label] (value)}
-			<button type="button" aria-current={!openedShow && view === value ? 'page' : undefined} onclick={() => openView(value)}
-				>{label}</button
-			>
-		{/each}
-	</div>
-	<!-- Feather's "sliders" icon -->
-	<button type="button" class="icon" aria-label="Settings" title="Settings" aria-current={!openedShow && view === 'settings' ? 'page' : undefined} onclick={() => openView('settings')}>
-		<svg viewBox="0 0 24 24" aria-hidden="true">
-			<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
-		</svg>
-	</button>
+	{#each [['dashboard', 'My Shows'], ['player', 'Player'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Downloads'], ['settings', 'Settings']] as const as [value, label] (value)}
+		<button type="button" aria-current={!openedShow && view === value ? 'page' : undefined} onclick={() => openView(value)}
+			>{label}</button
+		>
+	{/each}
 </nav>
 
 <!-- Settings swap light and dark, to stand apart from the other pages -->
@@ -768,13 +760,34 @@
 		position: sticky;
 		top: 0;
 		z-index: 1;
+		box-sizing: border-box;
 		display: flex;
-		flex-wrap: wrap;
-		justify-content: space-between;
-		gap: 0.5rem;
+		/* As tall as the player bar, bottom line included */
+		height: 40px;
 		border-bottom: 1px solid currentColor;
-		padding: 0.5rem 1rem;
 		background: var(--paper);
+	}
+
+	/* Full-height cells */
+	nav button {
+		border: none;
+		padding: 0 1rem;
+		white-space: nowrap;
+	}
+
+	/* One line before each tab but the first. Ink, not currentColor, so it doesn't vanish beside the active tab. */
+	nav button + button {
+		border-left: 1px solid var(--ink);
+	}
+
+	/* Settings sits at the right edge */
+	nav button:last-child {
+		margin-left: auto;
+	}
+
+	/* Inset, since the cells touch each other and the window's top edge */
+	nav button:focus-visible {
+		outline-offset: -3px;
 	}
 
 	main {
@@ -790,11 +803,6 @@
 		position: sticky;
 		bottom: 0;
 		margin-top: auto;
-	}
-
-	nav div {
-		display: flex;
-		gap: 0.5rem;
 	}
 
 	/* Matches the show sections below it */
