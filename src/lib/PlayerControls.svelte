@@ -86,15 +86,15 @@
 		visibility: hidden;
 	}
 
-	/* Drawn like a button, filled up to the playhead */
+	/* A thin outlined bar, filled up to the playhead. The row centres it, so it sits where the taller bar did. */
 	input {
 		flex: 1;
 		appearance: none;
 		box-sizing: border-box;
-		height: 1.5em;
+		height: 0.5em;
 		margin: 0;
 		border: 1px solid currentColor;
-		background: linear-gradient(var(--ink), var(--ink)) 0 0 / calc(var(--progress) * 100%) 100% no-repeat;
+		background: linear-gradient(var(--accent), var(--accent)) 0 0 / calc(var(--progress) * 100%) 100% no-repeat;
 		cursor: pointer;
 	}
 
@@ -106,7 +106,7 @@
 	input::-webkit-slider-thumb {
 		appearance: none;
 		width: 2px;
-		height: calc(1.5em - 2px);
-		background: var(--accent);
+		height: calc(0.5em - 2px);
+		background: var(--ink);
 	}
 </style>
