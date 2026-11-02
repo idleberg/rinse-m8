@@ -17,6 +17,7 @@
 		onappupdateintervalchange,
 		onclearimagecache,
 		onconnectlastfm,
+		oncancellastfm,
 		ondisconnectlastfm,
 	}: {
 		downloadFolder: string | null;
@@ -41,6 +42,7 @@
 		onappupdateintervalchange: (hours: number) => void;
 		onclearimagecache: () => void;
 		onconnectlastfm: () => void;
+		oncancellastfm: () => void;
 		ondisconnectlastfm: () => void;
 	} = $props();
 
@@ -112,6 +114,7 @@
 		<dd>
 			{#if connectingLastfm}
 				<span class="muted">waiting for approval…</span>
+				<button type="button" onclick={oncancellastfm}>Cancel</button>
 			{:else if lastfm.user}
 				connected as {lastfm.user}
 				<button type="button" onclick={ondisconnectlastfm}>Disconnect</button>

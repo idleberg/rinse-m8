@@ -2,7 +2,7 @@
 
 **What to build:** The app ships with one Last.fm API key and secret, read at compile time from `LASTFM_API_KEY` and `LASTFM_API_SECRET`, so neither is committed. When both are present, Settings shows a Last.fm row:
 
-1. The user clicks **Connect**. The app opens Last.fm's approval page in the browser, and the row reads "waiting for approval…".
+1. The user clicks **Connect**. The app opens Last.fm's approval page in the browser, and the row reads "waiting for approval…" with a **Cancel** button (#61).
 2. Once the user approves, the row reads "connected as NAME" and offers **Disconnect**.
 
 If approval doesn't come within a few minutes, connecting gives up and the row offers **Connect** again. The session key doesn't expire. It's kept in its own store, apart from the settings, so the webview never sees it.

@@ -2,7 +2,9 @@ use crate::rinse::Episode;
 use chrono::NaiveDate;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use std::future::Future;
 use std::time::Duration;
+use tokio::sync::oneshot;
 
 const API: &str = "https://ws.audioscrobbler.com/2.0/";
 
@@ -139,7 +141,11 @@ pub fn credentials() -> Option<(&'static str, &'static str)> {
 }
 
 /// Gets a token, has `open` show its approval page in the browser, then waits a few minutes for the user to approve it.
-pub async fn connect(open: impl FnOnce(&str) -> Result<(), String>) -> Result<Session, String> {
+/// Gives none if `cancel` fires or is dropped first, abandoning the token.
+pub async fn connect(
+    open: impl FnOnce(&str) -> Result<(), String>,
+    cancel: oneshot::Receiver<()>,
+) -> Result<Option<Session>, String> {
     #[derive(Deserialize)]
     struct Body {
         token: String,
@@ -154,17 +160,42 @@ pub async fn connect(open: impl FnOnce(&str) -> Result<(), String>) -> Result<Se
         "https://www.last.fm/api/auth/?api_key={key}&token={token}"
     ))?;
 
-    // The token lasts an hour, but clicking Allow takes seconds, and a forgotten tab shouldn't keep the row waiting
-    for _ in 0..100 {
-        tokio::time::sleep(Duration::from_secs(3)).await;
+    // Each poll's future copies this reference, since it can't borrow from the closure that makes it
+    let token = &token;
 
-        if let Some(session) = parse_session(&call("auth.getSession", &[("token", &token)]).await?)?
-        {
-            return Ok(session);
+    wait_for_approval(
+        move || async move { parse_session(&call("auth.getSession", &[("token", token)]).await?) },
+        Duration::from_secs(3),
+        cancel,
+    )
+    .await
+}
+
+/// Asks `get_session` every `interval` until it gives a session, or gives none once `cancel` fires or is dropped.
+async fn wait_for_approval<F: Future<Output = Result<Option<Session>, String>>>(
+    mut get_session: impl FnMut() -> F,
+    interval: Duration,
+    cancel: oneshot::Receiver<()>,
+) -> Result<Option<Session>, String> {
+    let poll = async {
+        // The token lasts an hour, but clicking Allow takes seconds, and a forgotten tab shouldn't keep the row waiting
+        for _ in 0..100 {
+            tokio::time::sleep(interval).await;
+
+            if let Some(session) = get_session().await? {
+                return Ok(session);
+            }
         }
-    }
 
-    Err("Last.fm approval timed out".into())
+        Err("Last.fm approval timed out".into())
+    };
+
+    // Cancel first, so a session arriving in the same poll as a cancel isn't kept
+    tokio::select! {
+        biased;
+        _ = cancel => Ok(None),
+        result = poll => result.map(Some),
+    }
 }
 
 /// Sends a signed call and returns the reply, error replies included.
@@ -275,6 +306,31 @@ mod tests {
             track(&episode("Uncle Dugs", None)).track,
             "Uncle Dugs - 30 October 2026"
         );
+    }
+
+    #[tokio::test]
+    async fn cancelling_mid_poll_gives_no_session() {
+        let (sender, receiver) = oneshot::channel();
+        let mut cancel = Some(sender);
+        let mut polls = 0;
+
+        let result = wait_for_approval(
+            || {
+                polls += 1;
+
+                if polls == 2 {
+                    cancel.take().unwrap().send(()).unwrap();
+                }
+
+                async { Ok(None) }
+            },
+            Duration::from_millis(1),
+            receiver,
+        )
+        .await;
+
+        assert_eq!(result, Ok(None));
+        assert_eq!(polls, 2);
     }
 
     #[test]

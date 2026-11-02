@@ -271,13 +271,17 @@
 	let lastfm = $state<{ user: string | null } | null>(null);
 	let connectingLastfm = $state(false);
 
-	/** Resolves once the user approves on Last.fm, or fails when approval times out. */
+	/** Resolves once the user approves on Last.fm or cancels, or fails when approval times out. */
 	async function connectLastfm() {
 		errorMessage = '';
 		connectingLastfm = true;
 
 		try {
-			lastfm = { user: await invoke<string>('connect_lastfm') };
+			const user = await invoke<string | null>('connect_lastfm');
+
+			if (user) {
+				lastfm = { user };
+			}
 		} finally {
 			connectingLastfm = false;
 		}
@@ -596,6 +600,7 @@
 			{lastfm}
 			{connectingLastfm}
 			onconnectlastfm={() => connectLastfm().catch(showError)}
+			oncancellastfm={() => invoke('cancel_lastfm_connect').catch(showError)}
 			ondisconnectlastfm={() => disconnectLastfm().catch(showError)}
 		/>
 	{:else if view === 'shows'}

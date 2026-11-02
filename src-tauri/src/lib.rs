@@ -23,6 +23,9 @@ static PLAYING: AtomicBool = AtomicBool::new(false);
 /// The tray menu's play/pause item, relabelled as playback starts and stops.
 static TOGGLE_ITEM: Mutex<Option<MenuItem<tauri::Wry>>> = Mutex::new(None);
 
+/// Stops the pending Last.fm connect.
+static LASTFM_CANCEL: Mutex<Option<tokio::sync::oneshot::Sender<()>>> = Mutex::new(None);
+
 /// The download queue and the signals that wake its worker and stop its running download.
 struct Downloads {
     queue: Mutex<rinse::DownloadQueue>,
@@ -429,14 +432,26 @@ fn get_lastfm(app: tauri::AppHandle) -> Result<Option<Lastfm>, String> {
 }
 
 /// Opens Last.fm's approval page and, once the user approves, stores the session and returns the account's name.
+/// Returns none if the connect is cancelled, which includes another connect starting.
 #[tauri::command]
-async fn connect_lastfm(app: tauri::AppHandle) -> Result<String, String> {
-    let session = lastfm::connect(|url| {
-        app.opener()
-            .open_url(url, None::<&str>)
-            .map_err(|e| e.to_string())
-    })
+async fn connect_lastfm(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let (cancel, cancelled) = tokio::sync::oneshot::channel();
+
+    // Dropping the previous attempt's sender cancels it; a finished attempt's sender is left behind, and firing it does nothing
+    *LASTFM_CANCEL.lock().unwrap_or_else(|e| e.into_inner()) = Some(cancel);
+
+    let connected = lastfm::connect(
+        |url| {
+            app.opener()
+                .open_url(url, None::<&str>)
+                .map_err(|e| e.to_string())
+        },
+        cancelled,
+    )
     .await?;
+    let Some(session) = connected else {
+        return Ok(None);
+    };
     let store = app.store("lastfm.json").map_err(|e| e.to_string())?;
 
     store.set(
@@ -445,7 +460,19 @@ async fn connect_lastfm(app: tauri::AppHandle) -> Result<String, String> {
     );
     store.save().map_err(|e| e.to_string())?;
 
-    Ok(session.name)
+    Ok(Some(session.name))
+}
+
+/// Stops a pending `connect_lastfm`, if any.
+#[tauri::command]
+fn cancel_lastfm_connect() {
+    if let Some(cancel) = LASTFM_CANCEL
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take()
+    {
+        let _ = cancel.send(());
+    }
 }
 
 #[tauri::command]
@@ -1028,6 +1055,7 @@ pub fn run() {
             set_settings,
             get_lastfm,
             connect_lastfm,
+            cancel_lastfm_connect,
             disconnect_lastfm,
             now_playing,
             scrobble,
