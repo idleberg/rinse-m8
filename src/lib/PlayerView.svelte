@@ -65,7 +65,7 @@
 	</div>
 	{#if playable}
 		<div class="controls">
-			<PlayerControls {...controls} />
+			<PlayerControls {...controls} layout="tab" />
 		</div>
 	{:else}
 		<p class="empty">Nothing playing</p>

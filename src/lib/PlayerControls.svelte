@@ -12,6 +12,7 @@
 		onpause,
 		onseek,
 		ontoggletime,
+		layout = 'bar',
 	}: {
 		/** Null until an episode is loaded, which leaves the label empty. */
 		episode: Episode | null;
@@ -26,10 +27,16 @@
 		onpause: () => void;
 		onseek: (time: number) => void;
 		ontoggletime: () => void;
+		/** The Player tab puts the label on a line of its own, and adds the full length to the time. */
+		layout?: 'bar' | 'tab';
 	} = $props();
 </script>
 
-<div>
+{#snippet label()}
+	<span>{episode && episodeLabel(episode)}</span>
+{/snippet}
+
+<div class="row">
 	{#if paused}
 		<button type="button" class="icon" aria-label="Play" title="Play" onclick={onplay}>
 			<svg viewBox="0 0 16 16" aria-hidden="true">
@@ -43,7 +50,9 @@
 			</svg>
 		</button>
 	{/if}
-	<span>{episode && episodeLabel(episode)}</span>
+	{#if layout === 'bar'}
+		{@render label()}
+	{/if}
 	<input
 		type="range"
 		aria-label="Seek"
@@ -58,16 +67,30 @@
 	<button type="button" class="time" title={showRemaining ? 'Show elapsed time' : 'Show remaining time'} onclick={ontoggletime}
 		><span class:hidden={!showRemaining}>-</span>{showRemaining
 			? formatTime((duration || 0) - currentTime)
-			: formatTime(currentTime)}</button
+			: formatTime(currentTime)}{#if layout === 'tab'}{` / ${formatTime(duration || 0)}`}{/if}</button
 	>
 </div>
 
+{#if layout === 'tab'}
+	<div class="label">
+		{@render label()}
+	</div>
+{/if}
+
 <style>
-	div {
+	.row {
 		display: flex;
 		gap: 1rem;
 		align-items: center;
+	}
+
+	.row,
+	.label {
 		text-transform: uppercase;
+	}
+
+	.label {
+		margin-top: 0.5rem;
 	}
 
 	span {
