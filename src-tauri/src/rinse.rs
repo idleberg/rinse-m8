@@ -163,6 +163,34 @@ impl Settings {
     }
 }
 
+/// The major version of the exported subscriptions file. Bump it only for changes older apps can't read.
+const SUBSCRIPTIONS_VERSION: u32 = 1;
+
+/// The subscriptions as an exported file.
+pub fn export_subscriptions(subscriptions: &[Subscription]) -> Result<String, String> {
+    serde_json::to_string_pretty(&serde_json::json!({
+        "version": SUBSCRIPTIONS_VERSION,
+        "subscriptions": subscriptions,
+    }))
+    .map_err(|e| e.to_string())
+}
+
+/// The subscriptions in an exported file. The version is checked first, so a newer format fails on it, not on its shape.
+pub fn parse_subscriptions(json: &str) -> Result<Vec<Subscription>, String> {
+    let file: serde_json::Value = serde_json::from_str(json).map_err(|e| e.to_string())?;
+    let version = &file["version"];
+
+    if version.is_null() {
+        return Err("the file has no version".into());
+    }
+
+    if *version != SUBSCRIPTIONS_VERSION {
+        return Err(format!("unsupported file version {version}"));
+    }
+
+    serde_json::from_value(file["subscriptions"].clone()).map_err(|e| e.to_string())
+}
+
 /// The available episodes of subscribed shows that haven't been seen, i.e. the ones to notify about.
 pub fn new_episodes(
     subscriptions: &[Subscription],
@@ -1236,6 +1264,41 @@ mod tests {
             [Subscription {
                 slug: "other".into(),
                 title: "Other".into(),
+            }]
+        );
+    }
+
+    #[test]
+    fn exported_subscriptions_parse_back() {
+        let subscriptions = vec![Subscription {
+            slug: "dubquake-records".into(),
+            title: "Dubquake Records".into(),
+        }];
+
+        let json = export_subscriptions(&subscriptions).unwrap();
+
+        assert!(json.contains(r#""version": 1"#));
+        assert_eq!(parse_subscriptions(&json).unwrap(), subscriptions);
+    }
+
+    #[test]
+    fn parsing_subscriptions_rejects_other_major_versions() {
+        let error = parse_subscriptions(r#"{"version": 2, "subscriptions": []}"#).unwrap_err();
+
+        assert!(error.contains('2'), "{error}");
+        assert!(parse_subscriptions(r#"{"subscriptions": []}"#).is_err());
+        assert!(parse_subscriptions("not json").is_err());
+    }
+
+    #[test]
+    fn parsing_subscriptions_ignores_unknown_fields() {
+        let json = r#"{"version": 1, "exported": "2026-11-02", "subscriptions": [{"slug": "a", "title": "A", "image": "x"}]}"#;
+
+        assert_eq!(
+            parse_subscriptions(json).unwrap(),
+            [Subscription {
+                slug: "a".into(),
+                title: "A".into(),
             }]
         );
     }

@@ -16,6 +16,10 @@
 		onupdateintervalchange,
 		onappupdateintervalchange,
 		onclearimagecache,
+		importing,
+		canExport,
+		onimport,
+		onexport,
 		onconnectlastfm,
 		oncancellastfm,
 		ondisconnectlastfm,
@@ -41,6 +45,12 @@
 		onupdateintervalchange: (hours: number) => void;
 		onappupdateintervalchange: (hours: number) => void;
 		onclearimagecache: () => void;
+		/** While an import subscribes to the file's shows. */
+		importing: boolean;
+		/** Whether there are subscriptions to export. */
+		canExport: boolean;
+		onimport: () => void;
+		onexport: () => void;
 		onconnectlastfm: () => void;
 		oncancellastfm: () => void;
 		ondisconnectlastfm: () => void;
@@ -108,6 +118,14 @@
 			<span class="muted">Empty</span>
 		{/if}
 		<button type="button" onclick={onclearimagecache} disabled={!imageCacheSize}>Clear</button>
+	</dd>
+	<dt>Show data</dt>
+	<dd>
+		<button type="button" onclick={onimport} disabled={importing}>Import…</button>
+		<button type="button" onclick={onexport} disabled={importing || !canExport}>Export…</button>
+		{#if importing}
+			<span class="muted">importing…</span>
+		{/if}
 	</dd>
 	{#if lastfm}
 		<dt>Last.fm</dt>

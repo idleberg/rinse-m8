@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
-	import { open } from '@tauri-apps/plugin-dialog';
+	import { open, save } from '@tauri-apps/plugin-dialog';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { check, type Update } from '@tauri-apps/plugin-updater';
 	import ConfirmDialog from '../lib/ConfirmDialog.svelte';
@@ -266,6 +266,38 @@
 
 		await invoke('clear_image_cache');
 		imageCacheSize = 0;
+	}
+
+	const jsonFilters = [{ name: 'JSON', extensions: ['json'] }];
+	let importing = $state(false);
+
+	/** Subscribes to the shows in a file chosen by the user, keeping the existing subscriptions. */
+	async function importSubscriptions() {
+		errorMessage = '';
+
+		const path = await open({ title: 'Import subscriptions', filters: jsonFilters });
+
+		if (!path) {
+			return;
+		}
+
+		importing = true;
+
+		try {
+			settings = await invoke<Settings>('import_subscriptions', { path });
+		} finally {
+			importing = false;
+		}
+	}
+
+	async function exportSubscriptions() {
+		errorMessage = '';
+
+		const path = await save({ title: 'Export subscriptions', defaultPath: 'rinse-m8-subscriptions.json', filters: jsonFilters });
+
+		if (path) {
+			await invoke('export_subscriptions', { path });
+		}
 	}
 
 	let lastfm = $state<{ user: string | null } | null>(null);
@@ -597,6 +629,10 @@
 			onappupdateintervalchange={(hours) => saveInterval('appUpdateInterval', hours).catch(showError)}
 			{imageCacheSize}
 			onclearimagecache={() => clearImageCache().catch(showError)}
+			{importing}
+			canExport={subscribed.length > 0}
+			onimport={() => importSubscriptions().catch(showError)}
+			onexport={() => exportSubscriptions().catch(showError)}
 			{lastfm}
 			{connectingLastfm}
 			onconnectlastfm={() => connectLastfm().catch(showError)}

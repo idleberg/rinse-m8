@@ -4,6 +4,7 @@ mod rinse;
 use chrono::Timelike;
 use futures_util::StreamExt;
 use std::collections::BTreeSet;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
@@ -711,6 +712,37 @@ fn unsubscribe(app: tauri::AppHandle, slug: String) -> Result<rinse::Settings, S
     update_settings(&app, |s| s.unsubscribe(&slug))
 }
 
+#[tauri::command]
+fn export_subscriptions(app: tauri::AppHandle, path: PathBuf) -> Result<(), String> {
+    let subscriptions = load_settings(&app, serde_json::Map::new())?.subscriptions;
+
+    std::fs::write(path, rinse::export_subscriptions(&subscriptions)?).map_err(|e| e.to_string())
+}
+
+/// Subscribes to the file's shows that aren't subscribed yet, one at a time, stopping at the first that fails.
+/// The ones before it stay subscribed, so importing again picks up where it stopped.
+#[tauri::command]
+async fn import_subscriptions(
+    app: tauri::AppHandle,
+    path: PathBuf,
+) -> Result<rinse::Settings, String> {
+    let json = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+    let imported = rinse::parse_subscriptions(&json)?;
+    let mut settings = load_settings(&app, serde_json::Map::new())?;
+
+    for show in imported {
+        if settings.subscriptions.iter().any(|s| s.slug == show.slug) {
+            continue;
+        }
+
+        settings = subscribe(app.clone(), show.slug, show.title.clone())
+            .await
+            .map_err(|e| format!("importing {} failed: {e}", show.title))?;
+    }
+
+    Ok(settings)
+}
+
 /// The stored settings with `patch`'s fields on top. A malformed field fails here, before anything is saved.
 fn load_settings(
     app: &tauri::AppHandle,
@@ -1064,6 +1096,8 @@ pub fn run() {
             set_tray_playing,
             subscribe,
             unsubscribe,
+            export_subscriptions,
+            import_subscriptions,
             get_show_directory
         ])
         .build(tauri::generate_context!())
