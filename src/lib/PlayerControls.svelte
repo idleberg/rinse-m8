@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { prefersReducedMotion } from 'svelte/motion';
-	import { type Episode, episodeLabel } from './episodes';
+	import { type Episode, episodeLabel, formatDate } from './episodes';
 	import { formatTime, type Repeat } from './listen';
 
 	let {
@@ -49,7 +49,14 @@
 
 	const repeatTitles: Record<Repeat, string> = { off: 'Repeat off', all: 'Repeat all', one: 'Repeat one' };
 
-	const label = $derived(episode ? episodeLabel(episode) : '');
+	/** The Player tab shows the show as a heading, so its label leaves it out. */
+	const label = $derived.by(() => {
+		if (!episode) {
+			return '';
+		}
+
+		return layout === 'tab' ? [episode.displayTitle, formatDate(episode.date)].filter(Boolean).join(' – ') : episodeLabel(episode);
+	});
 
 	let box: HTMLElement | undefined = $state();
 	let text: HTMLElement | undefined = $state();
@@ -175,6 +182,7 @@
 </div>
 
 {#if layout === 'tab'}
+	<h2>{episode?.showTitle}</h2>
 	<div class="label">
 		{@render title()}
 	</div>
@@ -194,8 +202,13 @@
 	}
 
 	.row,
+	h2,
 	.label {
 		text-transform: uppercase;
+	}
+
+	h2 {
+		margin-block: 0.5rem 0;
 	}
 
 	.label {

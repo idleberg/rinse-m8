@@ -69,8 +69,11 @@
 	});
 
 	/** Resumes the current episode, or starts another from the beginning. Going back doesn't add the current episode to the history. */
-	export async function play(next: Episode, back = false) {
+	export async function play(chosen: Episode, back = false) {
 		const store = await ready;
+
+		// Queued and past episodes are stored copies, which can predate the cache's artwork and mp3
+		const next = episodes.find((e) => e.id === chosen.id) ?? chosen;
 
 		if (next.id === episode?.id) {
 			savePosition(false);
