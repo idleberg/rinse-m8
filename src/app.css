@@ -60,6 +60,16 @@ body {
 		monospace;
 }
 
+/* Window frame, fixed so it stays put while the page scrolls */
+body::after {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: 2;
+	border-top: 1px solid var(--ink);
+	pointer-events: none;
+}
+
 /* SvelteKit's wrapper around the app, in app.html */
 body > div {
 	display: contents;

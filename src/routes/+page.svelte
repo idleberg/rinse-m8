@@ -264,6 +264,10 @@
 	async function clearImageCache() {
 		errorMessage = '';
 
+		if (!(await confirmDialog?.confirm({ title: 'Clear Image Cache', message: 'Clear the cached show images?', action: 'Clear' }))) {
+			return;
+		}
+
 		await invoke('clear_image_cache');
 		imageCacheSize = 0;
 	}
@@ -321,6 +325,16 @@
 
 	async function disconnectLastfm() {
 		errorMessage = '';
+
+		if (
+			!(await confirmDialog?.confirm({
+				title: 'Disconnect Last.fm',
+				message: `Disconnect ${lastfm?.user} from Last.fm?`,
+				action: 'Disconnect',
+			}))
+		) {
+			return;
+		}
 
 		await invoke('disconnect_lastfm');
 		lastfm = { user: null };
