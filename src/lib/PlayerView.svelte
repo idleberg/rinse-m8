@@ -133,7 +133,7 @@
 					</td>
 					<td>
 						<div class="actions">
-							<button type="button" class="icon" aria-label="Play" title="Play" onclick={() => onplay(index)}>
+							<button type="button" class="icon reveal" aria-label="Play" title="Play" onclick={() => onplay(index)}>
 								<svg viewBox="0 0 16 16" aria-hidden="true">
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
@@ -255,6 +255,16 @@
 		display: flex;
 		gap: 0.5ch;
 		justify-content: flex-end;
+	}
+
+	/* Opacity rather than visibility, so the button stays reachable by keyboard */
+	.reveal {
+		opacity: 0;
+	}
+
+	tr:hover .reveal,
+	tr:focus-within .reveal {
+		opacity: 1;
 	}
 
 	.subtitle {
