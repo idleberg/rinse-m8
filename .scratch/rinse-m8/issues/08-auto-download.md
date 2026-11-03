@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 (Download an episode), 07 (New-episode notifications)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The settings store has an auto-download flag, and the UI has a toggle for it
 - [x] When the flag is on and a download folder is set, the poller downloads each new episode using the same streaming and naming as manual download

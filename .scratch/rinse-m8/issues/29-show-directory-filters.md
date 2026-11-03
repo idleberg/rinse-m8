@@ -4,8 +4,8 @@
 
 **Blocked by:** 28 (Show directory)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Station checkboxes filter the show directory, and shows on a station without a checkbox stay visible
 - [x] Each directory row has a subscribe toggle that reflects and changes the subscription
-- [ ] The dashboard's empty hint mentions the Shows tab
+- [x] The dashboard's empty hint mentions the Shows tab

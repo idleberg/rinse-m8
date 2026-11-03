@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 (Schedule episodes in a table)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The data module maps a raw show response to Episodes, using the same rules as the schedule
 - [x] A small show-response fixture plus a `cargo test` check that its episodes map correctly

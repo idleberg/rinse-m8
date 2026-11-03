@@ -4,7 +4,7 @@
 
 **Blocked by:** 06 (Subscriptions)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The data module has a pure new-episode check: given the subscriptions, the seen ids and the fetched episodes, it returns the available, unseen episodes of subscribed shows
 - [x] `cargo test` covers the new-episode check:

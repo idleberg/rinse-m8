@@ -9,7 +9,7 @@ If approval doesn't come within a few minutes, connecting gives up and the row o
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] A build without the env vars shows no Last.fm row.
 - [ ] **Connect** opens the approval page and the row reads "waiting for approval…".

@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 (Table filters), 05 (Refresh a show)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The settings store holds the subscriptions (slug and title) and the seen episode ids
 - [x] `subscribe(slug, title)` fetches the show and adds all of its currently available episode ids to seen

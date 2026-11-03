@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 (Schedule episodes in a table)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] The download action shows only on available rows
 - [x] If no download folder is set, the dialog plugin's folder picker opens, and the choice is saved in settings
