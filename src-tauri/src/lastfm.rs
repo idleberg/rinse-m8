@@ -63,6 +63,9 @@ pub fn track(episode: &Episode) -> Track {
         None => episode.show_title.clone(),
     };
 
+    // Rinse's titles can hold tabs and doubled spaces, which the webview collapses but Last.fm doesn't take
+    let title = title.split_whitespace().collect::<Vec<_>>().join(" ");
+
     let date = NaiveDate::parse_from_str(&episode.date, "%Y-%m-%d").map_or_else(
         |_| episode.date.clone(),
         |d| d.format("%-d %B %Y").to_string(),
@@ -323,6 +326,14 @@ mod tests {
         assert_eq!(
             track(&episode("Uncle Dugs", None)).track,
             "Uncle Dugs - 30 October 2026"
+        );
+    }
+
+    #[test]
+    fn whitespace_in_titles_goes_out_as_single_spaces() {
+        assert_eq!(
+            track(&episode("Stretch AKO", Some("feat.\tFez The Kid"))).track,
+            "Stretch AKO feat. Fez The Kid - 30 October 2026"
         );
     }
 
