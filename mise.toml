@@ -42,6 +42,12 @@ run_windows = "bun tauri build --target x86_64-pc-windows-msvc"
 description = "Build the Linux bundles (run on Linux)"
 run = "bun tauri build --target x86_64-unknown-linux-gnu"
 
+# Walks every show on rinse.fm, one request at a time.
+[tasks.seed]
+description = "Regenerate the bundled seed of last aired dates"
+dir = "src-tauri"
+run = "cargo run --example seed_last_aired"
+
 [tasks.checks]
 description = "Run all checks"
 depends = ["biome", "check", "test", "format:check", "lint"]

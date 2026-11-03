@@ -4,9 +4,9 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] One documented command regenerates the seed file.
-- [ ] Requests are throttled; a failed show is skipped and reported rather than aborting the walk.
-- [ ] The seed is bundled into the app and readable at runtime.
-- [ ] Spot-checked dates for a few shows match rinse.fm.
+- [x] One documented command regenerates the seed file.
+- [x] Requests are throttled; a failed show is skipped and reported rather than aborting the walk.
+- [x] The seed is bundled into the app and readable at runtime.
+- [x] Spot-checked dates for a few shows match rinse.fm.

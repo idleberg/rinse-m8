@@ -521,6 +521,12 @@ pub fn record_last_aired(record: Option<serde_json::Value>, date: &str) -> serde
     serde_json::Value::Object(record)
 }
 
+/// Each show's last aired date as of the last `mise seed`, keyed by show slug. Never copied into the show records, so
+/// a newer release's seed replaces the old one in full.
+pub fn last_aired_seed() -> BTreeMap<String, String> {
+    serde_json::from_str(include_str!("../last-aired.json")).expect("valid last aired seed")
+}
+
 #[derive(Debug, Serialize)]
 pub struct ShowPage {
     pub details: ShowDetails,
@@ -1038,6 +1044,17 @@ mod tests {
             record_last_aired(None, "2026-01-01"),
             serde_json::json!({ "lastAired": "2026-01-01" })
         );
+    }
+
+    #[test]
+    fn the_last_aired_seed_maps_slugs_to_dates() {
+        for (slug, date) in last_aired_seed() {
+            assert!(!slug.is_empty());
+            assert!(
+                NaiveDate::parse_from_str(&date, "%Y-%m-%d").is_ok(),
+                "{slug}: {date}"
+            );
+        }
     }
 
     #[test]

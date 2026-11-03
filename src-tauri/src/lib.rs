@@ -1,9 +1,12 @@
 mod lastfm;
 mod rinse;
 
+// For the `seed_last_aired` example
+pub use rinse::{fetch_show, fetch_show_directory, last_aired};
+
 use chrono::Timelike;
 use futures_util::StreamExt;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
@@ -62,6 +65,12 @@ fn get_show_record(
 
     // A record holding only a last aired date was never refreshed
     Ok(details.filter(|d| *d != rinse::ShowDetails::default()))
+}
+
+/// Each show's last aired date from the seed bundled with this release, keyed by show slug.
+#[tauri::command]
+fn get_last_aired_seed() -> BTreeMap<String, String> {
+    rinse::last_aired_seed()
 }
 
 /// Merges the show's recent episodes into the episode cache, records its details and returns the record's details with the whole cache.
@@ -1135,6 +1144,7 @@ pub fn run() {
             get_episodes,
             refresh_show,
             get_show_record,
+            get_last_aired_seed,
             download,
             get_download_queue,
             get_previous_downloads,
