@@ -227,8 +227,10 @@ pub struct DownloadQueue {
     /// Of `current`, once the server has reported a size.
     pub percent: Option<u8>,
     pub waiting: VecDeque<Download>,
-    /// The last download that failed, until the next one starts or it's dismissed.
-    pub failed: Option<Download>,
+    /// Downloads that failed, oldest first, until they're retried or removed. Saved under a new key, so the single
+    /// `failed` of queues saved before it is ignored.
+    #[serde(default)]
+    pub failures: Vec<Download>,
     /// Ids of every episode the app has finished downloading; defaults for queues saved before it existed.
     #[serde(default)]
     pub downloaded: BTreeSet<String>,
@@ -256,7 +258,12 @@ impl DownloadQueue {
     }
 
     /// Adds the download unless its episode is already waiting or downloading; returns whether it was added.
+    /// A failed episode is retried instead, in the folder it was first queued with.
     pub fn push(&mut self, download: Download) -> bool {
+        if self.retry(&download.episode.id) {
+            return true;
+        }
+
         let mut queued = self.current.iter().chain(&self.waiting);
 
         if queued.any(|d| d.episode.id == download.episode.id) {
@@ -268,14 +275,16 @@ impl DownloadQueue {
         true
     }
 
-    /// Drops the episode from the waiting downloads; returns whether it was there.
+    /// Drops the episode from the waiting downloads or the failures; returns it if it was there.
     /// The running one stays, since stopping it is `cancel`.
-    pub fn remove(&mut self, id: &str) -> bool {
-        let before = self.waiting.len();
+    pub fn remove(&mut self, id: &str) -> Option<Download> {
+        if let Some(index) = self.waiting.iter().position(|d| d.episode.id == id) {
+            return self.waiting.remove(index);
+        }
 
-        self.waiting.retain(|d| d.episode.id != id);
+        let index = self.failures.iter().position(|d| d.episode.id == id)?;
 
-        self.waiting.len() != before
+        Some(self.failures.remove(index))
     }
 
     /// Moves the waiting episode to `index` among the waiting downloads; returns whether it moved.
@@ -294,6 +303,31 @@ impl DownloadQueue {
         true
     }
 
+    /// Moves the failed episode to the front of the waiting downloads; returns whether it had failed.
+    pub fn retry(&mut self, id: &str) -> bool {
+        let Some(index) = self.failures.iter().position(|d| d.episode.id == id) else {
+            return false;
+        };
+
+        let download = self.failures.remove(index);
+        self.waiting.push_front(download);
+
+        true
+    }
+
+    /// Moves every failure to the front of the waiting downloads, oldest first; returns whether there were any.
+    pub fn retry_all(&mut self) -> bool {
+        if self.failures.is_empty() {
+            return false;
+        }
+
+        for download in self.failures.drain(..).rev() {
+            self.waiting.push_front(download);
+        }
+
+        true
+    }
+
     /// Starts the oldest waiting download, unless one is still running.
     pub fn next(&mut self) -> Option<Download> {
         if self.current.is_some() {
@@ -302,19 +336,25 @@ impl DownloadQueue {
 
         self.current = Some(self.waiting.pop_front()?);
         self.percent = None;
-        self.failed = None;
 
         self.current.clone()
     }
 
-    /// Ends the current download without recording it as downloaded or failed; returns whether one was running.
+    /// Ends the current download as a failure, so it can be retried from its partial file; returns whether one was
+    /// running.
     pub fn cancel(&mut self) -> bool {
         self.percent = None;
 
-        self.current.take().is_some()
+        let Some(current) = self.current.take() else {
+            return false;
+        };
+
+        self.failures.push(current);
+
+        true
     }
 
-    /// Ends the current download, recording it as downloaded if it `succeeded` and as the last failure if not.
+    /// Ends the current download, recording it as downloaded if it `succeeded` and as a failure if not.
     pub fn finish(&mut self, succeeded: bool) {
         let Some(current) = self.current.take() else {
             return;
@@ -323,7 +363,7 @@ impl DownloadQueue {
         if succeeded {
             self.downloaded.insert(current.episode.id);
         } else {
-            self.failed = Some(current);
+            self.failures.push(current);
         }
     }
 }
@@ -1510,6 +1550,13 @@ mod tests {
         }
     }
 
+    fn ids<'a>(downloads: impl IntoIterator<Item = &'a Download>) -> Vec<&'a str> {
+        downloads
+            .into_iter()
+            .map(|d| d.episode.id.as_str())
+            .collect()
+    }
+
     #[test]
     fn the_download_queue_runs_first_in_first_out_and_skips_duplicates() {
         let mut queue = DownloadQueue::default();
@@ -1541,21 +1588,29 @@ mod tests {
     }
 
     #[test]
-    fn a_failed_download_is_kept_until_the_next_one_starts() {
+    fn failed_downloads_are_kept_in_order_and_skipped() {
         let mut queue = DownloadQueue::default();
 
         queue.push(queued("2315290", "/a"));
         queue.push(queued("2319482", "/a"));
+        queue.push(queued("2319625", "/a"));
         queue.next();
         queue.finish(false);
 
-        assert_eq!(queue.failed.as_ref().unwrap().episode.id, "2315290");
         assert_eq!(queue.next().unwrap().episode.id, "2319482");
-        assert_eq!(queue.failed, None);
+
+        queue.finish(false);
+
+        assert_eq!(queue.next().unwrap().episode.id, "2319625");
+
+        queue.finish(true);
+
+        assert_eq!(queue.next(), None);
+        assert_eq!(ids(&queue.failures), ["2315290", "2319482"]);
     }
 
     #[test]
-    fn cancelling_the_running_download_neither_fails_nor_records_it() {
+    fn cancelling_the_running_download_fails_it() {
         let mut queue = DownloadQueue::default();
 
         assert!(!queue.cancel());
@@ -1568,9 +1623,91 @@ mod tests {
         assert!(queue.cancel());
         assert_eq!(queue.current, None);
         assert_eq!(queue.percent, None);
-        assert_eq!(queue.failed, None);
+        assert_eq!(ids(&queue.failures), ["2315290"]);
         assert!(queue.downloaded.is_empty());
         assert_eq!(queue.next().unwrap().episode.id, "2319482");
+    }
+
+    #[test]
+    fn retrying_a_failure_puts_it_first_in_its_own_folder() {
+        let mut queue = DownloadQueue::default();
+
+        queue.push(queued("2315290", "/a"));
+        queue.push(queued("2319482", "/b"));
+        queue.push(queued("2319625", "/b"));
+        queue.next();
+        queue.finish(false);
+
+        assert!(queue.retry("2315290"));
+        assert!(!queue.retry("2315290"));
+        assert!(queue.failures.is_empty());
+        assert_eq!(ids(&queue.waiting), ["2315290", "2319482", "2319625"]);
+        assert_eq!(queue.next().unwrap().folder, Path::new("/a"));
+    }
+
+    #[test]
+    fn pushing_a_failed_episode_retries_it() {
+        let mut queue = DownloadQueue::default();
+
+        queue.push(queued("2319482", "/b"));
+        queue.push(queued("2315290", "/a"));
+        queue.next();
+        queue.finish(false);
+
+        assert!(queue.push(queued("2319482", "/c")));
+        assert!(queue.failures.is_empty());
+        assert_eq!(ids(&queue.waiting), ["2319482", "2315290"]);
+        assert_eq!(queue.waiting[0].folder, Path::new("/b"));
+    }
+
+    #[test]
+    fn retrying_all_failures_puts_them_first_oldest_first() {
+        let mut queue = DownloadQueue::default();
+
+        queue.push(queued("2315290", "/a"));
+        queue.push(queued("2319482", "/a"));
+        queue.push(queued("2319625", "/a"));
+        queue.next();
+        queue.finish(false);
+        queue.next();
+        queue.finish(false);
+
+        assert!(queue.retry_all());
+        assert!(!queue.retry_all());
+        assert!(queue.failures.is_empty());
+        assert_eq!(ids(&queue.waiting), ["2315290", "2319482", "2319625"]);
+    }
+
+    #[test]
+    fn a_restored_queue_keeps_its_failures_without_starting_them() {
+        let mut queue = DownloadQueue::default();
+
+        queue.push(queued("2315290", "/a"));
+        queue.next();
+        queue.finish(false);
+
+        let saved = serde_json::to_value(&queue).unwrap();
+        let mut queue = DownloadQueue::restore(serde_json::from_value(saved).unwrap());
+
+        assert_eq!(queue.next(), None);
+        assert_eq!(ids(&queue.failures), ["2315290"]);
+    }
+
+    #[test]
+    fn a_queue_saved_with_a_single_failure_still_loads() {
+        let download = serde_json::to_value(queued("2315290", "/a")).unwrap();
+        let saved = serde_json::json!({
+            "current": null,
+            "percent": null,
+            "waiting": [download],
+            "failed": queued("2319482", "/a"),
+            "downloaded": ["2319625"],
+        });
+        let queue = DownloadQueue::restore(serde_json::from_value(saved).unwrap());
+
+        assert_eq!(ids(&queue.waiting), ["2315290"]);
+        assert!(queue.failures.is_empty());
+        assert_eq!(queue.downloaded, BTreeSet::from(["2319625".to_string()]));
     }
 
     #[test]
@@ -1582,9 +1719,9 @@ mod tests {
         queue.push(queued("2319625", "/a"));
         queue.next();
 
-        assert!(queue.remove("2319482"));
-        assert!(!queue.remove("2315290"));
-        assert!(!queue.remove("9999999"));
+        assert_eq!(queue.remove("2319482").unwrap().episode.id, "2319482");
+        assert_eq!(queue.remove("2315290"), None);
+        assert_eq!(queue.remove("9999999"), None);
         assert_eq!(queue.current.as_ref().unwrap().episode.id, "2315290");
 
         let waiting: Vec<_> = queue
@@ -1594,6 +1731,21 @@ mod tests {
             .collect();
 
         assert_eq!(waiting, ["2319625"]);
+    }
+
+    #[test]
+    fn removing_a_failure_drops_only_that_one() {
+        let mut queue = DownloadQueue::default();
+
+        queue.push(queued("2315290", "/a"));
+        queue.push(queued("2319482", "/a"));
+        queue.next();
+        queue.finish(false);
+        queue.next();
+        queue.finish(false);
+
+        assert_eq!(queue.remove("2315290").unwrap().episode.id, "2315290");
+        assert_eq!(ids(&queue.failures), ["2319482"]);
     }
 
     #[test]

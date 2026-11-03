@@ -103,8 +103,8 @@ export interface DownloadQueue {
 	/** Of `current`, once the server has reported a size. */
 	percent: number | null;
 	waiting: Episode[];
-	/** The last download that failed, until the next one starts or it's dismissed. */
-	failed: Episode | null;
+	/** Downloads that failed, oldest first, until they're retried or removed. */
+	failures: Episode[];
 	/** Ids of every episode the app has finished downloading. */
 	downloaded: string[];
 }

@@ -16,38 +16,34 @@
 
 	const downloading = $derived(downloads.current?.id === episode.id);
 	const queued = $derived(downloads.waiting.some((e) => e.id === episode.id));
-	const failed = $derived(downloads.failed?.id === episode.id);
+	const failed = $derived(downloads.failures.some((e) => e.id === episode.id));
 	const downloaded = $derived(downloads.downloaded.includes(episode.id));
-	const label = $derived(downloaded ? 'Downloaded, download again' : 'Download');
+	const label = $derived(failed ? 'Retry' : downloaded ? 'Downloaded, download again' : 'Download');
 </script>
 
-{#if failed}
-	<button type="button" onclick={() => ondownload(episode)}>Failed</button>
-{:else}
-	<!-- A downloaded episode can be downloaded again, e.g. after its file was deleted -->
-	<!-- Disabled while the episode is in the queue; the progress is in the footer -->
+<!-- A downloaded episode can be downloaded again, e.g. after its file was deleted; a failed one is retried -->
+<!-- Disabled while the episode is in the queue; the progress is in the footer -->
+<button type="button"
+	class="icon"
+	aria-label={label}
+	title={label}
+	disabled={downloading || queued}
+	onclick={() => ondownload(episode)}
+>
+	<svg viewBox="0 0 16 16" aria-hidden="true">
+		<path d={downloaded ? 'M3 8l3.5 3.5L13 4' : 'M8 2v11M3 8l5 5 5-5'} />
+	</svg>
+</button>
+{#if onmark}
 	<button type="button"
 		class="icon"
-		aria-label={label}
-		title={label}
-		disabled={downloading || queued}
-		onclick={() => ondownload(episode)}
+		aria-label="Mark as downloaded"
+		title="Mark as downloaded"
+		disabled={downloaded}
+		onclick={() => onmark(episode)}
 	>
 		<svg viewBox="0 0 16 16" aria-hidden="true">
-			<path d={downloaded ? 'M3 8l3.5 3.5L13 4' : 'M8 2v11M3 8l5 5 5-5'} />
+			<path d="M4 4l8 8M12 4l-8 8" />
 		</svg>
 	</button>
-	{#if onmark}
-		<button type="button"
-			class="icon"
-			aria-label="Mark as downloaded"
-			title="Mark as downloaded"
-			disabled={downloaded}
-			onclick={() => onmark(episode)}
-		>
-			<svg viewBox="0 0 16 16" aria-hidden="true">
-				<path d="M4 4l8 8M12 4l-8 8" />
-			</svg>
-		</button>
-	{/if}
 {/if}

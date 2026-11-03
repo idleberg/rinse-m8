@@ -9,7 +9,7 @@
 		onmove,
 		oncancel,
 		onretry,
-		ondismiss,
+		onretryall,
 		onunmark,
 		onclear,
 		onerror,
@@ -21,9 +21,10 @@
 		onmove: (id: string, index: number) => void;
 		/** Stops the running download. */
 		oncancel: () => void;
-		/** Takes the failed episode. */
-		onretry: (episode: Episode) => void;
-		ondismiss: () => void;
+		/** Takes a failed episode's id. */
+		onretry: (id: string) => void;
+		/** Retries every failed download. */
+		onretryall: () => void;
 		/** Takes an episode id to drop from the previous downloads. */
 		onunmark: (id: string) => void;
 		/** Empties the previous downloads. */
@@ -85,9 +86,14 @@
 	}
 </script>
 
-<h2>Active Downloads</h2>
+<header class="first">
+	<h2>Active Downloads</h2>
+	{#if downloads.failures.length > 1}
+		<button type="button" onclick={onretryall}>Retry All</button>
+	{/if}
+</header>
 
-{#if downloads.current || downloads.waiting.length || downloads.failed}
+{#if downloads.current || downloads.waiting.length || downloads.failures.length}
 	<table>
 		<thead>
 			<tr>
@@ -162,23 +168,33 @@
 					<td><button type="button" onclick={() => onremove(episode.id)}>Remove</button></td>
 				</tr>
 			{/each}
-			{#if downloads.failed}
-				{@const failed = downloads.failed}
+			{#each downloads.failures as episode (episode.id)}
 				<tr class="failed">
-					<td>{formatDate(downloads.failed.date)}</td>
+					<td>{formatDate(episode.date)}</td>
 					<td>
-						{downloads.failed.showTitle}
-						{#if downloads.failed.displayTitle}
-							<span class="subtitle">{downloads.failed.displayTitle}</span>
+						{episode.showTitle}
+						{#if episode.displayTitle}
+							<span class="subtitle">{episode.displayTitle}</span>
 						{/if}
 					</td>
 					<td class="status">Failed</td>
 					<td>
-						<button type="button" onclick={() => onretry(failed)}>Retry</button>
-						<button type="button" onclick={ondismiss}>Dismiss</button>
+						<div class="actions">
+							<button type="button" onclick={() => onretry(episode.id)}>Retry</button>
+							<button type="button"
+								class="icon"
+								aria-label="Remove"
+								title="Remove"
+								onclick={() => onremove(episode.id)}
+							>
+								<svg viewBox="0 0 16 16" aria-hidden="true">
+									<path d="M4 4l8 8M12 4l-8 8" />
+								</svg>
+							</button>
+						</div>
 					</td>
 				</tr>
-			{/if}
+			{/each}
 		</tbody>
 	</table>
 {:else}
@@ -264,6 +280,11 @@
 
 	header h2 {
 		margin: 0;
+	}
+
+	/* Active Downloads starts the view, so it keeps the bare heading's spacing */
+	.first {
+		margin-top: 0;
 	}
 
 	table {

@@ -117,7 +117,7 @@
 	let playing = $state<string | null>(null);
 	let queue = $state<Episode[]>([]);
 
-	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failed: null, downloaded: [] });
+	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failures: [], downloaded: [] });
 
 	/** Asks for a download folder and saves it, returning false if the dialog was cancelled. */
 	async function chooseFolder() {
@@ -137,7 +137,8 @@
 		return true;
 	}
 
-	/** Queues the episode, asking for a download folder first if none is set. */
+	/** Queues the episode, asking for a download folder first if none is set. A failed one is retried, and the
+	 * downloads view opens to show it. */
 	async function download(episode: Episode) {
 		errorMessage = '';
 
@@ -145,7 +146,13 @@
 			return;
 		}
 
+		const failed = downloads.failures.some((e) => e.id === episode.id);
+
 		await invoke('download', { episode });
+
+		if (failed) {
+			openView('queue');
+		}
 	}
 
 	/** Dead episodes are dropped here, so no table shows them, whatever the filters. */
@@ -338,16 +345,6 @@
 
 		await invoke('disconnect_lastfm');
 		lastfm = { user: null };
-	}
-
-	async function dismissFailure() {
-		await invoke('dismiss_download_failure');
-	}
-
-	/** Queues the failed episode again, resuming its `.part` file, and clears the failure right away rather than once it starts. */
-	async function retryFailure(episode: Episode) {
-		await download(episode);
-		await dismissFailure();
 	}
 
 	/** Dismissing it hides that version until the next launch. */
@@ -614,8 +611,8 @@
 			onremove={(id) => invoke('remove_download', { id }).catch(showError)}
 			onmove={(id, index) => invoke('move_download', { id, index }).catch(showError)}
 			oncancel={() => invoke('cancel_download').catch(showError)}
-			onretry={(episode) => retryFailure(episode).catch(showError)}
-			ondismiss={() => dismissFailure().catch(showError)}
+			onretry={(id) => invoke('retry_download', { id }).catch(showError)}
+			onretryall={() => invoke('retry_all_downloads').catch(showError)}
 			onunmark={(id) => invoke('unmark_downloaded', { id }).catch(showError)}
 			onclear={async () => {
 				if (
@@ -773,8 +770,6 @@
 	<DownloadStatus
 		{downloads}
 		oncancel={() => invoke('cancel_download').catch(showError)}
-		onretry={(episode) => retryFailure(episode).catch(showError)}
-		ondismiss={() => dismissFailure().catch(showError)}
 		onviewqueue={() => openView('queue')}
 	/>
 	<Player bind:this={player} bind:playing bind:queue {episodes} onerror={showError} />

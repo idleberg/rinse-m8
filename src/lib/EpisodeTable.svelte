@@ -85,7 +85,7 @@
 	</thead>
 	<tbody>
 		{#each rows as episode (episode.id)}
-			<tr>
+			<tr class={{ failed: downloads.failures.some((e) => e.id === episode.id) }}>
 				<td>{formatDate(episode.date)}</td>
 				<td>{episode.time}</td>
 				<td>{episode.station}</td>
@@ -241,6 +241,12 @@
 	}
 
 	.badge {
+		color: var(--accent);
+	}
+
+	/* Only a colour change: the buttons draw their outlines and icons in the text colour */
+	.failed,
+	.failed .subtitle {
 		color: var(--accent);
 	}
 </style>

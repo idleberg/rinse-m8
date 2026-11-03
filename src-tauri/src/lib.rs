@@ -235,9 +235,37 @@ fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<PreviousDownload>
         .collect())
 }
 
+/// Drops a waiting or failed download along with its partial file; a missing one is no error.
 #[tauri::command]
-fn remove_download(app: tauri::AppHandle, id: String) {
-    update_downloads(&app, |queue| queue.remove(&id));
+async fn remove_download(app: tauri::AppHandle, id: String) {
+    let Some(download) = update_downloads(&app, |queue| queue.remove(&id)) else {
+        return;
+    };
+
+    let part = rinse::part_path(&download.episode, &download.folder);
+
+    match tokio::fs::remove_file(&part).await {
+        Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
+            eprintln!("deleting {} failed: {e}", part.display());
+        }
+        _ => {}
+    }
+}
+
+/// Moves the failed download to the front of the waiting ones, to resume from its partial file.
+#[tauri::command]
+fn retry_download(app: tauri::AppHandle, id: String) {
+    if update_downloads(&app, |queue| queue.retry(&id)) {
+        app.state::<Downloads>().wake.notify_one();
+    }
+}
+
+/// Moves every failed download to the front of the waiting ones, oldest failure first.
+#[tauri::command]
+fn retry_all_downloads(app: tauri::AppHandle) {
+    if update_downloads(&app, |queue| queue.retry_all()) {
+        app.state::<Downloads>().wake.notify_one();
+    }
 }
 
 #[tauri::command]
@@ -245,7 +273,7 @@ fn move_download(app: tauri::AppHandle, id: String, index: usize) {
     update_downloads(&app, |queue| queue.move_to(&id, index));
 }
 
-/// Takes the running download off the queue; the worker then drops its partial file and starts the next one.
+/// Moves the running download to the failures, keeping its partial file; the worker then starts the next one.
 #[tauri::command]
 fn cancel_download(app: tauri::AppHandle) {
     update_downloads(&app, |queue| {
@@ -284,11 +312,6 @@ fn clear_downloaded(app: tauri::AppHandle) -> Result<(), String> {
 
         save_downloads(&app, queue)
     })
-}
-
-#[tauri::command]
-fn dismiss_download_failure(app: tauri::AppHandle) {
-    update_downloads(&app, |queue| queue.failed = None);
 }
 
 /// Applies `change` to the download queue, saves it and sends it to the frontend.
@@ -369,17 +392,8 @@ async fn download_worker(
             Some(()) = cancelled.recv() => None,
         };
 
-        // The cancel already took it off the queue, so only its partial file is left
+        // The cancel already moved it to the failures
         let Some(result) = finished else {
-            let part = rinse::part_path(&download.episode, &download.folder);
-
-            match tokio::fs::remove_file(&part).await {
-                Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
-                    eprintln!("deleting {} failed: {e}", part.display());
-                }
-                _ => {}
-            }
-
             continue;
         };
 
@@ -1076,12 +1090,13 @@ pub fn run() {
             get_download_queue,
             get_previous_downloads,
             remove_download,
+            retry_download,
+            retry_all_downloads,
             move_download,
             cancel_download,
             mark_downloaded,
             unmark_downloaded,
             clear_downloaded,
-            dismiss_download_failure,
             recheck_mp3,
             get_settings,
             set_settings,
