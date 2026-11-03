@@ -852,7 +852,8 @@
 		gap: 1rem;
 		align-items: center;
 		justify-content: space-between;
-		margin: 0 0 1rem;
+		/* Cancels main's padding, so the banner meets the window edges and the nav */
+		margin: -1rem -1rem 1rem;
 		padding: 0.5rem 1rem;
 		background: var(--accent);
 		color: white;
