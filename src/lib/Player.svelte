@@ -28,6 +28,9 @@
 	let audio = $state<HTMLAudioElement>();
 	let paused = $state(true);
 
+	/** The ids of loved episodes, kept by the app and never read from Last.fm. */
+	let lovedIds = $state<string[]>([]);
+
 	/** Whether something has played this session, so the episode restored at launch isn't history. */
 	let played = false;
 	let currentTime = $state(0);
@@ -55,6 +58,7 @@
 		position = (await store.get<number>('position')) ?? 0;
 		lastPlayed = (await store.get<string>('lastPlayed')) ?? null;
 		queue = (await store.get<Episode[]>('queue')) ?? [];
+		lovedIds = (await store.get<string[]>('loved')) ?? [];
 
 		return store;
 	});
@@ -100,6 +104,20 @@
 				throw e;
 			}
 		}
+	}
+
+	/** Waits for the stored loves, so loading them can't undo the change. */
+	async function toggleLove() {
+		const store = await ready;
+
+		if (!episode) {
+			return;
+		}
+
+		const { id } = episode;
+
+		lovedIds = lovedIds.includes(id) ? lovedIds.filter((lovedId) => lovedId !== id) : [...lovedIds, id];
+		await store.set('loved', $state.snapshot(lovedIds));
 	}
 
 	/** Waits for the stored queue, so loading it can't drop the new episode. An episode can be queued more than once. */
@@ -202,6 +220,9 @@
 		get repeat() {
 			return repeat;
 		},
+		get loved() {
+			return episode !== null && lovedIds.includes(episode.id);
+		},
 		onplay: () => episode && play(episode).catch(onerror),
 		onpause: pause,
 		onprevious: previous,
@@ -217,6 +238,7 @@
 			repeat = repeatModes[(repeatModes.indexOf(repeat) + 1) % repeatModes.length];
 			localStorage.setItem('repeat', repeat);
 		},
+		onlove: () => toggleLove().catch(onerror),
 	};
 
 	function persistPosition() {

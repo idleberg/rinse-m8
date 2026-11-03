@@ -11,6 +11,7 @@
 		showRemaining,
 		queued,
 		repeat,
+		loved,
 		onplay,
 		onpause,
 		onprevious,
@@ -18,6 +19,7 @@
 		onseek,
 		ontoggletime,
 		onrepeat,
+		onlove,
 		layout = 'bar',
 	}: {
 		/** Null until an episode is loaded, which leaves the label empty. */
@@ -33,6 +35,8 @@
 		queued: boolean;
 		/** Repeats the play queue (`all`), the current episode (`one`), or nothing. */
 		repeat: Repeat;
+		/** Whether the episode is loved, which fills the heart. */
+		loved: boolean;
 		onplay: () => void;
 		onpause: () => void;
 		onprevious: () => void;
@@ -40,6 +44,7 @@
 		onseek: (time: number) => void;
 		ontoggletime: () => void;
 		onrepeat: () => void;
+		onlove: () => void;
 		/** The Player tab puts the label on a line of its own, and adds the full length to the time. */
 		layout?: 'bar' | 'tab';
 	} = $props();
@@ -171,14 +176,22 @@
 			? formatTime((duration || 0) - currentTime)
 			: formatTime(currentTime)}{#if layout === 'tab'}{` / ${formatTime(duration || 0)}`}{/if}</button
 	>
-	{#if layout === 'tab'}
-		<!-- Pressed in both repeat states, in the accent colour for repeat one -->
-		<button type="button" class="icon" class:one={repeat === 'one'} aria-label="Repeat" title={repeatTitles[repeat]} aria-pressed={repeat !== 'off'} onclick={onrepeat}>
+	<div class="buttons">
+		{#if layout === 'tab'}
+			<!-- Pressed in both repeat states, in the accent colour for repeat one -->
+			<button type="button" class="icon" class:one={repeat === 'one'} aria-label="Repeat" title={repeatTitles[repeat]} aria-pressed={repeat !== 'off'} onclick={onrepeat}>
+				<svg viewBox="0 0 16 16" aria-hidden="true">
+					<path d="M2 9V4h11M10.5 1.5L13 4M14 7v5H3M5.5 14.5L3 12" />
+				</svg>
+			</button>
+		{/if}
+		<!-- Outlined, or filled in the accent colour when loved -->
+		<button type="button" class="icon" class:loved aria-label="Love" title={loved ? 'Unlove' : 'Love'} aria-pressed={loved} onclick={onlove}>
 			<svg viewBox="0 0 16 16" aria-hidden="true">
-				<path d="M2 9V4h11M10.5 1.5L13 4M14 7v5H3M5.5 14.5L3 12" />
+				<path d="M8 13.5C8 13.5 1.5 9.5 1.5 5.5 1.5 3.5 3 2 4.75 2 6.25 2 7.5 3 8 4.25 8.5 3 9.75 2 11.25 2 13 2 14.5 3.5 14.5 5.5 14.5 9.5 8 13.5 8 13.5z" />
 			</svg>
 		</button>
-	{/if}
+	</div>
 </div>
 
 {#if layout === 'tab'}
@@ -264,6 +277,17 @@
 	.one {
 		border-color: var(--accent);
 		background: var(--accent);
+	}
+
+	/* Pressed, but shown by the red heart rather than the inverted button */
+	.loved {
+		background: none;
+		color: inherit;
+	}
+
+	.loved svg {
+		fill: var(--accent);
+		stroke: var(--accent);
 	}
 
 	/* Reads as plain text */

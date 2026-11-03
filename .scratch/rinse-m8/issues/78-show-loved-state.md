@@ -4,10 +4,16 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] The heart shows at the end of the controls row in the player bar and on the Player tab, connected to Last.fm or not.
 - [ ] Clicking an unloved heart fills it red; clicking a loved heart empties it.
 - [ ] The loved state follows the playing episode when it changes, including the episode restored at launch.
 - [ ] Loved episodes are still loved after restarting the app.
 - [ ] The button has `aria-pressed` set to the loved state, and its title reads Love or Unlove.
+
+## Comments
+
+- Loved episode ids are saved in `player.json` under `loved`, next to the queue and last-played episode.
+- The loved heart keeps the unpressed button look and only fills red; the global `aria-pressed` style would otherwise invert the whole button.
+- Every box above is an in-app check that hasn't been run yet: both layouts, both themes, and a restart.
