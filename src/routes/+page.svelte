@@ -466,6 +466,8 @@
 		errorMessage = String(e);
 	}
 
+	const offlineMessage = 'You are offline';
+
 	invoke<Settings>('get_settings')
 		.then((loaded) => {
 			settings = loaded;
@@ -527,9 +529,16 @@
 </script>
 
 <!-- With Tauri's file drop off, a dropped file would otherwise open in the window -->
+<!-- Going back online clears only the offline banner, not an error shown since -->
 <svelte:window
 	ondragover={(event) => event.dataTransfer?.types.includes('Files') && event.preventDefault()}
 	ondrop={(event) => event.dataTransfer?.types.includes('Files') && event.preventDefault()}
+	onoffline={() => showError(offlineMessage)}
+	ononline={() => {
+		if (errorMessage === offlineMessage) {
+			errorMessage = '';
+		}
+	}}
 />
 
 {#if update}
