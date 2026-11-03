@@ -4,9 +4,9 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human (needs a check in the app: reopening a show paints its details at once, and again offline)
 
-- [ ] A show refresh writes the show's description and image to its show record.
-- [ ] Opening a previously opened show view renders the cached description and image before the refresh finishes, then shows the refreshed ones.
-- [ ] Opening a show offline still shows its cached description and image.
-- [ ] A show that was never opened behaves as it does today.
+- [x] A show refresh writes the show's description and image to its show record.
+- [x] Opening a previously opened show view renders the cached description and image before the refresh finishes, then shows the refreshed ones.
+- [x] Opening a show offline still shows its cached description and image.
+- [x] A show that was never opened behaves as it does today.

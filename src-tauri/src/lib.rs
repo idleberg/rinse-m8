@@ -46,14 +46,36 @@ async fn get_episodes(app: tauri::AppHandle) -> Result<Vec<rinse::Episode>, Stri
     merge(&app, fetched)
 }
 
-/// Merges the show's recent episodes into the episode cache and returns the show's details with the whole cache.
+/// The show's details as its last refresh left them, or none if it was never refreshed.
+#[tauri::command]
+fn get_show_record(
+    app: tauri::AppHandle,
+    slug: String,
+) -> Result<Option<rinse::ShowDetails>, String> {
+    let store = app.store("shows.json").map_err(|e| e.to_string())?;
+
+    store
+        .get(&slug)
+        .map(serde_json::from_value)
+        .transpose()
+        .map_err(|e| e.to_string())
+}
+
+/// Merges the show's recent episodes into the episode cache, records its details and returns the record's details with the whole cache.
 #[tauri::command]
 async fn refresh_show(app: tauri::AppHandle, slug: String) -> Result<rinse::ShowPage, String> {
     let fetched = rinse::fetch_show(&slug).await?;
+    let episodes = merge(&app, fetched.episodes)?;
+
+    let store = app.store("shows.json").map_err(|e| e.to_string())?;
+    let record = rinse::update_show_record(store.get(&slug), &fetched.details);
+
+    store.set(slug, record.clone());
+    store.save().map_err(|e| e.to_string())?;
 
     Ok(rinse::ShowPage {
-        episodes: merge(&app, fetched.episodes)?,
-        ..fetched
+        episodes,
+        details: serde_json::from_value(record).map_err(|e| e.to_string())?,
     })
 }
 
@@ -1098,6 +1120,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_episodes,
             refresh_show,
+            get_show_record,
             download,
             get_download_queue,
             get_previous_downloads,

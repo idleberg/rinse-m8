@@ -190,20 +190,30 @@
 	let view = $state<'dashboard' | 'player' | 'schedule' | 'shows' | 'queue' | 'settings'>('dashboard');
 	let openedShow = $state<Show | null>(null);
 
-	/** Of `openedShow`, once its fetch has returned. */
+	/** Of `openedShow`, from its show record until its fetch returns. */
 	let showDetails = $state<ShowDetails | null>(null);
 	let refreshing = $state<string[]>([]);
 
-	/** Shows the cached episodes at once, then merges the show's fetched episodes in. */
+	/** Shows the cached episodes and details at once, then merges the show's fetched ones in. */
 	async function openShow(show: Show) {
 		errorMessage = '';
 
 		// Reopening the open show, as a notification click can, keeps its details on screen while they refresh
-		if (openedShow?.slug !== show.slug) {
-			showDetails = null;
-		}
+		const reopening = openedShow?.slug === show.slug;
 
 		openedShow = show;
+
+		if (!reopening) {
+			showDetails = null;
+
+			// A record that can't be read is only a slower first paint, never a reason to skip the refresh
+			const record = await invoke<ShowDetails | null>('get_show_record', { slug: show.slug }).catch(() => null);
+
+			// A refresh that returned meanwhile is newer than the record
+			if (openedShow?.slug === show.slug) {
+				showDetails ??= record;
+			}
+		}
 
 		refreshing.push(show.slug);
 

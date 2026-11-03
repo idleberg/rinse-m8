@@ -462,12 +462,30 @@ pub fn map_episodes(json: &str) -> serde_json::Result<Vec<Episode>> {
 }
 
 /// What Rinse says about a show besides its episodes, each field only when it provides one.
-#[derive(Debug, Default, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct ShowDetails {
     /// Served through the `image` scheme, which caches it on disk.
     pub image: Option<String>,
     /// HTML, which must never be injected into the page as is.
     pub description: Option<String>,
+}
+
+/// Writes `details` into a show's cached record, keeping the record's other fields and any detail the refresh lacks.
+pub fn update_show_record(
+    record: Option<serde_json::Value>,
+    details: &ShowDetails,
+) -> serde_json::Value {
+    let mut record = match record {
+        Some(serde_json::Value::Object(record)) => record,
+        _ => serde_json::Map::new(),
+    };
+
+    if let Ok(serde_json::Value::Object(details)) = serde_json::to_value(details) {
+        record.extend(details.into_iter().filter(|(_, v)| !v.is_null()));
+    }
+
+    serde_json::Value::Object(record)
 }
 
 #[derive(Debug, Serialize)]
@@ -934,6 +952,21 @@ mod tests {
             .unwrap();
 
         bytes
+    }
+
+    #[test]
+    fn a_show_record_takes_the_refreshed_details_and_keeps_what_the_refresh_lacks() {
+        let record =
+            serde_json::json!({ "image": "old", "description": "old", "lastAired": "2026-01-01" });
+        let details = ShowDetails {
+            image: Some("new".into()),
+            description: None,
+        };
+
+        assert_eq!(
+            update_show_record(Some(record), &details),
+            serde_json::json!({ "image": "new", "description": "old", "lastAired": "2026-01-01" })
+        );
     }
 
     #[test]
