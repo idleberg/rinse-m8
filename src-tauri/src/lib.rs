@@ -67,10 +67,15 @@ fn get_show_record(
     Ok(details.filter(|d| *d != rinse::ShowDetails::default()))
 }
 
-/// Each show's last aired date from the seed bundled with this release, keyed by show slug.
+/// Each show's last aired date, the later of the bundled seed's and its show record's, keyed by show slug.
 #[tauri::command]
-fn get_last_aired_seed() -> BTreeMap<String, String> {
-    rinse::last_aired_seed()
+fn get_last_aired(app: tauri::AppHandle) -> Result<BTreeMap<String, String>, String> {
+    let store = app.store("shows.json").map_err(|e| e.to_string())?;
+
+    Ok(rinse::merge_last_aired(
+        rinse::last_aired_seed(),
+        store.entries(),
+    ))
 }
 
 /// Merges the show's recent episodes into the episode cache, records its details and returns the record's details with the whole cache.
@@ -1144,7 +1149,7 @@ pub fn run() {
             get_episodes,
             refresh_show,
             get_show_record,
-            get_last_aired_seed,
+            get_last_aired,
             download,
             get_download_queue,
             get_previous_downloads,

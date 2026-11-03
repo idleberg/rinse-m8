@@ -22,6 +22,14 @@ _Avoid_: Show list, artists
 The screen for a single show, listing its known episodes.
 _Avoid_: Show page, show detail
 
+**Show record**:
+What the app keeps about a show between runs: its image and description from the last show view refresh, and its recorded last aired date. Lets a show view open instantly.
+_Avoid_: Show cache, show details
+
+**Last aired**:
+The date of a show's newest known episode: the later of the seed bundled with the release and the date in its show record. Unknown for a show in neither. The Shows tab can sort by it, freshest first.
+_Avoid_: Last episode, latest date
+
 **Image cache**:
 The show view images kept on disk once loaded, indefinitely, until cleared from Settings.
 _Avoid_: Thumbnail cache, bio cache

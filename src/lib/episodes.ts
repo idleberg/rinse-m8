@@ -76,6 +76,11 @@ export function available(episode: Episode): boolean {
 
 /** Whether the episode's mp3 is missing and it's over a month old, by when Rinse no longer fixes it. Such an episode is hidden everywhere. */
 export function dead(episode: Episode, now = new Date()): boolean {
+	return episode.mp3Found === false && episode.date <= monthsAgo(1, now);
+}
+
+/** The London date `months` before `now`, as `YYYY-MM-DD`. */
+export function monthsAgo(months: number, now = new Date()): string {
 	// en-CA formats as `YYYY-MM-DD`, in London like the episode dates
 	const [year, month, day] = now
 		.toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
@@ -83,12 +88,11 @@ export function dead(episode: Episode, now = new Date()): boolean {
 		.map(Number);
 
 	// Day 0 is the last of the month before, so 31 October goes back to 30 September, as in the backend
-	const lastDay = new Date(Date.UTC(year, month - 1, 0)).getUTCDate();
-	const cutoff = new Date(Date.UTC(year, month - 2, Math.min(day, lastDay)))
+	const lastDay = new Date(Date.UTC(year, month - months, 0)).getUTCDate();
+
+	return new Date(Date.UTC(year, month - 1 - months, Math.min(day, lastDay)))
 		.toISOString()
 		.slice(0, 10);
-
-	return episode.mp3Found === false && episode.date <= cutoff;
 }
 
 export function showOf(episode: Episode): Show {
@@ -111,8 +115,8 @@ export interface DownloadQueue {
 
 export type SortColumn = 'date' | 'time' | 'station' | 'show';
 
-export interface Sort {
-	column: SortColumn;
+export interface Sort<C extends string = SortColumn> {
+	column: C;
 	ascending: boolean;
 }
 
@@ -134,11 +138,35 @@ export function sortEpisodes(episodes: Episode[], sort: Sort): Episode[] {
 	return episodes.toSorted((a, b) => direction * key(a).localeCompare(key(b)));
 }
 
-/** The sort after clicking `column`: the same column reverses, another one ascends. */
-export function toggleSort(sort: Sort, column: SortColumn): Sort {
-	return sort.column === column
-		? { column, ascending: !sort.ascending }
-		: { column, ascending: true };
+/** The sort after clicking `column`: the same column reverses, another one starts `ascending`. */
+export function toggleSort<C extends string>(
+	sort: Sort<C> | null,
+	column: C,
+	ascending = true,
+): Sort<C> {
+	return sort?.column === column ? { column, ascending: !sort.ascending } : { column, ascending };
+}
+
+export type ShowSortColumn = 'title' | 'station' | 'lastAired';
+
+/** A sorted copy of `shows`, or `shows` itself in directory order without a sort. A show without a value, such as no date in
+ * `lastAired`, sorts last either way. Ties keep their order in `shows`. */
+export function sortShows<T extends DirectoryShow>(
+	shows: T[],
+	sort: Sort<ShowSortColumn> | null,
+	lastAired: Record<string, string>,
+): T[] {
+	if (!sort) {
+		return shows;
+	}
+
+	const key = (show: T) =>
+		sort.column === 'lastAired' ? (lastAired[show.slug] ?? '') : show[sort.column];
+	const direction = sort.ascending ? 1 : -1;
+
+	return shows.toSorted(
+		(a, b) => Number(!key(a)) - Number(!key(b)) || direction * key(a).localeCompare(key(b)),
+	);
 }
 
 /** `YYYY-MM-DD` as `YYYY/MM/DD`. */

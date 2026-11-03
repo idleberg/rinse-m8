@@ -527,6 +527,24 @@ pub fn last_aired_seed() -> BTreeMap<String, String> {
     serde_json::from_str(include_str!("../last-aired.json")).expect("valid last aired seed")
 }
 
+/// Each show's last aired date, the later of its `seed` date and its show record's, keyed by show slug.
+pub fn merge_last_aired(
+    mut seed: BTreeMap<String, String>,
+    records: Vec<(String, serde_json::Value)>,
+) -> BTreeMap<String, String> {
+    for (slug, record) in records {
+        if let Some(recorded) = record.get("lastAired").and_then(|v| v.as_str()) {
+            let date = seed.entry(slug).or_default();
+
+            if recorded > date.as_str() {
+                *date = recorded.into();
+            }
+        }
+    }
+
+    seed
+}
+
 #[derive(Debug, Serialize)]
 pub struct ShowPage {
     pub details: ShowDetails,
@@ -1055,6 +1073,40 @@ mod tests {
                 "{slug}: {date}"
             );
         }
+    }
+
+    #[test]
+    fn a_shows_last_aired_date_is_the_later_of_its_seed_and_recorded_dates() {
+        let seed = BTreeMap::from([
+            ("old-seed".to_string(), "2026-01-01".to_string()),
+            ("new-seed".to_string(), "2026-05-01".to_string()),
+            ("seed-only".to_string(), "2026-02-01".to_string()),
+        ]);
+        let records = vec![
+            (
+                "old-seed".to_string(),
+                serde_json::json!({ "lastAired": "2026-03-01" }),
+            ),
+            (
+                "new-seed".to_string(),
+                serde_json::json!({ "lastAired": "2026-04-01" }),
+            ),
+            (
+                "recorded-only".to_string(),
+                serde_json::json!({ "lastAired": "2026-06-01" }),
+            ),
+            ("undated".to_string(), serde_json::json!({ "image": "x" })),
+        ];
+
+        assert_eq!(
+            merge_last_aired(seed, records),
+            BTreeMap::from([
+                ("old-seed".to_string(), "2026-03-01".to_string()),
+                ("new-seed".to_string(), "2026-05-01".to_string()),
+                ("seed-only".to_string(), "2026-02-01".to_string()),
+                ("recorded-only".to_string(), "2026-06-01".to_string()),
+            ])
+        );
     }
 
     #[test]

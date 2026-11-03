@@ -8,7 +8,7 @@
 	import DownloadStatus from '../lib/DownloadStatus.svelte';
 	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
 	import EpisodeTable from '../lib/EpisodeTable.svelte';
-	import { available, type DirectoryShow, type DownloadQueue, dead, type Episode, type Show, type ShowDetails, type ShowPage, showOf, stations } from '../lib/episodes';
+	import { available, type DirectoryShow, type DownloadQueue, dead, type Episode, monthsAgo, type Show, type ShowDetails, type ShowPage, showOf, stations } from '../lib/episodes';
 	import Player from '../lib/Player.svelte';
 	import PlayerView from '../lib/PlayerView.svelte';
 	import QueueView from '../lib/QueueView.svelte';
@@ -100,13 +100,22 @@
 	/** Null until the first refresh finishes. */
 	let directory = $state<DirectoryShow[] | null>(null);
 
+	/** Keyed by show slug, refetched each time the Shows tab opens. */
+	let lastAired = $state<Record<string, string>>({});
+
+	/** Hides shows last aired more than this many months ago, or none when null. */
+	let hideOlderThan = $state<number | null>(24);
+
 	const filteredDirectory = $derived.by(() => {
 		const query = search.trim().toLowerCase();
+		const cutoff = hideOlderThan === null ? '' : monthsAgo(hideOlderThan);
 
+		// A show without a known date is kept, as its age is unknown
 		return (
 			directory?.filter(
 				(show) =>
 					(!stations.includes(show.station) || shownStations.includes(show.station)) &&
+					(!lastAired[show.slug] || lastAired[show.slug] >= cutoff) &&
 					[show.title, ...show.genres].some((text) => text.toLowerCase().includes(query)),
 			) ?? null
 		);
@@ -272,6 +281,15 @@
 			invoke<number>('get_image_cache_size')
 				.then((size) => {
 					imageCacheSize = size;
+				})
+				.catch(showError);
+		}
+
+		// Show views and schedule fetches record newer dates
+		if (value === 'shows') {
+			invoke<Record<string, string>>('get_last_aired')
+				.then((loaded) => {
+					lastAired = loaded;
 				})
 				.catch(showError);
 		}
@@ -676,10 +694,22 @@
 			ondisconnectlastfm={() => disconnectLastfm().catch(showError)}
 		/>
 	{:else if view === 'shows'}
-		<EpisodeFilters bind:shownStations bind:search />
+		<EpisodeFilters bind:shownStations bind:search>
+			<label>
+				hide shows
+				<select bind:value={hideOlderThan}>
+					<option value={null}>none</option>
+					<option value={6}>older than 6 months</option>
+					<option value={12}>older than 1 year</option>
+					<option value={24}>older than 2 years</option>
+					<option value={48}>older than 4 years</option>
+				</select>
+			</label>
+		</EpisodeFilters>
 
 		<ShowDirectory
 			shows={filteredDirectory}
+			{lastAired}
 			{subscribed}
 			{subscribing}
 			onopenshow={(show) => openShow(show).catch(showError)}

@@ -4,10 +4,11 @@
 
 **Blocked by:** 75 (Record each show's last aired date), 76 (Backfill seed of last aired dates)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The Shows tab offers a "Freshest first" sort alongside the current order.
-- [ ] Each show's last aired date is the later of its seed and recorded dates.
-- [ ] Shows with no known date sort last.
-- [ ] A Last aired column shows the date, or stays blank when unknown.
-- [ ] The glossary defines Show record and Last aired.
+- [x] The Shows tab offers a "Freshest first" sort alongside the current order.
+- [x] Each show's last aired date is the later of its seed and recorded dates.
+- [x] Shows with no known date sort last.
+- [x] A Last aired column shows the date, or stays blank when unknown.
+- [x] The glossary defines Show record and Last aired.
+- [x] A Hide shows select hides shows last aired over 6 months, 1 year, 2 years (default) or 4 years ago, or none.

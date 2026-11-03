@@ -7,8 +7,10 @@ import {
 	defaultSort,
 	type Episode,
 	episodeLabel,
+	monthsAgo,
 	moveItem,
 	sortEpisodes,
+	sortShows,
 	toggleSort,
 } from './episodes';
 
@@ -92,4 +94,29 @@ it('the label reads show, then subtitle if there is one, then date', () => {
 	expect(episodeLabel({ ...plain, displayTitle: 'Guest Mix' })).toBe(
 		'Beta – Guest Mix – 2026/10/01',
 	);
+});
+
+it('sorting shows by last aired starts freshest first, and undated shows stay last either way', () => {
+	const show = (slug: string) => ({ slug, title: slug, station: '', genres: [] });
+	const shows = [show('undated'), show('old'), show('new'), show('also-undated'), show('also-old')];
+	const lastAired = { old: '2026-01-01', new: '2026-05-01', 'also-old': '2026-01-01' };
+	const freshest = toggleSort(null, 'lastAired', false);
+
+	expect(sortShows(shows, freshest, lastAired).map((s) => s.slug)).toEqual([
+		'new',
+		'old',
+		'also-old',
+		'undated',
+		'also-undated',
+	]);
+	expect(sortShows(shows, toggleSort(freshest, 'lastAired'), lastAired).map((s) => s.slug)).toEqual(
+		['old', 'also-old', 'new', 'undated', 'also-undated'],
+	);
+	expect(sortShows(shows, null, lastAired)).toEqual(shows);
+});
+
+it('months ago lands on the same day, or the last day of a shorter month', () => {
+	expect(monthsAgo(24, new Date('2026-11-03T12:00:00Z'))).toBe('2024-11-03');
+	expect(monthsAgo(6, new Date('2026-08-31T12:00:00Z'))).toBe('2026-02-28');
+	expect(monthsAgo(12, new Date('2026-01-15T12:00:00Z'))).toBe('2025-01-15');
 });
