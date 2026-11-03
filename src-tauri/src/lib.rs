@@ -54,11 +54,14 @@ fn get_show_record(
 ) -> Result<Option<rinse::ShowDetails>, String> {
     let store = app.store("shows.json").map_err(|e| e.to_string())?;
 
-    store
+    let details: Option<rinse::ShowDetails> = store
         .get(&slug)
         .map(serde_json::from_value)
         .transpose()
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    // A record holding only a last aired date was never refreshed
+    Ok(details.filter(|d| *d != rinse::ShowDetails::default()))
 }
 
 /// Merges the show's recent episodes into the episode cache, records its details and returns the record's details with the whole cache.
@@ -79,7 +82,7 @@ async fn refresh_show(app: tauri::AppHandle, slug: String) -> Result<rinse::Show
     })
 }
 
-/// Merges `episodes` into the cache with `rinse::merge_episodes` and returns the whole cache.
+/// Merges `episodes` into the cache with `rinse::merge_episodes`, records each show's last aired date and returns the whole cache.
 fn merge(
     app: &tauri::AppHandle,
     episodes: Vec<rinse::Episode>,
@@ -89,7 +92,18 @@ fn merge(
         cache.get(id).and_then(|v| serde_json::from_value(v).ok())
     });
 
-    save_episodes(app, merged)
+    let shows = app.store("shows.json").map_err(|e| e.to_string())?;
+
+    for (slug, date) in rinse::last_aired(&merged) {
+        shows.set(slug, rinse::record_last_aired(shows.get(slug), date));
+    }
+
+    // The episodes go first, so a failed show record save never loses them
+    let cache = save_episodes(app, merged)?;
+
+    shows.save().map_err(|e| e.to_string())?;
+
+    Ok(cache)
 }
 
 /// Writes `episodes` to the cache as they are and returns the whole cache.

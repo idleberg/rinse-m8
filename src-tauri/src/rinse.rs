@@ -488,6 +488,39 @@ pub fn update_show_record(
     serde_json::Value::Object(record)
 }
 
+/// The newest episode date of each show in `episodes`, keyed by show slug.
+pub fn last_aired(episodes: &[Episode]) -> BTreeMap<&str, &str> {
+    let mut newest = BTreeMap::new();
+
+    for episode in episodes {
+        let date = newest.entry(episode.show_slug.as_str()).or_insert("");
+
+        if episode.date.as_str() > *date {
+            *date = &episode.date;
+        }
+    }
+
+    newest
+}
+
+/// Moves a show's cached record's last aired date forward to `date`, never backwards.
+pub fn record_last_aired(record: Option<serde_json::Value>, date: &str) -> serde_json::Value {
+    let mut record = match record {
+        Some(serde_json::Value::Object(record)) => record,
+        _ => serde_json::Map::new(),
+    };
+
+    if record
+        .get("lastAired")
+        .and_then(|v| v.as_str())
+        .is_none_or(|aired| aired < date)
+    {
+        record.insert("lastAired".into(), date.into());
+    }
+
+    serde_json::Value::Object(record)
+}
+
 #[derive(Debug, Serialize)]
 pub struct ShowPage {
     pub details: ShowDetails,
@@ -966,6 +999,44 @@ mod tests {
         assert_eq!(
             update_show_record(Some(record), &details),
             serde_json::json!({ "image": "new", "description": "old", "lastAired": "2026-01-01" })
+        );
+    }
+
+    #[test]
+    fn last_aired_picks_the_newest_date_per_show() {
+        let aired = |slug: &str, date: &str| Episode {
+            show_slug: slug.into(),
+            date: date.into(),
+            ..episode("2319625")
+        };
+        let episodes = [
+            aired("a", "2026-03-01"),
+            aired("b", "2026-01-01"),
+            aired("a", "2026-04-01"),
+            aired("a", "2026-02-01"),
+        ];
+
+        assert_eq!(
+            last_aired(&episodes),
+            BTreeMap::from([("a", "2026-04-01"), ("b", "2026-01-01")])
+        );
+    }
+
+    #[test]
+    fn a_show_record_takes_a_newer_last_aired_date_but_never_an_older_one() {
+        let record = serde_json::json!({ "image": "old", "lastAired": "2026-02-01" });
+
+        assert_eq!(
+            record_last_aired(Some(record.clone()), "2026-03-01"),
+            serde_json::json!({ "image": "old", "lastAired": "2026-03-01" })
+        );
+        assert_eq!(
+            record_last_aired(Some(record.clone()), "2026-01-01"),
+            record
+        );
+        assert_eq!(
+            record_last_aired(None, "2026-01-01"),
+            serde_json::json!({ "lastAired": "2026-01-01" })
         );
     }
 
