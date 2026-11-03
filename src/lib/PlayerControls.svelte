@@ -195,12 +195,6 @@
 		align-items: center;
 	}
 
-	/* Spaced like the episode table's buttons */
-	.buttons {
-		display: flex;
-		gap: 0.5ch;
-	}
-
 	.row,
 	h2,
 	.label {

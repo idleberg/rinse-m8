@@ -1,13 +1,13 @@
-# 79: Toggle love from the heart
+# 79: Love on Last.fm too
 
-**What to build:** Clicking the heart loves the playing episode on Last.fm (`track.love`), or unloves it if it's already loved (`track.unlove`). The heart changes as soon as it's clicked. If the call fails, for example while offline, the heart goes back to its previous state and the error banner shows the failure; it isn't only logged the way a failed scrobble is. If Last.fm rejects the session, the account is disconnected the same way it is for scrobbling. The button reports its state to assistive tech as pressed or not pressed, and its tooltip reads "Love" or "Unlove".
+**What to build:** When an episode is loved in the app and a Last.fm account is connected, the episode is also loved on Last.fm with `track.love`, sending the same artist and track names that scrobbling sends. Unloving in the app doesn't touch Last.fm: there's no `track.unlove`, so a track stays loved on the Last.fm profile. Without an account or an API key, loving only changes the app. A failed call doesn't change the heart, since the app's state stays the source of truth; the failure is logged the way a failed scrobble is, and there's no retry. If Last.fm rejects the session, the account is disconnected the same way it is for scrobbling.
 
-**Blocked by:** 78 (Show whether the playing episode is loved)
+**Blocked by:** 78 (Love episodes in the app)
 
 **Status:** ready-for-agent
 
-- [ ] Clicking an unloved heart fills it, and the episode shows as loved on the Last.fm profile.
-- [ ] Clicking a loved heart empties it, and the episode is no longer loved on Last.fm.
-- [ ] A failed call puts the heart back and shows the error banner.
-- [ ] If Last.fm rejects the session, the account disconnects and the heart disappears.
-- [ ] The button has `aria-pressed` set to the loved state, and its title reads Love or Unlove.
+- [ ] Loving an episode while connected loves it on the Last.fm profile.
+- [ ] Unloving an episode leaves it loved on Last.fm.
+- [ ] Loving while disconnected or without an API key makes no Last.fm call.
+- [ ] A failed call is logged and leaves the heart loved.
+- [ ] If Last.fm rejects the session, the account disconnects.

@@ -44,6 +44,10 @@ Read each rule below as a common case of this. When a case isn't listed, ask whe
   </main>
   ```
 
+## Buttons
+
+Buttons next to each other go in a `.buttons` group, which `app.css` spaces with a `0.5ch` gap. A component only adds what its layout needs, such as `justify-content: flex-end` in a table cell. Dialogs and Settings rows space their buttons wider on purpose.
+
 ## Markdown
 
 Markdown should read as well in raw text as it does rendered.

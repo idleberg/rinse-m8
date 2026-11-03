@@ -132,7 +132,7 @@
 						{/if}
 					</td>
 					<td>
-						<div class="actions">
+						<div class="buttons">
 							<button type="button" class="icon reveal" aria-label="Play" title="Play" onclick={() => onplay(index)}>
 								<svg viewBox="0 0 16 16" aria-hidden="true">
 									<path d="M4 2.5l9 5.5-9 5.5z" />
@@ -251,9 +251,7 @@
 		width: 1%;
 	}
 
-	.actions {
-		display: flex;
-		gap: 0.5ch;
+	.buttons {
 		justify-content: flex-end;
 	}
 

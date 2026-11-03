@@ -35,7 +35,7 @@
 		<span>Downloading {started} / {started + downloads.waiting.length}…</span>
 		<progress max="100" value={downloads.percent ?? undefined} aria-label={episodeLabel(downloads.current)}></progress>
 		{downloads.percent === null ? '' : `${downloads.percent}%`}
-		<div>
+		<div class="buttons">
 			<button type="button" class="icon" aria-label="Cancel" title="Cancel" onclick={oncancel}>
 				<svg viewBox="0 0 16 16" aria-hidden="true">
 					<path d="M4 4l8 8M12 4l-8 8" />
@@ -47,7 +47,7 @@
 {:else if downloads.failures.length}
 	<footer role="alert">
 		{downloads.failures.length === 1 ? `Failed: ${episodeLabel(downloads.failures[0])}` : `${downloads.failures.length} downloads failed`}
-		<div>
+		<div class="buttons">
 			<button type="button" onclick={onviewqueue}>View queue</button>
 		</div>
 	</footer>
@@ -70,10 +70,8 @@
 		flex: 1;
 	}
 
-	/* Spaced like the episode table's buttons, on the right edge also when a failure has no progress bar to push them there */
-	div {
-		display: flex;
-		gap: 0.5ch;
+	/* On the right edge also when a failure has no progress bar to push them there */
+	.buttons {
 		margin-left: auto;
 	}
 </style>

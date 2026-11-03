@@ -101,7 +101,7 @@
 					{/if}
 				</td>
 				<td>
-					<div class="actions">
+					<div class="buttons">
 						{#if ontogglesubscription && subscribeOnHover}
 							<span class="reveal">
 								<SubscribeButton
@@ -217,9 +217,7 @@
 		vertical-align: bottom;
 	}
 
-	.actions {
-		display: flex;
-		gap: 0.5ch;
+	.buttons {
 		justify-content: flex-end;
 		align-items: center;
 	}

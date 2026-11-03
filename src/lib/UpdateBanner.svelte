@@ -16,7 +16,7 @@
 <aside role="status">
 	<span>Version {version} is available</span>
 	{#if percent === null}
-		<div>
+		<div class="buttons">
 			<button type="button" onclick={onupdate}>Update</button>
 			<button type="button" onclick={ondismiss}>Dismiss</button>
 		</div>
@@ -49,9 +49,7 @@
 		background: currentColor;
 	}
 
-	div {
-		display: flex;
-		gap: 0.5ch;
+	.buttons {
 		margin-left: auto;
 	}
 </style>

@@ -149,6 +149,12 @@ progress::-webkit-progress-value {
 	background: var(--ink);
 }
 
+/* Buttons next to each other */
+.buttons {
+	display: flex;
+	gap: 0.5ch;
+}
+
 /* The size leaves out the border, so icon buttons are as tall as a line of text in a text button */
 button.icon {
 	box-sizing: content-box;

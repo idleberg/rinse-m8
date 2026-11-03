@@ -1,16 +1,13 @@
-# 78: Show whether the playing episode is loved
+# 78: Love episodes in the app
 
-**What to build:** When a Last.fm account is connected, a heart button sits to the right of the episode title, both in the player bar and on the Player tab. It's an outline (in the ink colour) when the episode isn't loved on Last.fm, and filled with the accent red when it is. Each time the episode changes, including the episode restored at launch, the loved state is read from Last.fm with `track.getInfo` and the connected `username`. Send the same artist and track names that scrobbling sends, with autocorrect off. When no account is connected, the build has no API key, or the lookup fails, there's no heart. An episode Last.fm has never seen ("Track not found") counts as unloved. If Last.fm rejects the session, the account is disconnected the same way it is for scrobbling. Clicking the heart does nothing yet; ticket 79 adds that.
+**What to build:** A heart button sits at the end of the controls row, both in the player bar and on the Player tab, where it follows the repeat button at the same height. It's always there, whether or not a Last.fm account is connected. It's an outline (in the ink colour) when the playing episode isn't loved, and filled with the accent red when it is. Clicking it loves or unloves the episode, and the heart changes at once. Loved episodes are stored by the app in its own store, so they survive a restart and don't depend on the episode cache. Last.fm is never read for the loved state; ticket 79 sends loves to Last.fm. The button reports its state to assistive tech as pressed or not pressed, and its tooltip reads "Love" or "Unlove".
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-human (needs a look in the app with a connected account: heart in both layouts and themes, loved vs unloved episode)
+**Status:** ready-for-agent
 
-- [ ] While connected, the heart shows next to the title in the player bar and on the Player tab.
-- [ ] The heart is filled red for an episode loved on Last.fm, and an outline otherwise.
-- [ ] An episode unknown to Last.fm shows as unloved.
-- [ ] The state is read again when the episode changes, and a slow reply for the previous episode doesn't apply to the next one.
-- [ ] The episode restored at launch shows its state.
-- [ ] There's no heart while disconnected, without an API key, or after a failed lookup.
-- [ ] Disconnecting in Settings, or Last.fm rejecting the session, hides the heart immediately.
-- [x] Unit tests turn a `track.getInfo` reply into the loved state: loved, not loved, and Track not found.
+- [ ] The heart shows at the end of the controls row in the player bar and on the Player tab, connected to Last.fm or not.
+- [ ] Clicking an unloved heart fills it red; clicking a loved heart empties it.
+- [ ] The loved state follows the playing episode when it changes, including the episode restored at launch.
+- [ ] Loved episodes are still loved after restarting the app.
+- [ ] The button has `aria-pressed` set to the loved state, and its title reads Love or Unlove.

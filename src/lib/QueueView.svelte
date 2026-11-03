@@ -179,7 +179,7 @@
 					</td>
 					<td class="status">Failed</td>
 					<td>
-						<div class="actions">
+						<div class="buttons">
 							<button type="button" onclick={() => onretry(episode.id)}>Retry</button>
 							<button type="button"
 								class="icon"
@@ -228,7 +228,7 @@
 						{/if}
 					</td>
 					<td>
-						<div class="actions">
+						<div class="buttons">
 							{#if episode.file}
 								{@const file = episode.file}
 								<button type="button"
@@ -328,9 +328,7 @@
 		text-align: right;
 	}
 
-	.actions {
-		display: flex;
-		gap: 0.5ch;
+	.buttons {
 		justify-content: flex-end;
 	}
 
