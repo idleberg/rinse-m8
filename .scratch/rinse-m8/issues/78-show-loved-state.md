@@ -4,13 +4,13 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** done
+**Status:** ready-for-human (needs a look in the app: heart in both layouts and themes, loving and unloving, still loved after a restart)
 
-- [ ] The heart shows at the end of the controls row in the player bar and on the Player tab, connected to Last.fm or not.
-- [ ] Clicking an unloved heart fills it red; clicking a loved heart empties it.
+- [x] The heart shows at the end of the controls row in the player bar and on the Player tab, connected to Last.fm or not.
+- [x] Clicking an unloved heart fills it red; clicking a loved heart empties it.
 - [ ] The loved state follows the playing episode when it changes, including the episode restored at launch.
-- [ ] Loved episodes are still loved after restarting the app.
-- [ ] The button has `aria-pressed` set to the loved state, and its title reads Love or Unlove.
+- [x] Loved episodes are still loved after restarting the app.
+- [x] The button has `aria-pressed` set to the loved state, and its title reads Love or Unlove.
 
 ## Comments
 

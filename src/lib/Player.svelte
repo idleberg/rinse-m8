@@ -106,7 +106,7 @@
 		}
 	}
 
-	/** Waits for the stored loves, so loading them can't undo the change. */
+	/** Waits for the stored loves, so loading them can't undo the change. Only a love goes to Last.fm, which has no unlove. */
 	async function toggleLove() {
 		const store = await ready;
 
@@ -115,9 +115,14 @@
 		}
 
 		const { id } = episode;
+		const loving = !lovedIds.includes(id);
 
-		lovedIds = lovedIds.includes(id) ? lovedIds.filter((lovedId) => lovedId !== id) : [...lovedIds, id];
+		lovedIds = loving ? [...lovedIds, id] : lovedIds.filter((lovedId) => lovedId !== id);
 		await store.set('loved', $state.snapshot(lovedIds));
+
+		if (loving) {
+			invoke('love', { episode }).catch(onerror);
+		}
 	}
 
 	/** Waits for the stored queue, so loading it can't drop the new episode. An episode can be queued more than once. */

@@ -4,10 +4,16 @@
 
 **Blocked by:** 78 (Love episodes in the app)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human (needs a check against a real Last.fm account: loving, unloving, and a revoked session)
 
 - [ ] Loving an episode while connected loves it on the Last.fm profile.
-- [ ] Unloving an episode leaves it loved on Last.fm.
-- [ ] Loving while disconnected or without an API key makes no Last.fm call.
+- [x] Unloving an episode leaves it loved on Last.fm.
+- [x] Loving while disconnected or without an API key makes no Last.fm call.
 - [ ] A failed call is logged and leaves the heart loved.
 - [ ] If Last.fm rejects the session, the account disconnects.
+
+## Comments
+
+- `track.love` gets only the artist and track names from `lastfm::track`, not the album or duration that scrobbles send.
+- The `love` command reuses `lastfm_outcome`, so failures are logged and a rejected session disconnects exactly as for scrobbles.
+- The unticked boxes need a real Last.fm account to check.

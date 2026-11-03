@@ -526,6 +526,18 @@ async fn scrobble(
     lastfm_outcome(&app, "scrobble", result)
 }
 
+/// Loves `episode` on Last.fm while connected. Unloving has no Last.fm call, so it's never sent.
+#[tauri::command]
+async fn love(app: tauri::AppHandle, episode: rinse::Episode) -> Result<(), String> {
+    let Some(session) = load_lastfm_session(&app)? else {
+        return Ok(());
+    };
+
+    let result = lastfm::love(&session, &lastfm::track(&episode)).await;
+
+    lastfm_outcome(&app, "love", result)
+}
+
 /// Drops a session Last.fm rejects and tells the Settings row. Other failures are only logged, so being offline doesn't show an error.
 fn lastfm_outcome(
     app: &tauri::AppHandle,
@@ -1106,6 +1118,7 @@ pub fn run() {
             disconnect_lastfm,
             now_playing,
             scrobble,
+            love,
             get_image_cache_size,
             clear_image_cache,
             set_tray_playing,

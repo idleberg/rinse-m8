@@ -100,6 +100,19 @@ pub async fn scrobble(session: &Session, track: &Track, started: u64) -> Result<
     .await
 }
 
+/// Loves `track` on the session's profile. It takes only the names, so the album and duration stay out.
+pub async fn love(session: &Session, track: &Track) -> Result<(), Failure> {
+    post(
+        "track.love",
+        &[
+            ("artist", &track.artist),
+            ("track", &track.track),
+            ("sk", &session.key),
+        ],
+    )
+    .await
+}
+
 /// Calls a track method with `track`'s fields and `extra` params.
 async fn send(
     method: &str,
@@ -122,7 +135,12 @@ async fn send(
         params.push(("duration", &duration));
     }
 
-    let reply = call(method, &params).await.map_err(Failure::Other)?;
+    post(method, &params).await
+}
+
+/// Calls a method with a session key among `params`, telling a rejected session apart from other failures.
+async fn post(method: &str, params: &[(&str, &str)]) -> Result<(), Failure> {
+    let reply = call(method, params).await.map_err(Failure::Other)?;
 
     match parse::<serde_json::Value>(&reply) {
         Ok(_) => Ok(()),
