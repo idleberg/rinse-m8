@@ -10,6 +10,8 @@ export interface Stored {
 	downloadFolder: string | null;
 	autoDownload: boolean;
 	keepRunning: boolean;
+	/** Whether the player empties once the last episode ends, with nothing queued or repeating. */
+	clearPlayer: boolean;
 	/** In hours. */
 	updateInterval: number;
 	/** In hours, or 0 to check only at launch. */
@@ -26,6 +28,7 @@ class Settings {
 		downloadFolder: null,
 		autoDownload: false,
 		keepRunning: true,
+		clearPlayer: false,
 		updateInterval: 6,
 		appUpdateInterval: 24,
 	});
@@ -68,10 +71,14 @@ class Settings {
 	ensureFolder = async () => Boolean(this.stored.downloadFolder) || this.chooseFolder();
 
 	/** Saves a checkbox or interval, and puts the stored value back if saving fails. */
-	async save<K extends 'autoDownload' | 'keepRunning' | 'updateInterval' | 'appUpdateInterval'>(
-		key: K,
-		value: Stored[K],
-	) {
+	async save<
+		K extends
+			| 'autoDownload'
+			| 'keepRunning'
+			| 'clearPlayer'
+			| 'updateInterval'
+			| 'appUpdateInterval',
+	>(key: K, value: Stored[K]) {
 		const previous = this.stored[key];
 
 		errors.clear();

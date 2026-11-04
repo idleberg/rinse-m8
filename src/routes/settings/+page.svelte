@@ -79,6 +79,13 @@
 			keep running in menu bar
 		</label>
 	</dd>
+	<dt>Player</dt>
+	<dd>
+		<label>
+			<input type="checkbox" checked={settings.stored.clearPlayer} onchange={(e) => settings.save('clearPlayer', e.currentTarget.checked)} />
+			empty the player once playback ends
+		</label>
+	</dd>
 	<dt>Show Updates</dt>
 	<dd>
 		<select aria-label="Update interval" value={settings.stored.updateInterval} onchange={(e) => settings.save('updateInterval', Number(e.currentTarget.value))}>

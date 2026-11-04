@@ -13,6 +13,7 @@ import {
 	repeatModes,
 	scrobbleAfter,
 } from './listen';
+import { settings } from './settings.svelte';
 
 /** How often a playing episode's position is saved, in milliseconds. */
 const saveInterval = 5000;
@@ -252,8 +253,13 @@ class Player {
 		// Starting over counts as a new listen
 		if (this.repeat === 'one' && this.episode) {
 			this.play(this.episode);
-		} else {
+		} else if (this.hasNext || !settings.stored.clearPlayer) {
 			this.skip();
+		} else {
+			// Forgotten too, so it doesn't come back at the next launch
+			this.episode = null;
+			this.#lastPlayed = null;
+			this.#save('lastPlayed', null);
 		}
 	};
 

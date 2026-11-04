@@ -49,6 +49,7 @@ const { flushSync } = await import('svelte');
 const { player } = await import('./player.svelte');
 const { episodes } = await import('./episodes.svelte');
 const { confirmation } = await import('./confirm.svelte');
+const { settings } = await import('./settings.svelte');
 
 episodes.replace([a, b, c]);
 player.init();
@@ -167,4 +168,20 @@ it('loves and unloves the episode, sending only the love to Last.fm', async () =
 	expect(player.loved).toBe(false);
 	expect(stored.get('loved')).toEqual([]);
 	expect(calls.filter(([command]) => command === 'love')).toHaveLength(1);
+});
+
+it('empties the player when the last episode ends, only if the setting is on', async () => {
+	player.playQueue = [];
+	await player.play(a);
+
+	player.handleEnded();
+	expect(player.episode?.id).toBe('a');
+
+	settings.stored.clearPlayer = true;
+	player.handleEnded();
+	await settle();
+
+	expect(player.episode).toBeNull();
+	expect(stored.get('lastPlayed')).toBeNull();
+	settings.stored.clearPlayer = false;
 });

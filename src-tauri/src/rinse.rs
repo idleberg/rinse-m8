@@ -107,6 +107,8 @@ pub struct Settings {
     pub auto_download: bool,
     /// Whether closing the window hides it behind a menu bar or tray icon instead of quitting.
     pub keep_running: bool,
+    /// Whether the player empties once the last episode ends, with nothing queued or repeating.
+    pub clear_player: bool,
     /// Hours between updates of the schedule and the subscribed shows.
     pub update_interval: u32,
     /// Hours between checks for a new app version, or 0 to check only at launch.
@@ -121,6 +123,7 @@ impl Default for Settings {
             download_folder: None,
             auto_download: false,
             keep_running: true,
+            clear_player: false,
             update_interval: 6,
             app_update_interval: 24,
         }
