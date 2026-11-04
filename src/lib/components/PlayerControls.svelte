@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { on } from 'svelte/events';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { episodeLabel, formatDate } from '#lib/episodes';
 	import { formatTime, type Repeat } from '#lib/listen';
@@ -13,6 +14,11 @@
 
 	/** How fast a title too long for its space scrolls, in pixels per second. */
 	const scrollSpeed = 25;
+
+	/** How far one mouse-wheel notch seeks, in seconds. */
+	const wheelSeek = 5;
+	/** The pixel delta of one mouse-wheel notch. */
+	const wheelNotch = 100;
 
 	const repeatTitles: Record<Repeat, string> = { off: 'Repeat off', all: 'Repeat all', one: 'Repeat one' };
 
@@ -58,6 +64,23 @@
 
 		return () => observer.disconnect();
 	});
+
+	/** Scrolling up seeks forward. Scaled by the delta, so a trackpad's many small events don't race. Not passive, so the page doesn't scroll too. */
+	function seekByWheel(element: HTMLElement) {
+		return on(
+			element,
+			'wheel',
+			(event) => {
+				if (!player.duration) {
+					return;
+				}
+
+				event.preventDefault();
+				player.currentTime = Math.min(player.duration, Math.max(0, player.currentTime - (event.deltaY / wheelNotch) * wheelSeek));
+			},
+			{ passive: false },
+		);
+	}
 
 	function toggleScrolling() {
 		stopped = !stopped;
@@ -124,19 +147,22 @@
 	{#if layout === 'bar'}
 		{@render title()}
 	{/if}
-	<input
-		type="range"
-		aria-label="Seek"
-		min="0"
-		max={player.duration || 0}
-		step="any"
-		disabled={!player.duration}
-		style:--progress={player.duration ? player.currentTime / player.duration : 0}
-		value={player.currentTime}
-		oninput={(e) => {
-			player.currentTime = e.currentTarget.valueAsNumber;
-		}}
-	/>
+	<!-- As tall as the row, so the wheel seeks without the pointer on the thin bar -->
+	<div class="seek" {@attach seekByWheel}>
+		<input
+			type="range"
+			aria-label="Seek"
+			min="0"
+			max={player.duration || 0}
+			step="any"
+			disabled={!player.duration}
+			style:--progress={player.duration ? player.currentTime / player.duration : 0}
+			value={player.currentTime}
+			oninput={(e) => {
+				player.currentTime = e.currentTarget.valueAsNumber;
+			}}
+		/>
+	</div>
 	<button type="button" class="time" title={player.showRemaining ? 'Show elapsed time' : 'Show remaining time'} onclick={player.toggleTime}
 		><span class:hidden={!player.showRemaining}>-</span>{player.showRemaining
 			? formatTime((player.duration || 0) - player.currentTime)
@@ -266,6 +292,13 @@
 	/* Keeps the minus's width, so toggling to remaining time doesn't resize the seek bar */
 	.hidden {
 		visibility: hidden;
+	}
+
+	.seek {
+		flex: 1;
+		align-self: stretch;
+		display: flex;
+		align-items: center;
 	}
 
 	/* A thin outlined bar, filled up to the playhead. The row centres it, so it sits where the taller bar did. */
