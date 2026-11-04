@@ -322,6 +322,11 @@
 		margin-left: auto;
 	}
 
+	/* Closes off the left group, since Settings' line moved away with it */
+	nav button:nth-last-child(2) {
+		border-right: 1px solid var(--ink);
+	}
+
 	/* Inset, since the cells touch each other and the window's top edge */
 	nav button:focus-visible {
 		outline-offset: -3px;
