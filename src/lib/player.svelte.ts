@@ -54,8 +54,8 @@ class Player {
 	playQueue = $state<Episode[]>([]);
 	/** The id of the episode while it's playing, not paused. */
 	playing = $derived(this.paused ? null : (this.episode?.id ?? null));
-	/** Whether NEXT has an episode to play: one in the play queue, or the current one under repeat all. */
-	hasNext = $derived(this.playQueue.length > 0 || (this.repeat === 'all' && this.episode !== null));
+	/** Whether NEXT has an episode to play: one in the play queue, or the current one under either repeat. */
+	hasNext = $derived(this.playQueue.length > 0 || (this.repeat !== 'off' && this.episode !== null));
 	/** The ids of loved episodes, kept by the app and never read from Last.fm. */
 	#lovedIds = $state<string[]>([]);
 	loved = $derived(this.episode !== null && this.#lovedIds.includes(this.episode.id));
@@ -123,9 +123,12 @@ class Player {
 	playFromQueue = (index: number) => this.play(this.dequeue(index));
 
 	/** Plays the first queued episode, from the start even if it's the current one. Repeat all queues the current
-	 * episode last, so the queue loops. */
+	 * episode last, so the queue loops. Repeat one leaves for the queue, or restarts the episode when it's empty. */
 	skip = async () => {
-		if (this.repeat === 'all' && this.episode) {
+		if (
+			this.episode &&
+			(this.repeat === 'all' || (this.repeat === 'one' && this.playQueue.length === 0))
+		) {
 			this.playQueue.push(this.episode);
 		}
 

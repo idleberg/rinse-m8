@@ -83,6 +83,25 @@ it('plays the first queued episode on NEXT, and under repeat all queues the curr
 	expect(player.playQueue.map((e) => e.id)).toEqual(['c', 'a']);
 });
 
+it('leaves for the queue on NEXT under repeat one, and restarts the episode once the queue is empty', async () => {
+	await player.play(a);
+	player.playQueue = [b];
+	player.repeat = 'one';
+
+	await player.skip();
+
+	expect(player.episode?.id).toBe('b');
+	expect(player.playQueue).toEqual([]);
+	expect(player.hasNext).toBe(true);
+
+	player.currentTime = 10;
+	await player.skip();
+
+	expect(player.episode?.id).toBe('b');
+	expect(player.currentTime).toBe(0);
+	expect(player.playQueue).toEqual([]);
+});
+
 it('goes back to the episode played before on PREV, and queues the current one first', async () => {
 	player.playQueue = [];
 	await player.play(a);
