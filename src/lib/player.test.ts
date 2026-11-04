@@ -15,6 +15,7 @@ const calls: [string, unknown][] = [];
 const stored = new Map<string, unknown>([
 	['lastPlayed', 'b'],
 	['queue', [c]],
+	['history', [a]],
 ]);
 
 mock.module('@tauri-apps/api/core', () => ({
@@ -65,12 +66,13 @@ beforeEach(async () => {
 	player.repeat = 'off';
 });
 
-it('brings back the last-played episode and the stored queue at launch', async () => {
+it('brings back the last-played episode, the stored queue and the history at launch', async () => {
 	await settle();
 	flushSync();
 
 	expect(player.episode?.id).toBe('b');
 	expect(player.playQueue.map((e) => e.id)).toEqual(['c']);
+	expect(player.playHistory.map((e) => e.id)).toEqual(['a']);
 });
 
 it('plays the first queued episode on NEXT, and under repeat all queues the current one last', async () => {
@@ -168,6 +170,22 @@ it('loves and unloves the episode, sending only the love to Last.fm', async () =
 	expect(player.loved).toBe(false);
 	expect(stored.get('loved')).toEqual([]);
 	expect(calls.filter(([command]) => command === 'love')).toHaveLength(1);
+});
+
+it('keeps each listened episode once in the history, latest first, and stores it', async () => {
+	player.playHistory = [];
+	await player.play(a);
+	player.handlePlay();
+	player.pause();
+	player.handlePlay();
+	await player.play(b);
+	player.handlePlay();
+	await player.play(a);
+	player.handlePlay();
+	await settle();
+
+	expect(player.playHistory.map((e) => e.id)).toEqual(['a', 'b']);
+	expect((stored.get('history') as Episode[]).map((e) => e.id)).toEqual(['a', 'b']);
 });
 
 it('empties the player when the last episode ends, only if the setting is on', async () => {

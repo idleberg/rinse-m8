@@ -14,6 +14,10 @@
 	let over = $state<number | null>(null);
 	let rows: HTMLTableRowElement[] = [];
 
+	/** How many history rows show, growing a page at a time. */
+	const historyPage = 20;
+	let historyShown = $state(historyPage);
+
 	// The rows are unkeyed, so a moved episode shows in another row's element and focus follows it there
 	function moveWithArrows(event: KeyboardEvent, index: number) {
 		const step = { ArrowUp: -1, ArrowDown: 1 }[event.key];
@@ -132,6 +136,53 @@
 	<p class="empty">The play queue is empty</p>
 {/if}
 
+<header>
+	<h2>History</h2>
+</header>
+
+{#if player.playHistory.length}
+	<table>
+		<thead>
+			<tr>
+				<th>Date</th>
+				<th>Show</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			{#each player.playHistory.slice(0, historyShown) as episode (episode.id)}
+				<tr>
+					<td>{formatDate(episode.date)}</td>
+					<td>
+						{episode.showTitle}
+						{#if episode.displayTitle}
+							<span class="subtitle">{episode.displayTitle}</span>
+						{/if}
+					</td>
+					<td>
+						<div class="buttons">
+							<button type="button" class="icon reveal" aria-label="Play" title="Play" onclick={() => player.play(episode)}>
+								<svg viewBox="0 0 16 16" aria-hidden="true">
+									<path d="M4 2.5l9 5.5-9 5.5z" />
+								</svg>
+							</button>
+						</div>
+					</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+	{#if player.playHistory.length > historyShown}
+		<button type="button" class="more" onclick={() => {
+			historyShown += historyPage;
+		}}>
+			Show more ({player.playHistory.length - historyShown})
+		</button>
+	{/if}
+{:else}
+	<p class="empty">Nothing played yet</p>
+{/if}
+
 <style>
 	section {
 		display: flex;
@@ -246,5 +297,9 @@
 
 	.subtitle {
 		color: var(--muted);
+	}
+
+	.more {
+		margin-top: 0.5rem;
 	}
 </style>

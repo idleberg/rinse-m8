@@ -18,6 +18,10 @@ import { settings } from './settings.svelte';
 /** How often a playing episode's position is saved, in milliseconds. */
 const saveInterval = 5000;
 
+// ponytail: capped at 500 so player.json stays small, page it from its own store if more is wanted
+/** How many episodes the play history keeps. */
+const historyLimit = 500;
+
 /** How far into an episode PREV restarts it rather than going back, in seconds. */
 const restartAfter = 3;
 
@@ -53,6 +57,8 @@ class Player {
 	repeat = $state<Repeat>('off');
 	/** The play queue, played from the front once the current episode ends. An episode can be queued more than once. */
 	playQueue = $state<Episode[]>([]);
+	/** The episodes listened to, latest first, each once. Saved, and separate from the session stack PREV uses. */
+	playHistory = $state<Episode[]>([]);
 	/** The id of the episode while it's playing, not paused. */
 	playing = $derived(this.paused ? null : (this.episode?.id ?? null));
 	/** Whether NEXT has an episode to play: one in the play queue, or the current one under either repeat. */
@@ -236,11 +242,23 @@ class Player {
 	handleSeeked = () => this.#savePosition(false);
 
 	handlePlay = () => {
+		const { episode } = this;
+		const fresh = this.#listen.started === null;
+
 		this.#played = true;
 		this.#listen.started ??= Math.floor(Date.now() / millisecondsPerSecond);
 
-		if (this.episode) {
-			invoke('now_playing', { episode: this.episode }).catch(errors.report);
+		// A new listen, not a resume, moves it to the top
+		if (episode && fresh) {
+			this.playHistory = [episode, ...this.playHistory.filter((e) => e.id !== episode.id)].slice(
+				0,
+				historyLimit,
+			);
+			this.#save('history', $state.snapshot(this.playHistory));
+		}
+
+		if (episode) {
+			invoke('now_playing', { episode }).catch(errors.report);
 		}
 	};
 
@@ -278,6 +296,7 @@ class Player {
 			this.#lastPlayed = (await store.get<string>('lastPlayed')) ?? null;
 			this.playQueue = (await store.get<Episode[]>('queue')) ?? [];
 			this.#lovedIds = (await store.get<string[]>('loved')) ?? [];
+			this.playHistory = (await store.get<Episode[]>('history')) ?? [];
 
 			return store;
 		});
