@@ -36,15 +36,15 @@ beforeEach(() => {
 });
 
 it('unticks a checkbox again when saving it fails', async () => {
-	settings.stored.autoDownload = true;
+	settings.stored.autoDownload = false;
 	failing = 'set_settings';
-	await settings.saveCheckbox('autoDownload');
+	await settings.save('autoDownload', true);
 	expect(settings.stored.autoDownload).toBe(false);
 	expect(errors.message).toBe('saving failed');
 });
 
 it('keeps a saved interval', async () => {
-	await settings.saveInterval('updateInterval', 12);
+	await settings.save('updateInterval', 12);
 	expect(settings.stored.updateInterval).toBe(12);
 	expect(calls).toContainEqual(['set_settings', { patch: { updateInterval: 12 } }]);
 });
@@ -52,7 +52,7 @@ it('keeps a saved interval', async () => {
 it('puts the stored interval back when saving fails', async () => {
 	settings.stored.appUpdateInterval = 24;
 	failing = 'set_settings';
-	await settings.saveInterval('appUpdateInterval', 1);
+	await settings.save('appUpdateInterval', 1);
 	expect(settings.stored.appUpdateInterval).toBe(24);
 	expect(errors.message).toBe('saving failed');
 });

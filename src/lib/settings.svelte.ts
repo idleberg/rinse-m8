@@ -67,27 +67,18 @@ class Settings {
 	/** Resolves true once a download folder is set, asking for one if needed. */
 	ensureFolder = async () => Boolean(this.stored.downloadFolder) || this.chooseFolder();
 
-	/** Saves a checkbox bound to `stored`, and unticks it again if saving fails. */
-	async saveCheckbox(key: 'autoDownload' | 'keepRunning') {
-		errors.clear();
-
-		try {
-			await invoke('set_settings', { patch: { [key]: this.stored[key] } });
-		} catch (e) {
-			this.stored[key] = !this.stored[key];
-			errors.report(e);
-		}
-	}
-
-	/** Saves an interval, and puts the stored one back if saving fails. */
-	async saveInterval(key: 'updateInterval' | 'appUpdateInterval', hours: number) {
+	/** Saves a checkbox or interval, and puts the stored value back if saving fails. */
+	async save<K extends 'autoDownload' | 'keepRunning' | 'updateInterval' | 'appUpdateInterval'>(
+		key: K,
+		value: Stored[K],
+	) {
 		const previous = this.stored[key];
 
 		errors.clear();
-		this.stored[key] = hours;
+		this.stored[key] = value;
 
 		try {
-			await invoke('set_settings', { patch: { [key]: hours } });
+			await invoke('set_settings', { patch: { [key]: value } });
 		} catch (e) {
 			this.stored[key] = previous;
 			errors.report(e);

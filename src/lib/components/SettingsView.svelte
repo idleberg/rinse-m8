@@ -68,20 +68,20 @@
 	<dt>Downloads</dt>
 	<dd>
 		<label>
-			<input type="checkbox" bind:checked={settings.stored.autoDownload} onchange={() => settings.saveCheckbox('autoDownload')} />
+			<input type="checkbox" checked={settings.stored.autoDownload} onchange={(e) => settings.save('autoDownload', e.currentTarget.checked)} />
 			auto-download new episodes of subscribed shows
 		</label>
 	</dd>
 	<dt>Window</dt>
 	<dd>
 		<label>
-			<input type="checkbox" bind:checked={settings.stored.keepRunning} onchange={() => settings.saveCheckbox('keepRunning')} />
+			<input type="checkbox" checked={settings.stored.keepRunning} onchange={(e) => settings.save('keepRunning', e.currentTarget.checked)} />
 			keep running in menu bar
 		</label>
 	</dd>
 	<dt>Show Updates</dt>
 	<dd>
-		<select aria-label="Update interval" value={settings.stored.updateInterval} onchange={(e) => settings.saveInterval('updateInterval', Number(e.currentTarget.value))}>
+		<select aria-label="Update interval" value={settings.stored.updateInterval} onchange={(e) => settings.save('updateInterval', Number(e.currentTarget.value))}>
 			{#each updateIntervals as hours}
 				<option value={hours}>every {hours === 1 ? 'hour' : `${hours} hours`}</option>
 			{/each}
@@ -89,7 +89,7 @@
 	</dd>
 	<dt>App updates</dt>
 	<dd>
-		<select aria-label="App update check" value={settings.stored.appUpdateInterval} onchange={(e) => settings.saveInterval('appUpdateInterval', Number(e.currentTarget.value))}>
+		<select aria-label="App update check" value={settings.stored.appUpdateInterval} onchange={(e) => settings.save('appUpdateInterval', Number(e.currentTarget.value))}>
 			{#each appUpdateIntervals as hours}
 				<option value={hours}>check every {hours === 1 ? 'hour' : `${hours} hours`}</option>
 			{/each}
