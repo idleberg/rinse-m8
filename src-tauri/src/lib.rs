@@ -288,10 +288,13 @@ fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<PreviousDownload>
 /// Drops a waiting or failed download along with its partial file; a missing one is no error.
 #[tauri::command]
 async fn remove_download(app: tauri::AppHandle, id: String) {
-    let Some(download) = update_downloads(&app, |queue| queue.remove(&id)) else {
-        return;
-    };
+    if let Some(download) = update_downloads(&app, |queue| queue.remove(&id)) {
+        delete_part(&download).await;
+    }
+}
 
+/// Deletes the download's partial file, if it has one.
+async fn delete_part(download: &rinse::Download) {
     let part = rinse::part_path(&download.episode, &download.folder);
 
     match tokio::fs::remove_file(&part).await {
@@ -323,7 +326,7 @@ fn move_download(app: tauri::AppHandle, id: String, index: usize) {
     update_downloads(&app, |queue| queue.move_to(&id, index));
 }
 
-/// Moves the running download to the failures, keeping its partial file; the worker then starts the next one.
+/// Drops the running download; the worker then deletes its partial file and starts the next one.
 #[tauri::command]
 fn cancel_download(app: tauri::AppHandle) {
     update_downloads(&app, |queue| {
@@ -442,8 +445,9 @@ async fn download_worker(
             Some(()) = cancelled.recv() => None,
         };
 
-        // The cancel already moved it to the failures
+        // The cancel already dropped it from the queue; the transfer is dropped too, so its file is closed
         let Some(result) = finished else {
+            delete_part(&download).await;
             continue;
         };
 

@@ -340,18 +340,11 @@ impl DownloadQueue {
         self.current.clone()
     }
 
-    /// Ends the current download as a failure, so it can be retried from its partial file; returns whether one was
-    /// running.
+    /// Drops the current download without failing it, since the user stopped it; returns whether one was running.
     pub fn cancel(&mut self) -> bool {
         self.percent = None;
 
-        let Some(current) = self.current.take() else {
-            return false;
-        };
-
-        self.failures.push(current);
-
-        true
+        self.current.take().is_some()
     }
 
     /// Ends the current download, recording it as downloaded if it `succeeded` and as a failure if not.
@@ -1783,7 +1776,7 @@ mod tests {
     }
 
     #[test]
-    fn cancelling_the_running_download_fails_it() {
+    fn cancelling_the_running_download_drops_it() {
         let mut queue = DownloadQueue::default();
 
         assert!(!queue.cancel());
@@ -1796,7 +1789,7 @@ mod tests {
         assert!(queue.cancel());
         assert_eq!(queue.current, None);
         assert_eq!(queue.percent, None);
-        assert_eq!(ids(&queue.failures), ["2315290"]);
+        assert!(queue.failures.is_empty());
         assert!(queue.downloaded.is_empty());
         assert_eq!(queue.next().unwrap().episode.id, "2319482");
     }
