@@ -71,8 +71,6 @@ class Player {
 	readonly #history: Episode[] = [];
 
 	#listen = freshListen();
-	/** The episode the dev panel's fake replaced, undefined while there's no fake. */
-	#beforeFake: Episode | null | undefined;
 
 	#ready!: Promise<Store>;
 
@@ -192,20 +190,22 @@ class Player {
 		}
 	};
 
-	/** Loads the dev panel's fake, the first cached episode with an mp3, paused, or clears it for the episode loaded
-	 * before. Nothing is saved until it plays. */
-	fake = (on: boolean) => {
-		const found = episodes.list.find((e) => e.mp3);
-
+	/** Loads the first cached episode with an mp3, paused, for the dev panel. Nothing is saved until it plays. */
+	fake = () => {
 		this.pause();
+		this.episode = episodes.list.find((e) => e.mp3) ?? this.episode;
+	};
 
-		if (on && found) {
-			this.#beforeFake = this.#beforeFake === undefined ? this.episode : this.#beforeFake;
-			this.episode = found;
-		} else if (!on && this.#beforeFake !== undefined) {
-			this.episode = this.#beforeFake;
-			this.#beforeFake = undefined;
-		}
+	/** Puts the player back as if nothing had ever played, for the dev panel. The play queue stays, and so does
+	 * `player.json`, which brings the real state back at the next launch. */
+	reset = () => {
+		this.pause();
+		this.episode = null;
+		this.#lastPlayed = null;
+		this.#position = 0;
+		this.#played = false;
+		this.#history.length = 0;
+		this.#listen = freshListen();
 	};
 
 	toggleTime = () => {

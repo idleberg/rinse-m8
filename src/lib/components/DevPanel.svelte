@@ -19,7 +19,7 @@
 
 {#if open}
 	<aside class="dev-panel" aria-label="Developer panel">
-		<h2>Dev</h2>
+		<h2>Dev Tools</h2>
 		<label>
 			<input type="checkbox" checked={updates.faked} onchange={(event) => updates.fake(event.currentTarget.checked)} />
 			Fake update
@@ -29,8 +29,8 @@
 			Fake download
 		</label>
 		<div class="buttons">
-			<button type="button" onclick={() => player.fake(true)}>Load episode</button>
-			<button type="button" onclick={() => player.fake(false)}>Clear</button>
+			<button type="button" onclick={player.fake}>Load episode</button>
+			<button type="button" onclick={player.reset}>Clear</button>
 		</div>
 		<button type="button" onclick={() => errors.report('Sample error: something went wrong')}>Set error</button>
 		<!-- Through the real event, which the errors module turns into its offline message -->
@@ -54,13 +54,17 @@
 		box-sizing: border-box;
 		width: 16rem;
 		border-left: 1px solid var(--ink);
-		padding: 1rem;
+		padding: 0 1rem 1rem;
 		background: color-mix(in srgb, var(--paper), var(--ink) 10%);
 		overflow-y: auto;
 	}
 
+	/* As tall as the nav, so it lines up with the tabs */
 	h2 {
-		margin: 0 0 1rem;
+		display: flex;
+		align-items: center;
+		height: 40px;
+		margin: 0 0 0.5rem;
 		font-size: inherit;
 		text-transform: uppercase;
 	}
