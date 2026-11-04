@@ -61,6 +61,7 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
 ## Implementation Decisions
 
 **Prefactor: dependency refresh (must land first, blocks everything else)**
+
 - Switch to bun as the only package manager. Remove the Deno and pnpm lockfiles. Update every JS dependency (Svelte, SvelteKit, Vite, svelte-check, TypeScript, the Tauri JS packages) to latest and fix any config breakage.
 - Run `cargo update` and bump reqwest to latest with JSON and streaming support. Replace the deprecated Tauri shell plugin with the opener plugin. Add the notification, store and dialog plugins, tokio (timers), and a futures stream helper.
 - The Tauri config uses bun for its dev/build hooks. The product name and window title are "Rinse M8".
@@ -68,6 +69,7 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
 - Done when the app launches to an empty window and type-check passes.
 
 **Data source contract (researched live 2026-10-29)**
+
 - Schedule: `GET https://www.rinse.fm/api/query/v1/schedule` returns `{episodes, channels, eventTakeovers}`, roughly 200 episodes covering about 7 days across all four stations.
 - Show: `GET https://www.rinse.fm/api/query/v1/shows/<slug>` returns `{entry, episodes}`, about 30 recent episodes, newest first.
 - Show index: `GET https://www.rinse.fm/api/query/v1/shows/filter?offset=N`, the endpoint behind rinse.fm's Artists page, returns `{entries}`, 20 shows per page. `offset` is a page index (0, 1, 2…), not an item offset, and an empty `entries` marks the end. There's no total count and no free-text search. About 1,588 shows over 80 pages. Raw show fields used: `slug`, `title`, `genreTag[].title`, `channel[0].slug`, which maps to a station like an episode's; about 200 shows have no channel.
@@ -75,6 +77,7 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
 - Raw episode fields used: `id`, `title`, `episodeDate`, `episodeTime`, `episodeLength`, `isRebroadcast`, `genreTag`, `fileUrl`, `channel[0].slug`, `parentShow[0]` (`id`, `slug`, `title`).
 
 **Domain rules (the hard-won part, encode exactly)**
+
 - An episode is **available** only when `fileUrl` ends in `.mp3`. Treat null and placeholders such as `https://replay.rinse.fm/uk/` (a bare channel directory) as unavailable.
 - The **broadcast date** comes from `episodeDate`, which is London midnight expressed in UTC: `2026-10-13T23:00Z` means 14 Oct. The **time of day** comes from `episodeTime`, whose date part is junk (always today) and must be ignored. Format both in Europe/London.
 - The **station** comes from `channel[0].slug`: `uk` → Rinse FM, `france` → Rinse FR, `kool` → Kool FM, `swu` → SWU FM.
@@ -84,6 +87,7 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
 - A resumed download is trusted only when the server answers `206` with a `Content-Range` that starts at the requested offset, and a finished file must match the total size the server reported.
 
 **Rinse data module (Rust, deep module, the main test seam)**
+
 - A flat `Episode` type: id, title, show id/slug/title, station, date, time, length, rebroadcast flag, genres, and an optional mp3 URL that is set only when available.
 - A pure mapping from a raw schedule response to episodes, and from a raw show response to episodes. No I/O, so fixtures can drive it.
 - Thin fetchers for the schedule and a show that call the mapping.
@@ -91,12 +95,14 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
 - A pure **resume decision**: given the partial file's size and the server's status and `Content-Range`, it decides whether to append or to start over.
 
 **Persistence (tauri store plugin, four files)**
+
 - The episode cache maps id → Episode, and every fetch merges into it. Each entry records whether it has appeared in the schedule feed; a show fetch never clears that mark, and entries from before the mark existed count as schedule episodes. It's unbounded on purpose; prune by age if it grows large.
 - Settings hold the subscriptions (slug and title), the seen episode ids, the download folder (optional) and the auto-download flag.
 - Player state holds the play queue (a list of episodes), the last-played id and its playback position (seconds).
 - The download queue holds the pending downloads in order, each with the download folder it was queued with, including the one in progress.
 
 **Tauri command surface**
+
 - Episodes: `get_episodes` returns the cache merged with a fresh schedule fetch. `refresh_show(slug)` merges that show's episodes into the cache; the show view calls it when it opens.
 - Downloads: `download(episode)` adds the episode to the download queue, and does nothing if it's already there. When no folder is set, the frontend asks for one first using the dialog plugin.
 - Subscriptions: `subscribe(slug, title)` fetches the show, merges its episodes into the cache and marks all of its currently available episodes as seen. `unsubscribe(slug)`.
@@ -104,16 +110,19 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
 - Events: `episodes-updated` is emitted after a background check adds anything. The download queue reports its contents, the current download's progress and the last failure to the frontend.
 
 **Download queue (backend)**
+
 - A single worker downloads one episode at a time, first in, first out. Manual downloads and auto-downloads go through it.
 - A download writes into `<Show> - <YYYY-MM-DD>.mp3.part` and renames it to `.mp3` once complete. An existing `.part` file is resumed with a byte-range request, following the resume rule above.
 - A failed download leaves the queue and keeps its `.part` file, so downloading it again resumes. There's no automatic retry.
 - The download queue is saved whenever it changes and starts again by itself at launch.
 
 **Background poller**
+
 - A tokio task spawned at app setup runs once immediately and then every 15 minutes. For each subscription it fetches the show, runs the new-episode check, and for each result sends a native notification ("New: <Show> – <dd/mm>"), adds the episode to the download queue if auto-download is on, and adds the id to seen. Then it emits `episodes-updated`.
 - It only runs while the app is open.
 
 **UI (Svelte components composed by one page)**
+
 - The page holds the shared state and the current view (main view or show view), and composes the components below. None of the components assume where they're placed, so the layout can be redesigned freely.
 - `EpisodeTable` renders a list of episodes with columns Date, Time, Station, Show, Title, Rebroadcast badge, plus actions (play, add to play queue, download, subscribe toggle). Clicking a show name opens its show view.
 - `EpisodeFilters` renders the filter bar: four station checkboxes; mp3 available only (on by default); hide rebroadcasts; free text over title, show and genres. It can be configured to show only some filters. All filtering is a derived value over the episode list, with no table or filter library.
@@ -123,11 +132,13 @@ The data comes from the public JSON API that the rinse.fm frontend itself uses. 
 - `DownloadStatus` is a sticky footer, hidden when idle, that shows the current download, its percent and the queued count, or the last failure until it's dismissed or the next download starts.
 
 **Player (one Svelte component, bottom bar)**
+
 - A native `<audio>` element pointed at the remote mp3.
 - The play queue appends, auto-advances when a track ends, and supports reorder and remove.
 - The position is saved on `timeupdate`, throttled to about 5 s, and restored when the last-played episode loads; switching to another episode resets it to 0. At launch the last-played episode is restored paused.
 
 **Capabilities**
+
 - The default capability grants core, opener, notification, dialog and store permissions.
 
 ## Testing Decisions
