@@ -4,9 +4,16 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] All `.svelte` components live in `lib/components/`; TS modules stay flat in `lib/`
-- [ ] No relative `../lib/` or `./` cross-folder imports remain; everything imports via `$lib/…`
-- [ ] `bun test` and `svelte-check` pass
+- [x] All `.svelte` components live in `lib/components/`; TS modules stay flat in `lib/`
+- [x] No relative `../lib/` or `./` cross-folder imports remain; everything imports via `$lib/…`
+- [x] `bun test` and `svelte-check` pass
 - [ ] The app runs and every tab works as before
+
+## Comments
+
+- SvelteKit 3 removed `$lib` (`module_removed_lib`), so imports use `#lib/…` via `package.json` `imports`. The `"./src/lib/*.ts"` fallback lets TypeScript resolve extensionless `.ts` imports.
+- Tests in `lib/` keep `./` imports: same folder, and Bun resolves them without the alias.
+- `svelte-check` 0 errors, `bun test` 15 pass, `vite build` succeeds. The app hasn't been launched by hand yet, so the last box stays open.
+- Later tickets say `$lib/…`; read that as `#lib/…`.

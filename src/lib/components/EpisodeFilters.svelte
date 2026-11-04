@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { stations } from './episodes';
+	import { stations } from '#lib/episodes';
 
 	/** Each filter renders only when its prop is bound, so a view picks its filters by binding them. */
 	let {

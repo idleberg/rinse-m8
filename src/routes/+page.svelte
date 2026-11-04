@@ -4,19 +4,19 @@
 	import { open, save } from '@tauri-apps/plugin-dialog';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { check, type Update } from '@tauri-apps/plugin-updater';
-	import ConfirmDialog from '../lib/ConfirmDialog.svelte';
-	import DownloadStatus from '../lib/DownloadStatus.svelte';
-	import EpisodeFilters from '../lib/EpisodeFilters.svelte';
-	import EpisodeTable from '../lib/EpisodeTable.svelte';
-	import { available, type DirectoryShow, type DownloadQueue, dead, type Episode, monthsAgo, type Show, type ShowDetails, type ShowPage, showOf, stations } from '../lib/episodes';
-	import Player from '../lib/Player.svelte';
-	import PlayerView from '../lib/PlayerView.svelte';
-	import QueueView from '../lib/QueueView.svelte';
-	import SettingsView from '../lib/SettingsView.svelte';
-	import ShowDirectory from '../lib/ShowDirectory.svelte';
-	import ShowSection from '../lib/ShowSection.svelte';
-	import ShowView from '../lib/ShowView.svelte';
-	import UpdateBanner from '../lib/UpdateBanner.svelte';
+	import ConfirmDialog from '#lib/components/ConfirmDialog.svelte';
+	import DownloadStatus from '#lib/components/DownloadStatus.svelte';
+	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
+	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
+	import Player from '#lib/components/Player.svelte';
+	import PlayerView from '#lib/components/PlayerView.svelte';
+	import QueueView from '#lib/components/QueueView.svelte';
+	import SettingsView from '#lib/components/SettingsView.svelte';
+	import ShowDirectory from '#lib/components/ShowDirectory.svelte';
+	import ShowSection from '#lib/components/ShowSection.svelte';
+	import ShowView from '#lib/components/ShowView.svelte';
+	import UpdateBanner from '#lib/components/UpdateBanner.svelte';
+	import { available, type DirectoryShow, type DownloadQueue, dead, type Episode, monthsAgo, type Show, type ShowDetails, type ShowPage, showOf, stations } from '#lib/episodes';
 
 	interface Settings {
 		subscriptions: Show[];

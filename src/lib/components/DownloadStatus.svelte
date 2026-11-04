@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { type DownloadQueue, episodeLabel } from './episodes';
+	import { type DownloadQueue, episodeLabel } from '#lib/episodes';
 
 	let {
 		downloads,

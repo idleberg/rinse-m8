@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { type DirectoryShow, formatDate, type Show, type ShowSortColumn, type Sort, sortShows, toggleSort } from './episodes';
-	import SubscribeButton from './SubscribeButton.svelte';
+	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
+	import { type DirectoryShow, formatDate, type Show, type ShowSortColumn, type Sort, sortShows, toggleSort } from '#lib/episodes';
 
 	let {
 		shows,

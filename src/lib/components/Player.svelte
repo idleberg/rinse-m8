@@ -2,9 +2,9 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { load } from '@tauri-apps/plugin-store';
 	import { type ComponentProps, tick } from 'svelte';
-	import { type Episode, moveItem } from './episodes';
-	import { heardBetween, millisecondsPerSecond, type Repeat, repeatModes, scrobbleAfter } from './listen';
-	import PlayerControls from './PlayerControls.svelte';
+	import PlayerControls from '#lib/components/PlayerControls.svelte';
+	import { type Episode, moveItem } from '#lib/episodes';
+	import { heardBetween, millisecondsPerSecond, type Repeat, repeatModes, scrobbleAfter } from '#lib/listen';
 
 	let {
 		episodes,

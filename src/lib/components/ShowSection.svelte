@@ -1,7 +1,7 @@
 <script lang="ts">
-	import EpisodeTable from './EpisodeTable.svelte';
-	import { type DownloadQueue, type Episode, type Show, showOf } from './episodes';
-	import SubscribeButton from './SubscribeButton.svelte';
+	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
+	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
+	import { type DownloadQueue, type Episode, type Show, showOf } from '#lib/episodes';
 
 	let {
 		show,

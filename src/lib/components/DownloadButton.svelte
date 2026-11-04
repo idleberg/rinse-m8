@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DownloadQueue, Episode } from './episodes';
+	import type { DownloadQueue, Episode } from '#lib/episodes';
 
 	let {
 		episode,

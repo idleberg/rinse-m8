@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getVersion } from '@tauri-apps/api/app';
 	import { openUrl } from '@tauri-apps/plugin-opener';
-	import ThemeToggle from './ThemeToggle.svelte';
+	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 
 	let {
 		downloadFolder,

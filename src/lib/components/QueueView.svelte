@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
-	import { type DownloadQueue, type Episode, formatDate } from './episodes';
+	import { type DownloadQueue, type Episode, formatDate } from '#lib/episodes';
 
 	let {
 		downloads,

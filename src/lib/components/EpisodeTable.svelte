@@ -1,5 +1,6 @@
 <script lang="ts">
-	import DownloadButton from './DownloadButton.svelte';
+	import DownloadButton from '#lib/components/DownloadButton.svelte';
+	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
 	import {
 		available,
 		type DownloadQueue,
@@ -9,8 +10,7 @@
 		type SortColumn,
 		sortEpisodes,
 		toggleSort,
-	} from './episodes';
-	import SubscribeButton from './SubscribeButton.svelte';
+	} from '#lib/episodes';
 
 	let {
 		episodes,

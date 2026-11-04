@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { prefersReducedMotion } from 'svelte/motion';
-	import { type Episode, episodeLabel, formatDate } from './episodes';
-	import { formatTime, type Repeat } from './listen';
+	import { type Episode, episodeLabel, formatDate } from '#lib/episodes';
+	import { formatTime, type Repeat } from '#lib/listen';
 
 	let {
 		episode,

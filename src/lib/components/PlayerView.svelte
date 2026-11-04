@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ComponentProps } from 'svelte';
-	import { type Episode, formatDate } from './episodes';
-	import PlayerControls from './PlayerControls.svelte';
+	import PlayerControls from '#lib/components/PlayerControls.svelte';
+	import { type Episode, formatDate } from '#lib/episodes';
 
 	let {
 		controls,
