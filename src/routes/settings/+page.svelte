@@ -51,90 +51,111 @@
 	});
 </script>
 
-<dl>
-	<dt>Appearance</dt>
-	<dd>
-		<ThemeToggle />
-	</dd>
-	<dt>Download folder</dt>
-	<dd>
-		{#if settings.stored.downloadFolder}
-			<code>{settings.stored.downloadFolder}</code>
-		{:else}
-			<span class="muted">None set</span>
-		{/if}
-		<button type="button" onclick={settings.chooseFolder}>Change…</button>
-	</dd>
-	<dt>Downloads</dt>
-	<dd>
-		<label>
-			<input type="checkbox" checked={settings.stored.autoDownload} onchange={(e) => settings.save('autoDownload', e.currentTarget.checked)} />
-			auto-download new episodes of subscribed shows
-		</label>
-	</dd>
-	<dt>Window</dt>
-	<dd>
-		<label>
-			<input type="checkbox" checked={settings.stored.keepRunning} onchange={(e) => settings.save('keepRunning', e.currentTarget.checked)} />
-			keep running in menu bar
-		</label>
-	</dd>
-	<dt>Player</dt>
-	<dd>
-		<label>
-			<input type="checkbox" checked={settings.stored.clearPlayer} onchange={(e) => settings.save('clearPlayer', e.currentTarget.checked)} />
-			empty the player once playback ends
-		</label>
-	</dd>
-	<dt>Show Updates</dt>
-	<dd>
-		<select aria-label="Update interval" value={settings.stored.updateInterval} onchange={(e) => settings.save('updateInterval', Number(e.currentTarget.value))}>
-			{#each updateIntervals as hours}
-				<option value={hours}>every {hours === 1 ? 'hour' : `${hours} hours`}</option>
-			{/each}
-		</select>
-	</dd>
-	<dt>App updates</dt>
-	<dd>
-		<select aria-label="App update check" value={settings.stored.appUpdateInterval} onchange={(e) => settings.save('appUpdateInterval', Number(e.currentTarget.value))}>
-			{#each appUpdateIntervals as hours}
-				<option value={hours}>check every {hours === 1 ? 'hour' : `${hours} hours`}</option>
-			{/each}
-		</select>
-		<button type="button" onclick={updates.checkNow} disabled={updates.cooling}>Check now</button>
-	</dd>
-	<dt>Image cache</dt>
-	<dd>
-		{#if imageCacheSize}
-			{megabytes.format(imageCacheSize / bytesPerMegabyte)}
-		{:else if imageCacheSize === 0}
-			<span class="muted">Empty</span>
-		{/if}
-		<button type="button" onclick={clearImageCache} disabled={!imageCacheSize}>Clear</button>
-	</dd>
-	<dt>Subscriptions</dt>
-	<dd>
-		<button type="button" onclick={settings.importSubscriptions} disabled={settings.importing}>Import…</button>
-		<button type="button" onclick={settings.exportSubscriptions} disabled={settings.importing || settings.subscribed.length === 0}>Export…</button>
-		{#if settings.importing}
-			<span class="muted">importing…</span>
-		{/if}
-	</dd>
-	{#if lastfm.account}
-		<dt>Last.fm</dt>
-		<dd>
-			{#if lastfm.connecting}
-				<span class="muted">waiting for approval…</span>
-				<button type="button" onclick={lastfm.cancel}>Cancel</button>
-			{:else if lastfm.account.user}
-				connected as {lastfm.account.user}
-				<button type="button" onclick={lastfm.disconnect}>Disconnect</button>
-			{:else}
-				<button type="button" onclick={lastfm.connect}>Connect</button>
+<!-- One grid for all groups, so the labels share a column; the sections and lists are display: contents -->
+<div class="groups">
+	<section>
+		<h2>General</h2>
+		<dl>
+			<dt>Appearance</dt>
+			<dd>
+				<ThemeToggle />
+			</dd>
+			<dt>Window</dt>
+			<dd>
+				<label>
+					<input type="checkbox" checked={settings.stored.keepRunning} onchange={(e) => settings.save('keepRunning', e.currentTarget.checked)} />
+					keep running in menu bar
+				</label>
+			</dd>
+			<dt>App updates</dt>
+			<dd>
+				<select aria-label="App update check" value={settings.stored.appUpdateInterval} onchange={(e) => settings.save('appUpdateInterval', Number(e.currentTarget.value))}>
+					{#each appUpdateIntervals as hours}
+						<option value={hours}>check every {hours === 1 ? 'hour' : `${hours} hours`}</option>
+					{/each}
+				</select>
+				<button type="button" onclick={updates.checkNow} disabled={updates.cooling}>Check now</button>
+			</dd>
+		</dl>
+	</section>
+	<section>
+		<h2>Library</h2>
+		<dl>
+			<dt>Show updates</dt>
+			<dd>
+				<select aria-label="Update interval" value={settings.stored.updateInterval} onchange={(e) => settings.save('updateInterval', Number(e.currentTarget.value))}>
+					{#each updateIntervals as hours}
+						<option value={hours}>every {hours === 1 ? 'hour' : `${hours} hours`}</option>
+					{/each}
+				</select>
+			</dd>
+			<dt>Subscriptions</dt>
+			<dd>
+				<button type="button" onclick={settings.importSubscriptions} disabled={settings.importing}>Import…</button>
+				<button type="button" onclick={settings.exportSubscriptions} disabled={settings.importing || settings.subscribed.length === 0}>Export…</button>
+				{#if settings.importing}
+					<span class="muted">importing…</span>
+				{/if}
+			</dd>
+			<dt>Image cache</dt>
+			<dd>
+				{#if imageCacheSize}
+					{megabytes.format(imageCacheSize / bytesPerMegabyte)}
+				{:else if imageCacheSize === 0}
+					<span class="muted">Empty</span>
+				{/if}
+				<button type="button" onclick={clearImageCache} disabled={!imageCacheSize}>Clear</button>
+			</dd>
+		</dl>
+	</section>
+	<section>
+		<h2>Downloads</h2>
+		<dl>
+			<dt>Folder</dt>
+			<dd>
+				{#if settings.stored.downloadFolder}
+					<code>{settings.stored.downloadFolder}</code>
+				{:else}
+					<span class="muted">None set</span>
+				{/if}
+				<button type="button" onclick={settings.chooseFolder}>Change…</button>
+			</dd>
+			<dt>Automatic</dt>
+			<dd>
+				<label>
+					<input type="checkbox" checked={settings.stored.autoDownload} onchange={(e) => settings.save('autoDownload', e.currentTarget.checked)} />
+					new episodes of subscribed shows
+				</label>
+			</dd>
+		</dl>
+	</section>
+	<section>
+		<h2>Playback</h2>
+		<dl>
+			<dt>When finished</dt>
+			<dd>
+				<label>
+					<input type="checkbox" checked={settings.stored.clearPlayer} onchange={(e) => settings.save('clearPlayer', e.currentTarget.checked)} />
+					empty the player
+				</label>
+			</dd>
+			{#if lastfm.account}
+				<dt>Last.fm</dt>
+				<dd>
+					{#if lastfm.connecting}
+						<span class="muted">waiting for approval…</span>
+						<button type="button" onclick={lastfm.cancel}>Cancel</button>
+					{:else if lastfm.account.user}
+						connected as {lastfm.account.user}
+						<button type="button" onclick={lastfm.disconnect}>Disconnect</button>
+					{:else}
+						<button type="button" onclick={lastfm.connect}>Connect</button>
+					{/if}
+				</dd>
 			{/if}
-		</dd>
-	{/if}
-</dl>
+		</dl>
+	</section>
+</div>
 
 {#if version}
 	<footer>
@@ -164,12 +185,28 @@
 {/if}
 
 <style>
-	dl {
+	.groups {
 		display: grid;
 		grid-template-columns: max-content 1fr;
 		gap: 1rem 2ch;
 		align-items: baseline;
+	}
+
+	section,
+	dl {
+		display: contents;
+	}
+
+	/* Matches the show headings in the other views */
+	h2 {
+		grid-column: 1 / -1;
 		margin: 0;
+		font-size: 1.25rem;
+		text-transform: uppercase;
+	}
+
+	section:not(:first-child) h2 {
+		margin-top: 1rem;
 	}
 
 	dt {
