@@ -71,6 +71,8 @@ class Player {
 	readonly #history: Episode[] = [];
 
 	#listen = freshListen();
+	/** The episode the dev panel's fake replaced, undefined while there's no fake. */
+	#beforeFake: Episode | null | undefined;
 
 	#ready!: Promise<Store>;
 
@@ -187,6 +189,22 @@ class Player {
 			}
 		} catch (e) {
 			errors.report(e);
+		}
+	};
+
+	/** Loads the dev panel's fake, the first cached episode with an mp3, paused, or clears it for the episode loaded
+	 * before. Nothing is saved until it plays. */
+	fake = (on: boolean) => {
+		const found = episodes.list.find((e) => e.mp3);
+
+		this.pause();
+
+		if (on && found) {
+			this.#beforeFake = this.#beforeFake === undefined ? this.episode : this.#beforeFake;
+			this.episode = found;
+		} else if (!on && this.#beforeFake !== undefined) {
+			this.episode = this.#beforeFake;
+			this.#beforeFake = undefined;
 		}
 	};
 

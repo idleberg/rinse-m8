@@ -29,12 +29,12 @@
 		<progress max="100" value={queue.percent ?? undefined} aria-label={episodeLabel(queue.current)}></progress>
 		{queue.percent === null ? '' : `${queue.percent}%`}
 		<div class="buttons">
+			<button type="button" onclick={() => goto('/downloads')}>View queue</button>
 			<button type="button" class="icon" aria-label="Cancel" title="Cancel" onclick={downloads.cancel}>
 				<svg viewBox="0 0 16 16" aria-hidden="true">
 					<path d="M4 4l8 8M12 4l-8 8" />
 				</svg>
 			</button>
-			<button type="button" onclick={() => goto('/downloads')}>View queue</button>
 		</div>
 	</footer>
 {:else if queue.failures.length}

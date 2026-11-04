@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { confirm } from './confirm.svelte';
 import type { DownloadQueue, Episode } from './episodes';
+import { episodes } from './episodes.svelte';
 import { errors } from './errors.svelte';
 import { settings } from './settings.svelte';
 
@@ -24,7 +25,12 @@ class Downloads {
 		failures: [],
 		downloaded: [],
 	});
+	/** Set while the download bar shows the dev panel's fake download. */
+	faked = $state(false);
 	#hooks: Hooks = { openQueue: () => {} };
+	/** The real queue the fake hides, shown again once the fake is. */
+	#realQueue: DownloadQueue | null = null;
+	#fakeTimer: ReturnType<typeof setInterval> | undefined;
 
 	/** Queues the episode, asking for a download folder first if none is set. A failed one is retried, and the
 	 * download queue view opens to show it. */
@@ -82,19 +88,58 @@ class Downloads {
 		}
 	};
 
+	/** Shows or hides the dev panel's fake download: the first cached episode running, the next three waiting. Its
+	 * progress loops from 0 to 100% until hidden. */
+	fake = (on: boolean) => {
+		const [current, ...waiting] = episodes.list.slice(0, 4);
+
+		clearInterval(this.#fakeTimer);
+
+		// A real queue that replaced the fake stays
+		if (!on) {
+			if (this.faked) {
+				this.faked = false;
+				this.queue = this.#realQueue ?? this.queue;
+			}
+
+			return;
+		}
+
+		if (!current) {
+			return;
+		}
+
+		this.#realQueue ??= this.queue;
+		this.faked = true;
+		this.queue = { ...this.queue, current, percent: 0, waiting };
+
+		this.#fakeTimer = setInterval(() => {
+			if (!this.faked) {
+				clearInterval(this.#fakeTimer);
+
+				return;
+			}
+
+			this.queue.percent = ((this.queue.percent ?? 0) + 5) % 105;
+		}, 100);
+	};
+
 	init(hooks: Hooks) {
 		this.#hooks = hooks;
 
-		invoke<DownloadQueue>('get_download_queue')
-			.then((loaded) => {
-				this.queue = loaded;
-			})
-			.catch(errors.report);
+		invoke<DownloadQueue>('get_download_queue').then(this.#replace).catch(errors.report);
 
-		listen<DownloadQueue>('download-queue', (event) => {
-			this.queue = event.payload;
-		}).catch(errors.report);
+		listen<DownloadQueue>('download-queue', (event) => this.#replace(event.payload)).catch(
+			errors.report,
+		);
 	}
+
+	/** A real queue ends the fake. */
+	#replace = (queue: DownloadQueue) => {
+		this.faked = false;
+		this.#realQueue = null;
+		this.queue = queue;
+	};
 }
 
 export const downloads = new Downloads();

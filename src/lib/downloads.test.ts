@@ -1,6 +1,6 @@
 /// <reference types="bun" />
 
-import { beforeEach, expect, test as it, mock } from 'bun:test';
+import { beforeEach, expect, test as it, jest, mock } from 'bun:test';
 import type { DownloadQueue, Episode } from './episodes';
 
 const calls: [string, unknown][] = [];
@@ -39,11 +39,13 @@ let chosenFolder: string | null = null;
 
 mock.module('@tauri-apps/plugin-dialog', () => ({
 	open: async () => chosenFolder,
+	save: async () => null,
 }));
 
 const { downloads } = await import('./downloads.svelte');
 const { errors } = await import('./errors.svelte');
 const { settings } = await import('./settings.svelte');
+const { episodes } = await import('./episodes.svelte');
 
 const episode = { id: 'a' } as Episode;
 
@@ -109,4 +111,51 @@ it('reports a failed command instead of throwing', async () => {
 	errors.clear();
 	await downloads.cancel();
 	expect(errors.message).toBe('no download folder set');
+});
+
+it('fakes a running download with moving progress until hidden', () => {
+	jest.useFakeTimers();
+
+	const real = downloads.queue;
+	const [first, ...rest] = ['f1', 'f2', 'f3', 'f4', 'f5'].map(
+		(id) => ({ id, date: '2026-01-01', time: '12:00' }) as Episode,
+	);
+
+	episodes.replace([first, ...rest]);
+	downloads.fake(true);
+	expect(downloads.queue).toEqual({
+		...real,
+		current: first,
+		percent: 0,
+		waiting: rest.slice(0, 3),
+	});
+
+	jest.advanceTimersByTime(1000);
+	expect(downloads.queue.percent).toBe(50);
+
+	// Shown again at once, which mustn't speed up the progress
+	downloads.fake(false);
+	downloads.fake(true);
+	jest.advanceTimersByTime(500);
+	expect(downloads.queue.percent).toBe(25);
+
+	downloads.fake(false);
+	expect(downloads.queue).toEqual(real);
+	jest.useRealTimers();
+});
+
+it('lets a real queue update replace the fake', () => {
+	jest.useFakeTimers();
+	episodes.replace([episode]);
+	downloads.fake(true);
+
+	const updated = { ...loaded, waiting: [episode] };
+
+	sendQueue(updated);
+	jest.advanceTimersByTime(1000);
+	expect(downloads.queue).toEqual(updated);
+
+	downloads.fake(false);
+	expect(downloads.queue).toEqual(updated);
+	jest.useRealTimers();
 });

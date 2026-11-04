@@ -11,10 +11,10 @@ A real event, such as a `download-queue` update, may replace faked state.
 
 **Blocked by:** 08 (Dev panel with the fake update)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human (needs a look in `mise run dev`: each control against its bar, banner or dialog)
 
-- [ ] The download control shows and hides the download bar, with moving progress and a waiting count
+- [x] The download control shows and hides the download bar, with moving progress and a waiting count
 - [ ] The player control shows the player bar with a cached episode, paused
 - [ ] The error control shows a sample error and the offline message, each dismissable as usual
 - [ ] The confirm control opens the confirm dialog, and both answers close it
-- [ ] `bun test` and `svelte-check` pass
+- [x] `bun test` and `svelte-check` pass
