@@ -102,3 +102,31 @@ it('stops the fake download once the fake is hidden', async () => {
 	expect(updates.available).toEqual({ version: '9.0.9', percent: null });
 	jest.useRealTimers();
 });
+
+it('skips the install of a cancelled update and brings the buttons back', async () => {
+	let finishDownload = () => {};
+	let installs = 0;
+
+	found = {
+		version: '2.0.2',
+		download: () =>
+			new Promise<void>((resolve) => {
+				finishDownload = resolve;
+			}),
+		install: async () => {
+			installs++;
+		},
+	} as { version: string };
+	await updates.check();
+
+	const installing = updates.install();
+
+	updates.cancel();
+	expect(updates.available).toEqual({ version: '2.0.2', percent: null });
+
+	finishDownload();
+	await installing;
+	expect(installs).toBe(0);
+	expect(relaunches).toBe(0);
+	expect(updates.available).toEqual({ version: '2.0.2', percent: null });
+});

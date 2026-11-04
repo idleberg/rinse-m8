@@ -13,6 +13,9 @@
 		{:else}
 			<progress max="100" value={updates.available.percent} aria-label="Updating"></progress>
 			{updates.available.percent}%
+			<div class="buttons">
+				<button type="button" onclick={updates.cancel}>Cancel</button>
+			</div>
 		{/if}
 	</aside>
 {/if}

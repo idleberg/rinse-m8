@@ -17,6 +17,8 @@ class Updates {
 	faked = $state(false);
 	#found: Update | null = null;
 	#dismissed: string | null = null;
+	/** Counts installs, so a cancelled one can tell it was. */
+	#attempt = 0;
 
 	// Arrow functions, so they can be passed as callbacks such as `onclick={updates.install}`
 
@@ -73,6 +75,7 @@ class Updates {
 			return;
 		}
 
+		const attempt = ++this.#attempt;
 		let total = 0;
 		let received = 0;
 
@@ -80,7 +83,11 @@ class Updates {
 		this.available = { version, percent: 0 };
 
 		try {
-			await this.#found.downloadAndInstall((event) => {
+			await this.#found.download((event) => {
+				if (attempt !== this.#attempt) {
+					return;
+				}
+
 				if (event.event === 'Started') {
 					total = event.data.contentLength ?? 0;
 				} else if (event.event === 'Progress' && total) {
@@ -89,10 +96,28 @@ class Updates {
 				}
 			});
 
+			// Cancelled while it downloaded
+			if (attempt !== this.#attempt) {
+				return;
+			}
+
+			await this.#found.install();
 			await relaunch();
 		} catch (e) {
-			errors.report(e);
-			this.available = { version, percent: null };
+			if (attempt === this.#attempt) {
+				errors.report(e);
+				this.available = { version, percent: null };
+			}
+		}
+	};
+
+	/** Brings the buttons back and skips the install. The updater can't abort a download, so the running one
+	 * finishes unseen. */
+	cancel = () => {
+		this.#attempt++;
+
+		if (this.available) {
+			this.available = { version: this.available.version, percent: null };
 		}
 	};
 
