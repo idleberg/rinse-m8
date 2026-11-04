@@ -26,7 +26,7 @@
 
 		const target = index + step;
 
-		if (target >= 0 && target < player.queue.length) {
+		if (target >= 0 && target < player.playQueue.length) {
 			player.move(index, target);
 			rows[target]?.focus();
 		}
@@ -53,12 +53,12 @@
 
 <header>
 	<h2>Play Queue</h2>
-	{#if player.queue.length}
+	{#if player.playQueue.length}
 		<button type="button" onclick={player.clearQueue}>Clear Queue</button>
 	{/if}
 </header>
 
-{#if player.queue.length}
+{#if player.playQueue.length}
 	<table>
 		<thead>
 			<tr>
@@ -69,7 +69,7 @@
 		</thead>
 		<tbody>
 			<!-- Unkeyed, since an episode can be queued more than once -->
-			{#each player.queue as episode, index}
+			{#each player.playQueue as episode, index}
 				<tr
 					bind:this={rows[index]}
 					class={{

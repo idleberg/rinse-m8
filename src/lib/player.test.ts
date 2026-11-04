@@ -69,22 +69,22 @@ it('brings back the last-played episode and the stored queue at launch', async (
 	flushSync();
 
 	expect(player.episode?.id).toBe('b');
-	expect(player.queue.map((e) => e.id)).toEqual(['c']);
+	expect(player.playQueue.map((e) => e.id)).toEqual(['c']);
 });
 
 it('plays the first queued episode on NEXT, and under repeat all queues the current one last', async () => {
 	await player.play(a);
-	player.queue = [b, c];
+	player.playQueue = [b, c];
 	player.repeat = 'all';
 
 	await player.skip();
 
 	expect(player.episode?.id).toBe('b');
-	expect(player.queue.map((e) => e.id)).toEqual(['c', 'a']);
+	expect(player.playQueue.map((e) => e.id)).toEqual(['c', 'a']);
 });
 
 it('goes back to the episode played before on PREV, and queues the current one first', async () => {
-	player.queue = [];
+	player.playQueue = [];
 	await player.play(a);
 	player.handlePlay();
 	await player.play(b);
@@ -92,7 +92,7 @@ it('goes back to the episode played before on PREV, and queues the current one f
 	await player.previous();
 
 	expect(player.episode?.id).toBe('a');
-	expect(player.queue.map((e) => e.id)).toEqual(['b']);
+	expect(player.playQueue.map((e) => e.id)).toEqual(['b']);
 });
 
 it('restarts the episode on PREV once past its first seconds', async () => {
@@ -108,7 +108,7 @@ it('restarts the episode on PREV once past its first seconds', async () => {
 });
 
 it('stores the play queue as it is queued, reordered and dequeued', async () => {
-	player.queue = [];
+	player.playQueue = [];
 	await player.enqueue(a);
 	await player.enqueue(b);
 	await player.enqueue(c);
@@ -120,20 +120,20 @@ it('stores the play queue as it is queued, reordered and dequeued', async () => 
 });
 
 it('clears the play queue only once confirmed', async () => {
-	player.queue = [a];
+	player.playQueue = [a];
 
 	const declined = player.clearQueue();
 
 	confirmation.answer(false);
 	await declined;
-	expect(player.queue).toHaveLength(1);
+	expect(player.playQueue).toHaveLength(1);
 
 	const confirmed = player.clearQueue();
 
 	confirmation.answer(true);
 	await confirmed;
 	await settle();
-	expect(player.queue).toEqual([]);
+	expect(player.playQueue).toEqual([]);
 	expect(stored.get('queue')).toEqual([]);
 });
 

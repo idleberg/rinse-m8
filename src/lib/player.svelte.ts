@@ -20,6 +20,22 @@ const saveInterval = 5000;
 /** How far into an episode PREV restarts it rather than going back, in seconds. */
 const restartAfter = 3;
 
+/** A listen runs until another episode plays or this one ends. */
+interface Listen {
+	/** Seconds heard. */
+	heard: number;
+	/** The playhead at the last count. */
+	heardTo: number;
+	/** In Unix seconds, once it starts playing. */
+	started: number | null;
+	scrobbled: boolean;
+}
+
+/** So a listen counts, and can scrobble, from scratch. */
+function freshListen(): Listen {
+	return { heard: 0, heardTo: 0, started: null, scrobbled: false };
+}
+
 /** Playback, the play queue and loves, shared by the player bar, the Player tab, the episode tables and the tray.
  * `Player.svelte` owns the `<audio>` element, binds it to `audio`, and forwards its events to the `handle…`
  * methods. */
@@ -35,11 +51,11 @@ class Player {
 	showRemaining = $state(false);
 	repeat = $state<Repeat>('off');
 	/** The play queue, played from the front once the current episode ends. An episode can be queued more than once. */
-	queue = $state<Episode[]>([]);
+	playQueue = $state<Episode[]>([]);
 	/** The id of the episode while it's playing, not paused. */
 	playing = $derived(this.paused ? null : (this.episode?.id ?? null));
 	/** Whether NEXT has an episode to play: one in the play queue, or the current one under repeat all. */
-	queued = $derived(this.queue.length > 0 || (this.repeat === 'all' && this.episode !== null));
+	hasNext = $derived(this.playQueue.length > 0 || (this.repeat === 'all' && this.episode !== null));
 	/** The ids of loved episodes, kept by the app and never read from Last.fm. */
 	#lovedIds = $state<string[]>([]);
 	loved = $derived(this.episode !== null && this.#lovedIds.includes(this.episode.id));
@@ -54,12 +70,7 @@ class Player {
 	/** The episodes played this session, latest last, which PREV goes back through. Not saved. */
 	readonly #history: Episode[] = [];
 
-	/** The current listen, which runs until another episode plays or this one ends: seconds heard, the playhead at
-	 * the last count, and when it started in Unix seconds. */
-	#heard = 0;
-	#heardTo = 0;
-	#started: number | null = null;
-	#scrobbled = false;
+	#listen = freshListen();
 
 	#ready!: Promise<Store>;
 
@@ -77,7 +88,7 @@ class Player {
 	enqueue = async (added: Episode) => {
 		try {
 			await this.#ready;
-			this.queue.push(added);
+			this.playQueue.push(added);
 			this.#persistQueue();
 		} catch (e) {
 			errors.report(e);
@@ -86,7 +97,7 @@ class Player {
 
 	/** Takes the episode at `index` out of the play queue, leaving the rest in order. */
 	dequeue = (index: number) => {
-		const [removed] = this.queue.splice(index, 1);
+		const [removed] = this.playQueue.splice(index, 1);
 
 		this.#persistQueue();
 
@@ -95,7 +106,7 @@ class Player {
 
 	/** Moves the episode at `from` in the play queue to `to`, which is the order auto-advance follows. */
 	move = (from: number, to: number) => {
-		this.queue = moveItem(this.queue, from, to);
+		this.playQueue = moveItem(this.playQueue, from, to);
 		this.#persistQueue();
 	};
 
@@ -104,7 +115,7 @@ class Player {
 		if (
 			await confirm({ title: 'Clear Queue', message: 'Clear the play queue?', action: 'Clear' })
 		) {
-			this.queue = [];
+			this.playQueue = [];
 			this.#persistQueue();
 		}
 	};
@@ -115,10 +126,10 @@ class Player {
 	 * episode last, so the queue loops. */
 	skip = async () => {
 		if (this.repeat === 'all' && this.episode) {
-			this.queue.push(this.episode);
+			this.playQueue.push(this.episode);
 		}
 
-		if (this.queue.length === 0) {
+		if (this.playQueue.length === 0) {
 			return;
 		}
 
@@ -144,11 +155,11 @@ class Player {
 		this.#history.pop();
 
 		// Repeat all queued it last when it ended or was skipped
-		if (this.repeat === 'all' && this.queue.at(-1)?.id === last.id) {
-			this.queue.pop();
+		if (this.repeat === 'all' && this.playQueue.at(-1)?.id === last.id) {
+			this.playQueue.pop();
 		}
 
-		this.queue.unshift(this.episode);
+		this.playQueue.unshift(this.episode);
 		this.#persistQueue();
 		await this.#play(last, true).catch(errors.report);
 	};
@@ -157,7 +168,7 @@ class Player {
 	 * unlove. */
 	toggleLove = async () => {
 		try {
-			const store = await this.#ready;
+			await this.#ready;
 
 			if (!this.episode) {
 				return;
@@ -169,7 +180,7 @@ class Player {
 			this.#lovedIds = loving
 				? [...this.#lovedIds, id]
 				: this.#lovedIds.filter((lovedId) => lovedId !== id);
-			await store.set('loved', $state.snapshot(this.#lovedIds));
+			await this.#save('loved', $state.snapshot(this.#lovedIds));
 
 			if (loving) {
 				invoke('love', { episode: this.episode }).catch(errors.report);
@@ -204,7 +215,7 @@ class Player {
 
 	handlePlay = () => {
 		this.#played = true;
-		this.#started ??= Math.floor(Date.now() / millisecondsPerSecond);
+		this.#listen.started ??= Math.floor(Date.now() / millisecondsPerSecond);
 
 		if (this.episode) {
 			invoke('now_playing', { episode: this.episode }).catch(errors.report);
@@ -215,7 +226,7 @@ class Player {
 
 	handleEnded = () => {
 		this.#forgetPosition();
-		this.#endListen();
+		this.#listen = freshListen();
 
 		// Starting over counts as a new listen
 		if (this.repeat === 'one' && this.episode) {
@@ -238,7 +249,7 @@ class Player {
 		this.#ready = load('player.json').then(async (store) => {
 			this.#position = (await store.get<number>('position')) ?? 0;
 			this.#lastPlayed = (await store.get<string>('lastPlayed')) ?? null;
-			this.queue = (await store.get<Episode[]>('queue')) ?? [];
+			this.playQueue = (await store.get<Episode[]>('queue')) ?? [];
 			this.#lovedIds = (await store.get<string[]>('loved')) ?? [];
 
 			return store;
@@ -268,7 +279,7 @@ class Player {
 
 	/** Going back doesn't add the current episode to the history. */
 	async #play(chosen: Episode, back = false) {
-		const store = await this.#ready;
+		await this.#ready;
 
 		// Queued and past episodes are stored copies, which can predate the cache's artwork and mp3
 		const next = episodes.list.find((e) => e.id === chosen.id) ?? chosen;
@@ -282,13 +293,13 @@ class Player {
 			}
 
 			this.#forgetPosition();
-			this.#endListen();
+			this.#listen = freshListen();
 		}
 
 		// The new source loads at once, so the old one's events can't save over the reset position
 		this.episode = next;
 		await tick();
-		await store.set('lastPlayed', next.id);
+		await this.#save('lastPlayed', next.id);
 
 		// Switching episodes while one is still loading aborts its play()
 		try {
@@ -300,14 +311,13 @@ class Player {
 		}
 	}
 
-	#persistPosition() {
-		this.#ready.then((store) => store.set('position', this.#position)).catch(errors.report);
+	/** Writes to `player.json` once it has loaded, so the load can't overwrite the change. Reports a failure. */
+	#save(key: string, value: unknown) {
+		return this.#ready.then((store) => store.set(key, value)).catch(errors.report);
 	}
 
 	#persistQueue() {
-		this.#ready
-			.then((store) => store.set('queue', $state.snapshot(this.queue)))
-			.catch(errors.report);
+		this.#save('queue', $state.snapshot(this.playQueue));
 	}
 
 	/** Skipped while a new source loads, since the position then reads 0, and after the end, which `#forgetPosition`
@@ -326,12 +336,13 @@ class Player {
 
 		this.#savedAt = Date.now();
 		this.#position = audio.currentTime;
-		this.#persistPosition();
+		this.#save('position', this.#position);
 	}
 
 	/** Scrobbles the episode once enough of it has been heard. */
 	#countHeard() {
 		const { audio, episode } = this;
+		const current = this.#listen;
 
 		if (!(audio && episode)) {
 			return;
@@ -339,33 +350,25 @@ class Player {
 
 		// Dragging the seek bar moves the playhead in small steps too
 		if (!(audio.paused || audio.seeking)) {
-			this.#heard += heardBetween(this.#heardTo, audio.currentTime);
+			current.heard += heardBetween(current.heardTo, audio.currentTime);
 		}
 
-		this.#heardTo = audio.currentTime;
+		current.heardTo = audio.currentTime;
 
 		if (
-			!this.#scrobbled &&
-			this.#started !== null &&
-			this.#heard >= scrobbleAfter(audio.duration)
+			!current.scrobbled &&
+			current.started !== null &&
+			current.heard >= scrobbleAfter(audio.duration)
 		) {
-			this.#scrobbled = true;
-			invoke('scrobble', { episode, started: this.#started }).catch(errors.report);
+			current.scrobbled = true;
+			invoke('scrobble', { episode, started: current.started }).catch(errors.report);
 		}
-	}
-
-	/** So the next play counts, and can scrobble, from scratch. */
-	#endListen() {
-		this.#heard = 0;
-		this.#heardTo = 0;
-		this.#started = null;
-		this.#scrobbled = false;
 	}
 
 	/** On switching episodes, and when one finishes, so it starts over next time. */
 	#forgetPosition() {
 		this.#position = 0;
-		this.#persistPosition();
+		this.#save('position', 0);
 	}
 }
 

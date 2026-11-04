@@ -114,7 +114,7 @@
 			</button>
 		{/if}
 		{#if layout === 'tab'}
-			<button type="button" class="icon" aria-label="Next" title="Next" disabled={!player.queued} onclick={player.skip}>
+			<button type="button" class="icon" aria-label="Next" title="Next" disabled={!player.hasNext} onclick={player.skip}>
 				<svg viewBox="0 0 16 16" aria-hidden="true">
 					<path d="M3 3l8 5-8 5zM13 3v10" />
 				</svg>
