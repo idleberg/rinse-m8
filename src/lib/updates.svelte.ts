@@ -3,9 +3,6 @@ import { check, type Update } from '@tauri-apps/plugin-updater';
 import { errors } from './errors.svelte';
 import { settings } from './settings.svelte';
 
-// `mise run dev:update` fakes an update for design review; release builds drop this, since DEV is false there
-const fakeUpdate = import.meta.env.DEV && Boolean(import.meta.env.VITE_FAKE_UPDATE);
-
 const millisecondsPerHour = 3_600_000;
 const manualCheckCooldown = 60_000;
 
@@ -16,6 +13,8 @@ class Updates {
 	available = $state<{ version: string; percent: number | null } | null>(null);
 	/** Set while the Settings' Check now button waits out its cooldown. */
 	cooling = $state(false);
+	/** Set while the update banner shows the dev panel's fake update. */
+	faked = $state(false);
 	#found: Update | null = null;
 	#dismissed: string | null = null;
 
@@ -33,6 +32,7 @@ class Updates {
 			this.#found = found;
 
 			if (found && found.version !== this.#dismissed) {
+				this.faked = false;
 				this.available = { version: found.version, percent: null };
 			}
 		} catch {
@@ -51,6 +51,7 @@ class Updates {
 
 	dismiss = () => {
 		this.#dismissed = this.available?.version ?? null;
+		this.faked = false;
 		this.available = null;
 	};
 
@@ -62,7 +63,7 @@ class Updates {
 
 		const { version } = this.available;
 
-		if (fakeUpdate) {
+		if (this.faked) {
 			this.#fakeDownload(version);
 
 			return;
@@ -95,29 +96,41 @@ class Updates {
 		}
 	};
 
-	/** The fake download stops at 100% rather than relaunching. */
-	#fakeDownload(version: string) {
-		const progress = { version, percent: 0 };
+	/** Shows or hides the dev panel's fake update. */
+	fake = (on: boolean) => {
+		// A real update that replaced the fake stays
+		if (!(on || this.faked)) {
+			return;
+		}
 
-		this.available = progress;
+		this.faked = on;
+		this.available = on ? { version: '9.0.9', percent: null } : null;
+	};
+
+	/** The fake download stops at 100% rather than relaunching, or once the fake is hidden. */
+	#fakeDownload(version: string) {
+		let percent = 0;
+
+		this.available = { version, percent };
 
 		const timer = setInterval(() => {
-			progress.percent += 5;
-			this.available = { ...progress };
+			// Hidden, or hidden and shown again, which starts over
+			if (!this.faked || this.available?.percent !== percent) {
+				clearInterval(timer);
 
-			if (progress.percent === 100) {
+				return;
+			}
+
+			percent += 5;
+			this.available = { version, percent };
+
+			if (percent === 100) {
 				clearInterval(timer);
 			}
 		}, 100);
 	}
 
 	init() {
-		if (fakeUpdate) {
-			this.available = { version: '9.9.9', percent: null };
-
-			return;
-		}
-
 		this.check();
 
 		// The launch check above runs regardless, so 0 only skips the repeats

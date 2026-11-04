@@ -88,6 +88,13 @@
 
 <ConfirmDialog />
 
+<!-- Imported only in dev, so release builds drop the panel and its shortcut -->
+{#if import.meta.env.DEV}
+	{#await import('#lib/components/DevPanel.svelte') then { default: DevPanel }}
+		<DevPanel />
+	{/await}
+{/if}
+
 <style>
 	/* Pinned to the top of the window while the page scrolls under it */
 	nav {

@@ -18,7 +18,13 @@ mock.module('@tauri-apps/plugin-updater', () => ({
 	},
 }));
 
-mock.module('@tauri-apps/plugin-process', () => ({ relaunch: async () => {} }));
+let relaunches = 0;
+
+mock.module('@tauri-apps/plugin-process', () => ({
+	relaunch: async () => {
+		relaunches++;
+	},
+}));
 
 const { updates } = await import('./updates.svelte');
 const { errors } = await import('./errors.svelte');
@@ -64,5 +70,35 @@ it('locks Check now for a minute after it checks', async () => {
 
 	jest.advanceTimersByTime(60_000);
 	expect(updates.cooling).toBe(false);
+	jest.useRealTimers();
+});
+
+it('fakes an update whose download stops at 100% without relaunching', async () => {
+	jest.useFakeTimers();
+	updates.fake(true);
+	expect(updates.available).toEqual({ version: '9.0.9', percent: null });
+
+	await updates.install();
+	jest.advanceTimersByTime(1000);
+	expect(updates.available).toEqual({ version: '9.0.9', percent: 50 });
+
+	jest.advanceTimersByTime(5000);
+	expect(updates.available).toEqual({ version: '9.0.9', percent: 100 });
+	expect(relaunches).toBe(0);
+	jest.useRealTimers();
+});
+
+it('stops the fake download once the fake is hidden', async () => {
+	jest.useFakeTimers();
+	updates.fake(true);
+	await updates.install();
+	jest.advanceTimersByTime(500);
+
+	updates.fake(false);
+	expect(updates.available).toBeNull();
+
+	updates.fake(true);
+	jest.advanceTimersByTime(1000);
+	expect(updates.available).toEqual({ version: '9.0.9', percent: null });
 	jest.useRealTimers();
 });
