@@ -35,16 +35,21 @@ mock.module('@tauri-apps/api/event', () => ({
 	},
 }));
 
+let chosenFolder: string | null = null;
+
+mock.module('@tauri-apps/plugin-dialog', () => ({
+	open: async () => chosenFolder,
+}));
+
 const { downloads } = await import('./downloads.svelte');
 const { errors } = await import('./errors.svelte');
+const { settings } = await import('./settings.svelte');
 
 const episode = { id: 'a' } as Episode;
 
-let folderSet = true;
 let queueOpened = false;
 
 downloads.init({
-	ensureFolder: async () => folderSet,
 	openQueue: () => {
 		queueOpened = true;
 	},
@@ -52,15 +57,24 @@ downloads.init({
 
 beforeEach(() => {
 	calls.length = 0;
-	folderSet = true;
+	settings.stored.downloadFolder = '/music';
+	chosenFolder = null;
 	queueOpened = false;
 	failing = '';
 });
 
 it('queues nothing when no download folder is chosen', async () => {
-	folderSet = false;
+	settings.stored.downloadFolder = null;
 	await downloads.download(episode);
 	expect(calls).not.toContainEqual(['download', { episode }]);
+});
+
+it('asks for a download folder first if none is set', async () => {
+	settings.stored.downloadFolder = null;
+	chosenFolder = '/music';
+	await downloads.download(episode);
+	expect(calls).toContainEqual(['set_settings', { patch: { downloadFolder: '/music' } }]);
+	expect(calls).toContainEqual(['download', { episode }]);
 });
 
 it('queues the episode once a folder is set', async () => {

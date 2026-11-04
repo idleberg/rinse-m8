@@ -5,21 +5,13 @@
 	let {
 		shows,
 		lastAired,
-		subscribed,
-		subscribing,
 		onopenshow,
-		ontogglesubscription,
 	}: {
 		/** The filtered directory, or null until the first refresh finishes. */
 		shows: DirectoryShow[] | null;
 		/** Dates keyed by show slug. */
 		lastAired: Record<string, string>;
-		/** Show slugs. */
-		subscribed: string[];
-		/** Show slugs. */
-		subscribing: string[];
 		onopenshow: (show: Show) => void;
-		ontogglesubscription: (show: Show) => void;
 	} = $props();
 
 	const columns: [ShowSortColumn, string][] = [
@@ -66,11 +58,7 @@
 					<td title={show.genres.join(', ')}>{show.genres.join(', ')}</td>
 					<td>
 						<div class="buttons">
-							<SubscribeButton
-								subscribed={subscribed.includes(show.slug)}
-								disabled={subscribing.includes(show.slug)}
-								onclick={() => ontogglesubscription(show)}
-							/>
+							<SubscribeButton {show} />
 						</div>
 					</td>
 				</tr>

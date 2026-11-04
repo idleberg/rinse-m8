@@ -10,10 +10,10 @@ The settings view, the subscribe buttons and the update banner read these module
 
 **Blocked by:** 02 (Errors and confirm modules, init pattern, ADR)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Every Settings row works as before: folder, auto-download, keep running, both intervals, Check now, import/export, Last.fm connect/cancel/disconnect
-- [ ] Subscribing and unsubscribing work from every table, show section and the show view
-- [ ] The update banner appears, downloads with progress, and dismisses as before, including under the fake-update dev mode
-- [ ] The settings view takes no props
-- [ ] `bun test` and `svelte-check` pass
+- [x] Every Settings row works as before: folder, auto-download, keep running, both intervals, Check now, import/export, Last.fm connect/cancel/disconnect
+- [x] Subscribing and unsubscribing work from every table, show section and the show view
+- [x] The update banner appears, downloads with progress, and dismisses as before, including under the fake-update dev mode
+- [x] The settings view takes no props
+- [x] `bun test` and `svelte-check` pass

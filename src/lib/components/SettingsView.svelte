@@ -1,67 +1,13 @@
 <script lang="ts">
 	import { getVersion } from '@tauri-apps/api/app';
+	import { invoke } from '@tauri-apps/api/core';
 	import { openUrl } from '@tauri-apps/plugin-opener';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
-
-	let {
-		downloadFolder,
-		autoDownload = $bindable(),
-		keepRunning = $bindable(),
-		updateInterval,
-		appUpdateInterval,
-		imageCacheSize,
-		lastfm,
-		connectingLastfm,
-		onchoosefolder,
-		onautodownloadchange,
-		onkeeprunningchange,
-		onupdateintervalchange,
-		onappupdateintervalchange,
-		canCheckAppUpdate,
-		oncheckappupdate,
-		onclearimagecache,
-		importing,
-		canExport,
-		onimport,
-		onexport,
-		onconnectlastfm,
-		oncancellastfm,
-		ondisconnectlastfm,
-	}: {
-		downloadFolder: string | null;
-		autoDownload: boolean;
-		keepRunning: boolean;
-		/** In hours. */
-		updateInterval: number;
-		/** In hours, or 0 to check only at launch. */
-		appUpdateInterval: number;
-		/** In bytes, or null until it has loaded. */
-		imageCacheSize: number | null;
-		/** Null in a build without a Last.fm API key, which leaves the row out. */
-		lastfm: { user: string | null } | null;
-		/** While the app waits for the user to approve it on Last.fm. */
-		connectingLastfm: boolean;
-		onchoosefolder: () => void;
-		/** Called after the bound checkbox has changed. */
-		onautodownloadchange: () => void;
-		/** Called after the bound checkbox has changed. */
-		onkeeprunningchange: () => void;
-		onupdateintervalchange: (hours: number) => void;
-		onappupdateintervalchange: (hours: number) => void;
-		/** False for a minute after a manual check. */
-		canCheckAppUpdate: boolean;
-		oncheckappupdate: () => void;
-		onclearimagecache: () => void;
-		/** While an import subscribes to the file's shows. */
-		importing: boolean;
-		/** Whether there are subscriptions to export. */
-		canExport: boolean;
-		onimport: () => void;
-		onexport: () => void;
-		onconnectlastfm: () => void;
-		oncancellastfm: () => void;
-		ondisconnectlastfm: () => void;
-	} = $props();
+	import { confirm } from '#lib/confirm.svelte';
+	import { errors } from '#lib/errors.svelte';
+	import { lastfm } from '#lib/lastfm.svelte';
+	import { settings } from '#lib/settings.svelte';
+	import { updates } from '#lib/updates.svelte';
 
 	/** In hours. */
 	// biome-ignore lint/style/noMagicNumbers: the list is the menu's choices
@@ -71,6 +17,32 @@
 	const appUpdateIntervals = [1, 6, 24];
 	const bytesPerMegabyte = 1e6;
 	const megabytes = new Intl.NumberFormat(undefined, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1, maximumSignificantDigits: 1, roundingPriority: 'morePrecision' });
+
+	/** In bytes, or null until it has loaded. Measured afresh each time the view opens, since show views fill the
+	 * cache. */
+	let imageCacheSize = $state<number | null>(null);
+
+	invoke<number>('get_image_cache_size')
+		.then((size) => {
+			imageCacheSize = size;
+		})
+		.catch(errors.report);
+
+	/** Keeps the old size showing if clearing fails. */
+	async function clearImageCache() {
+		errors.clear();
+
+		if (!(await confirm({ title: 'Clear Image Cache', message: 'Clear the cached show images?', action: 'Clear' }))) {
+			return;
+		}
+
+		try {
+			await invoke('clear_image_cache');
+			imageCacheSize = 0;
+		} catch (e) {
+			errors.report(e);
+		}
+	}
 
 	let version = $state('');
 
@@ -86,30 +58,30 @@
 	</dd>
 	<dt>Download folder</dt>
 	<dd>
-		{#if downloadFolder}
-			<code>{downloadFolder}</code>
+		{#if settings.stored.downloadFolder}
+			<code>{settings.stored.downloadFolder}</code>
 		{:else}
 			<span class="muted">None set</span>
 		{/if}
-		<button type="button" onclick={onchoosefolder}>Change…</button>
+		<button type="button" onclick={settings.chooseFolder}>Change…</button>
 	</dd>
 	<dt>Downloads</dt>
 	<dd>
 		<label>
-			<input type="checkbox" bind:checked={autoDownload} onchange={onautodownloadchange} />
+			<input type="checkbox" bind:checked={settings.stored.autoDownload} onchange={() => settings.saveCheckbox('autoDownload')} />
 			auto-download new episodes of subscribed shows
 		</label>
 	</dd>
 	<dt>Window</dt>
 	<dd>
 		<label>
-			<input type="checkbox" bind:checked={keepRunning} onchange={onkeeprunningchange} />
+			<input type="checkbox" bind:checked={settings.stored.keepRunning} onchange={() => settings.saveCheckbox('keepRunning')} />
 			keep running in menu bar
 		</label>
 	</dd>
 	<dt>Show Updates</dt>
 	<dd>
-		<select aria-label="Update interval" value={updateInterval} onchange={(e) => onupdateintervalchange(Number(e.currentTarget.value))}>
+		<select aria-label="Update interval" value={settings.stored.updateInterval} onchange={(e) => settings.saveInterval('updateInterval', Number(e.currentTarget.value))}>
 			{#each updateIntervals as hours}
 				<option value={hours}>every {hours === 1 ? 'hour' : `${hours} hours`}</option>
 			{/each}
@@ -117,12 +89,12 @@
 	</dd>
 	<dt>App updates</dt>
 	<dd>
-		<select aria-label="App update check" value={appUpdateInterval} onchange={(e) => onappupdateintervalchange(Number(e.currentTarget.value))}>
+		<select aria-label="App update check" value={settings.stored.appUpdateInterval} onchange={(e) => settings.saveInterval('appUpdateInterval', Number(e.currentTarget.value))}>
 			{#each appUpdateIntervals as hours}
 				<option value={hours}>check every {hours === 1 ? 'hour' : `${hours} hours`}</option>
 			{/each}
 		</select>
-		<button type="button" onclick={oncheckappupdate} disabled={!canCheckAppUpdate}>Check now</button>
+		<button type="button" onclick={updates.checkNow} disabled={updates.cooling}>Check now</button>
 	</dd>
 	<dt>Image cache</dt>
 	<dd>
@@ -131,27 +103,27 @@
 		{:else if imageCacheSize === 0}
 			<span class="muted">Empty</span>
 		{/if}
-		<button type="button" onclick={onclearimagecache} disabled={!imageCacheSize}>Clear</button>
+		<button type="button" onclick={clearImageCache} disabled={!imageCacheSize}>Clear</button>
 	</dd>
 	<dt>Subscriptions</dt>
 	<dd>
-		<button type="button" onclick={onimport} disabled={importing}>Import…</button>
-		<button type="button" onclick={onexport} disabled={importing || !canExport}>Export…</button>
-		{#if importing}
+		<button type="button" onclick={settings.importSubscriptions} disabled={settings.importing}>Import…</button>
+		<button type="button" onclick={settings.exportSubscriptions} disabled={settings.importing || settings.subscribed.length === 0}>Export…</button>
+		{#if settings.importing}
 			<span class="muted">importing…</span>
 		{/if}
 	</dd>
-	{#if lastfm}
+	{#if lastfm.account}
 		<dt>Last.fm</dt>
 		<dd>
-			{#if connectingLastfm}
+			{#if lastfm.connecting}
 				<span class="muted">waiting for approval…</span>
-				<button type="button" onclick={oncancellastfm}>Cancel</button>
-			{:else if lastfm.user}
-				connected as {lastfm.user}
-				<button type="button" onclick={ondisconnectlastfm}>Disconnect</button>
+				<button type="button" onclick={lastfm.cancel}>Cancel</button>
+			{:else if lastfm.account.user}
+				connected as {lastfm.account.user}
+				<button type="button" onclick={lastfm.disconnect}>Disconnect</button>
 			{:else}
-				<button type="button" onclick={onconnectlastfm}>Connect</button>
+				<button type="button" onclick={lastfm.connect}>Connect</button>
 			{/if}
 		</dd>
 	{/if}

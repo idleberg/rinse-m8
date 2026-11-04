@@ -6,28 +6,20 @@
 	let {
 		show,
 		episodes,
-		subscribed,
-		subscribing,
 		playing,
 		onplay,
 		onpause,
 		onenqueue,
 		onopenshow,
-		ontogglesubscription,
 	}: {
 		show: Show;
 		/** The show's filtered episodes, at least one. */
 		episodes: Episode[];
-		/** Show slugs. */
-		subscribed: string[];
-		/** Show slugs. */
-		subscribing: string[];
 		playing: string | null;
 		onplay: (episode: Episode) => void;
 		onpause: () => void;
 		onenqueue: (episode: Episode) => void;
 		onopenshow: (show: Show) => void;
-		ontogglesubscription: (show: Show) => void;
 	} = $props();
 
 	const limit = 5;
@@ -37,17 +29,11 @@
 <section>
 	<header>
 		<h2><button type="button" class="link" onclick={() => onopenshow(show)}>{show.title}</button></h2>
-		<SubscribeButton
-			subscribed={subscribed.includes(show.slug)}
-			disabled={subscribing.includes(show.slug)}
-			onclick={() => ontogglesubscription(show)}
-		/>
+		<SubscribeButton {show} />
 	</header>
 	<EpisodeTable
 		{episodes}
 		limit={expanded ? undefined : limit}
-		{subscribed}
-		{subscribing}
 		{playing}
 		{onplay}
 		{onpause}

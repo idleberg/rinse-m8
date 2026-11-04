@@ -1,30 +1,21 @@
 <script lang="ts">
-	let {
-		version,
-		percent,
-		onupdate,
-		ondismiss,
-	}: {
-		version: string;
-		/** Null until Update is clicked. */
-		percent: number | null;
-		onupdate: () => void;
-		ondismiss: () => void;
-	} = $props();
+	import { updates } from '#lib/updates.svelte';
 </script>
 
-<aside role="status">
-	<span>Version {version} is available</span>
-	{#if percent === null}
-		<div class="buttons">
-			<button type="button" onclick={onupdate}>Update</button>
-			<button type="button" onclick={ondismiss}>Dismiss</button>
-		</div>
-	{:else}
-		<progress max="100" value={percent} aria-label="Updating"></progress>
-		{percent}%
-	{/if}
-</aside>
+{#if updates.available}
+	<aside role="status">
+		<span>Version {updates.available.version} is available</span>
+		{#if updates.available.percent === null}
+			<div class="buttons">
+				<button type="button" onclick={updates.install}>Update</button>
+				<button type="button" onclick={updates.dismiss}>Dismiss</button>
+			</div>
+		{:else}
+			<progress max="100" value={updates.available.percent} aria-label="Updating"></progress>
+			{updates.available.percent}%
+		{/if}
+	</aside>
+{/if}
 
 <style>
 	/* Laid out like the download status bar */

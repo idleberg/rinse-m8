@@ -2,21 +2,18 @@
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
-	import { available, type Episode, paragraphs, type Show, type ShowDetails, showOf } from '#lib/episodes';
+	import { available, type Episode, paragraphs, type Show, type ShowDetails } from '#lib/episodes';
 
 	let {
 		show,
 		details,
 		refreshing,
 		episodes,
-		subscribed,
-		subscribing,
 		playing,
 		onplay,
 		onpause,
 		onenqueue,
 		onopenshow,
-		ontogglesubscription,
 		onback,
 	}: {
 		show: Show;
@@ -25,16 +22,11 @@
 		refreshing: boolean;
 		/** All cached episodes; the view keeps the show's own. */
 		episodes: Episode[];
-		/** Show slugs. */
-		subscribed: string[];
-		/** Show slugs. */
-		subscribing: string[];
 		playing: string | null;
 		onplay: (episode: Episode) => void;
 		onpause: () => void;
 		onenqueue: (episode: Episode) => void;
 		onopenshow: (episode: Episode) => void;
-		ontogglesubscription: (show: Show) => void;
 		onback: () => void;
 	} = $props();
 
@@ -71,11 +63,7 @@
 <header>
 	<button type="button" onclick={onback}>Back</button>
 	<h1>{show.title}</h1>
-	<SubscribeButton
-		subscribed={subscribed.includes(show.slug)}
-		disabled={subscribing.includes(show.slug)}
-		onclick={() => ontogglesubscription(show)}
-	/>
+	<SubscribeButton {show} />
 </header>
 
 {#if details?.image || description.length}
@@ -110,14 +98,12 @@
 
 <EpisodeTable
 	episodes={visibleEpisodes}
-	{subscribed}
-	{subscribing}
 	{playing}
 	{onplay}
 	{onpause}
 	{onenqueue}
 	{onopenshow}
-	ontogglesubscription={(episode) => ontogglesubscription(showOf(episode))}
+	subscribable
 />
 
 <style>

@@ -1,9 +1,6 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
-	import { open, save } from '@tauri-apps/plugin-dialog';
-	import { relaunch } from '@tauri-apps/plugin-process';
-	import { check, type Update } from '@tauri-apps/plugin-updater';
 	import ConfirmDialog from '#lib/components/ConfirmDialog.svelte';
 	import DownloadStatus from '#lib/components/DownloadStatus.svelte';
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
@@ -20,18 +17,9 @@
 	import { downloads } from '#lib/downloads.svelte';
 	import { available, type DirectoryShow, dead, type Episode, monthsAgo, type Show, type ShowDetails, type ShowPage, showOf, stations } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
-
-	interface Settings {
-		subscriptions: Show[];
-		seen: string[];
-		downloadFolder: string | null;
-		autoDownload: boolean;
-		keepRunning: boolean;
-		/** In hours. */
-		updateInterval: number;
-		/** In hours, or 0 to check only at launch. */
-		appUpdateInterval: number;
-	}
+	import { lastfm } from '#lib/lastfm.svelte';
+	import { settings } from '#lib/settings.svelte';
+	import { updates } from '#lib/updates.svelte';
 
 	let episodes = $state<Episode[]>([]);
 	/** True until the first episode fetch settles, so an empty list isn't mistaken for filtered out. */
@@ -56,9 +44,6 @@
 		localStorage.setItem('filters', JSON.stringify({ shownStations, mp3Only, hideRebroadcasts }));
 	});
 
-	let settings = $state<Settings>({ subscriptions: [], seen: [], downloadFolder: null, autoDownload: false, keepRunning: true, updateInterval: 6, appUpdateInterval: 24 });
-	const subscribed = $derived(settings.subscriptions.map((s) => s.slug));
-
 	const filteredEpisodes = $derived.by(() => {
 		const query = search.trim().toLowerCase();
 
@@ -73,7 +58,7 @@
 	});
 
 	const showSections = $derived(
-		settings.subscriptions.map((show) => ({
+		settings.stored.subscriptions.map((show) => ({
 			show,
 			episodes: filteredEpisodes.filter(
 				(episode) =>
@@ -88,7 +73,7 @@
 
 		// The latest is picked before the downloaded check, so an older episode doesn't stand in for it
 		return filteredEpisodes.filter((episode) => {
-			if (!subscribed.includes(episode.showSlug) || seen.has(episode.showSlug)) {
+			if (!settings.subscribed.includes(episode.showSlug) || seen.has(episode.showSlug)) {
 				return false;
 			}
 
@@ -127,54 +112,9 @@
 	let playing = $state<string | null>(null);
 	let queue = $state<Episode[]>([]);
 
-	/** Asks for a download folder and saves it, returning false if the dialog was cancelled. */
-	async function chooseFolder() {
-		const folder = await open({
-			directory: true,
-			title: 'Choose a download folder',
-			defaultPath: settings.downloadFolder ?? undefined,
-		});
-
-		if (!folder) {
-			return false;
-		}
-
-		await invoke('set_settings', { patch: { downloadFolder: folder } });
-		settings.downloadFolder = folder;
-
-		return true;
-	}
-
 	/** Dead episodes are dropped here, so no table shows them, whatever the filters. */
 	function setEpisodes(list: Episode[]) {
 		episodes = list.filter((episode) => !dead(episode)).sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
-	}
-
-	/** Saves a checkbox bound to `settings`, and unticks it again if saving fails. */
-	async function saveCheckbox(key: 'autoDownload' | 'keepRunning') {
-		errors.clear();
-
-		try {
-			await invoke('set_settings', { patch: { [key]: settings[key] } });
-		} catch (e) {
-			settings[key] = !settings[key];
-			throw e;
-		}
-	}
-
-	/** Saves an interval, and puts the stored one back if saving fails. */
-	async function saveInterval(key: 'updateInterval' | 'appUpdateInterval', hours: number) {
-		const stored = settings[key];
-
-		errors.clear();
-		settings[key] = hours;
-
-		try {
-			await invoke('set_settings', { patch: { [key]: hours } });
-		} catch (e) {
-			settings[key] = stored;
-			throw e;
-		}
 	}
 
 	let view = $state<'dashboard' | 'player' | 'schedule' | 'shows' | 'queue' | 'settings'>('dashboard');
@@ -221,50 +161,9 @@
 		}
 	}
 
-	let subscribing = $state<string[]>([]);
-
-	async function toggleSubscription(show: Show) {
-		errors.clear();
-
-		// Read before the dialog, so what the user confirmed is what happens
-		const unsubscribing = subscribed.includes(show.slug);
-
-		if (
-			unsubscribing &&
-			!(await confirm({
-				title: 'Unsubscribe',
-				message: `Unsubscribe from ${show.title}?`,
-				action: 'Unsubscribe',
-			}))
-		) {
-			return;
-		}
-
-		subscribing.push(show.slug);
-
-		try {
-			settings = unsubscribing
-				? await invoke<Settings>('unsubscribe', { slug: show.slug })
-				: await invoke<Settings>('subscribe', { slug: show.slug, title: show.title });
-		} finally {
-			subscribing = subscribing.filter((s) => s !== show.slug);
-		}
-	}
-
-	let imageCacheSize = $state<number | null>(null);
-
 	function openView(value: typeof view) {
 		view = value;
 		openedShow = null;
-
-		// Show views fill the cache, so it's measured afresh each time
-		if (value === 'settings') {
-			invoke<number>('get_image_cache_size')
-				.then((size) => {
-					imageCacheSize = size;
-				})
-				.catch(errors.report);
-		}
 
 		// Show views and schedule fetches record newer dates
 		if (value === 'shows') {
@@ -276,225 +175,16 @@
 		}
 	}
 
-	/** Keeps the old size showing if clearing fails. */
-	async function clearImageCache() {
-		errors.clear();
-
-		if (!(await confirm({ title: 'Clear Image Cache', message: 'Clear the cached show images?', action: 'Clear' }))) {
-			return;
-		}
-
-		await invoke('clear_image_cache');
-		imageCacheSize = 0;
-	}
-
 	async function clearQueue() {
 		if (await confirm({ title: 'Clear Queue', message: 'Clear the play queue?', action: 'Clear' })) {
 			player?.clearQueue();
 		}
 	}
 
-	const jsonFilters = [{ name: 'JSON', extensions: ['json'] }];
-	let importing = $state(false);
-
-	/** Subscribes to the shows in a file chosen by the user, keeping the existing subscriptions. */
-	async function importSubscriptions() {
-		errors.clear();
-
-		const path = await open({ title: 'Import subscriptions', filters: jsonFilters });
-
-		if (!path) {
-			return;
-		}
-
-		importing = true;
-
-		try {
-			settings = await invoke<Settings>('import_subscriptions', { path });
-		} finally {
-			importing = false;
-		}
-	}
-
-	async function exportSubscriptions() {
-		errors.clear();
-
-		const path = await save({ title: 'Export subscriptions', defaultPath: 'rinse-m8-subscriptions.json', filters: jsonFilters });
-
-		if (path) {
-			await invoke('export_subscriptions', { path });
-		}
-	}
-
-	let lastfm = $state<{ user: string | null } | null>(null);
-	let connectingLastfm = $state(false);
-
-	/** Resolves once the user approves on Last.fm or cancels, or fails when approval times out. */
-	async function connectLastfm() {
-		errors.clear();
-		connectingLastfm = true;
-
-		try {
-			const user = await invoke<string | null>('connect_lastfm');
-
-			if (user) {
-				lastfm = { user };
-			}
-		} finally {
-			connectingLastfm = false;
-		}
-	}
-
-	async function disconnectLastfm() {
-		errors.clear();
-
-		if (
-			!(await confirm({
-				title: 'Disconnect Last.fm',
-				message: `Disconnect ${lastfm?.user} from Last.fm?`,
-				action: 'Disconnect',
-			}))
-		) {
-			return;
-		}
-
-		await invoke('disconnect_lastfm');
-		lastfm = { user: null };
-	}
-
-	/** Dismissing it hides that version until the next launch. */
-	let update = $state<{ version: string; percent: number | null } | null>(null);
-
-	// `mise run dev:update` fakes an update for design review; release builds drop this, since DEV is false there
-	const fakeUpdate = import.meta.env.DEV && Boolean(import.meta.env.VITE_FAKE_UPDATE);
-
-	let foundUpdate: Update | null = null;
-	let dismissedVersion: string | null = null;
-	const millisecondsPerHour = 3_600_000;
-
-	function checkForUpdate() {
-		// A running download keeps the update it started with
-		if (update && update.percent !== null) {
-			return;
-		}
-
-		check()
-			.then((found) => {
-				foundUpdate = found;
-
-				if (found && found.version !== dismissedVersion) {
-					update = { version: found.version, percent: null };
-				}
-			})
-			.catch(() => {
-				// Being offline is normal, so a failed check stays silent
-			});
-	}
-
-	/** Set while the settings' Check now button waits out its cooldown. */
-	let checkedUpdateManually = $state(false);
-	const manualCheckCooldown = 60_000;
-
-	function checkForUpdateNow() {
-		checkedUpdateManually = true;
-		checkForUpdate();
-		setTimeout(() => {
-			checkedUpdateManually = false;
-		}, manualCheckCooldown);
-	}
-
-	if (fakeUpdate) {
-		update = { version: '9.9.9', percent: null };
-	} else {
-		checkForUpdate();
-	}
-
-	// The launch check above runs regardless, so 0 only skips the repeats
-	$effect(() => {
-		if (fakeUpdate || !settings.appUpdateInterval) {
-			return;
-		}
-
-		const timer = setInterval(checkForUpdate, settings.appUpdateInterval * millisecondsPerHour);
-
-		return () => clearInterval(timer);
-	});
-
-	/** The fake download stops at 100% rather than relaunching. */
-	function fakeDownload(version: string) {
-		const progress = { version, percent: 0 };
-
-		update = progress;
-
-		const timer = setInterval(() => {
-			progress.percent += 5;
-			update = { ...progress };
-
-			if (progress.percent === 100) {
-				clearInterval(timer);
-			}
-		}, 100);
-	}
-
-	/** A failed download or install brings the buttons back, so the user can retry or dismiss. */
-	async function startUpdate() {
-		if (!update) {
-			return;
-		}
-
-		const { version } = update;
-
-		if (fakeUpdate) {
-			fakeDownload(version);
-
-			return;
-		}
-
-		if (!foundUpdate) {
-			return;
-		}
-
-		let total = 0;
-		let received = 0;
-
-		errors.clear();
-		update = { version, percent: 0 };
-
-		try {
-			await foundUpdate.downloadAndInstall((event) => {
-				if (event.event === 'Started') {
-					total = event.data.contentLength ?? 0;
-				} else if (event.event === 'Progress' && total) {
-					received += event.data.chunkLength;
-					update = { version, percent: Math.floor((received / total) * 100) };
-				}
-			});
-
-			await relaunch();
-		} catch (e) {
-			errors.report(e);
-			update = { version, percent: null };
-		}
-	}
-
 	errors.init();
-
-	invoke<Settings>('get_settings')
-		.then((loaded) => {
-			settings = loaded;
-		})
-		.catch(errors.report);
-
-	invoke<{ user: string | null } | null>('get_lastfm')
-		.then((loaded) => {
-			lastfm = loaded;
-		})
-		.catch(errors.report);
-
-	// Sent when Last.fm rejects the session, for example after the user revoked access
-	listen('lastfm-disconnected', () => {
-		lastfm = { user: null };
-	});
+	settings.init();
+	lastfm.init();
+	updates.init();
 
 	invoke<Episode[]>('get_episodes')
 		.then(setEpisodes)
@@ -507,7 +197,6 @@
 	listen<Episode[]>('episodes-updated', (event) => setEpisodes(event.payload));
 
 	downloads.init({
-		ensureFolder: async () => Boolean(settings.downloadFolder) || chooseFolder(),
 		openQueue: () => openView('queue'),
 	});
 
@@ -540,17 +229,7 @@
 	ondrop={(event) => event.dataTransfer?.types.includes('Files') && event.preventDefault()}
 />
 
-{#if update}
-	<UpdateBanner
-		version={update.version}
-		percent={update.percent}
-		onupdate={startUpdate}
-		ondismiss={() => {
-			dismissedVersion = update?.version ?? null;
-			update = null;
-		}}
-	/>
-{/if}
+<UpdateBanner />
 
 <nav>
 	{#each [['dashboard', 'My Shows'], ['player', 'Player'], ['schedule', 'Schedule'], ['shows', 'Shows'], ['queue', 'Downloads'], ['settings', 'Settings']] as const as [value, label] (value)}
@@ -581,14 +260,11 @@
 				details={showDetails}
 				refreshing={refreshing.includes(openedShow.slug)}
 				{episodes}
-				{subscribed}
-				{subscribing}
 				{playing}
 				onplay={(episode) => player?.play(episode).catch(errors.report)}
 				onpause={() => player?.pause()}
 				onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
-				ontogglesubscription={(show) => toggleSubscription(show).catch(errors.report)}
 				onback={() => {
 					openedShow = null;
 				}}
@@ -608,34 +284,7 @@
 	{:else if view === 'queue'}
 		<QueueView />
 	{:else if view === 'settings'}
-		<SettingsView
-			downloadFolder={settings.downloadFolder}
-			bind:autoDownload={settings.autoDownload}
-			bind:keepRunning={settings.keepRunning}
-			onchoosefolder={() => {
-				errors.clear();
-				chooseFolder().catch(errors.report);
-			}}
-			onautodownloadchange={() => saveCheckbox('autoDownload').catch(errors.report)}
-			onkeeprunningchange={() => saveCheckbox('keepRunning').catch(errors.report)}
-			updateInterval={settings.updateInterval}
-			onupdateintervalchange={(hours) => saveInterval('updateInterval', hours).catch(errors.report)}
-			appUpdateInterval={settings.appUpdateInterval}
-			onappupdateintervalchange={(hours) => saveInterval('appUpdateInterval', hours).catch(errors.report)}
-			canCheckAppUpdate={!checkedUpdateManually}
-			oncheckappupdate={checkForUpdateNow}
-			{imageCacheSize}
-			onclearimagecache={() => clearImageCache().catch(errors.report)}
-			{importing}
-			canExport={subscribed.length > 0}
-			onimport={() => importSubscriptions().catch(errors.report)}
-			onexport={() => exportSubscriptions().catch(errors.report)}
-			{lastfm}
-			{connectingLastfm}
-			onconnectlastfm={() => connectLastfm().catch(errors.report)}
-			oncancellastfm={() => invoke('cancel_lastfm_connect').catch(errors.report)}
-			ondisconnectlastfm={() => disconnectLastfm().catch(errors.report)}
-		/>
+		<SettingsView />
 	{:else if view === 'shows'}
 		<EpisodeFilters bind:shownStations bind:search>
 			<label>
@@ -653,10 +302,7 @@
 		<ShowDirectory
 			shows={filteredDirectory}
 			{lastAired}
-			{subscribed}
-			{subscribing}
 			onopenshow={(show) => openShow(show).catch(errors.report)}
-			ontogglesubscription={(show) => toggleSubscription(show).catch(errors.report)}
 		/>
 	{:else}
 		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:search>
@@ -669,21 +315,19 @@
 		</EpisodeFilters>
 
 		{#if view === 'dashboard'}
-			{#if settings.subscriptions.length}
+			{#if settings.stored.subscriptions.length}
 				<section class="latest">
 					<h2>Latest</h2>
 					{#if latestEpisodes.length}
 						<EpisodeTable
 							episodes={latestEpisodes}
-							{subscribed}
-							{subscribing}
 							{playing}
 							onplay={(episode) => player?.play(episode).catch(errors.report)}
 							onpause={() => player?.pause()}
 							onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
 							markable
 							onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
-							ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(errors.report)}
+							subscribable
 							subscribeOnHover
 						/>
 					{:else if loadingEpisodes}
@@ -700,14 +344,11 @@
 					<ShowSection
 						show={section.show}
 						episodes={section.episodes}
-						{subscribed}
-						{subscribing}
 						{playing}
 						onplay={(episode) => player?.play(episode).catch(errors.report)}
 						onpause={() => player?.pause()}
 						onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
 						onopenshow={(show) => openShow(show).catch(errors.report)}
-						ontogglesubscription={(show) => toggleSubscription(show).catch(errors.report)}
 					/>
 				{/if}
 			{:else}
@@ -734,14 +375,12 @@
 		{:else if scheduleEpisodes.length}
 			<EpisodeTable
 				episodes={scheduleEpisodes}
-				{subscribed}
-				{subscribing}
 				{playing}
 				onplay={(episode) => player?.play(episode).catch(errors.report)}
 				onpause={() => player?.pause()}
 				onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
-				ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(errors.report)}
+				subscribable
 			/>
 		{:else if loadingEpisodes}
 			<p class="empty" role="status">Loading episodes…</p>

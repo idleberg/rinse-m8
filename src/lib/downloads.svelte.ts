@@ -3,11 +3,10 @@ import { listen } from '@tauri-apps/api/event';
 import { confirm } from './confirm.svelte';
 import type { DownloadQueue, Episode } from './episodes';
 import { errors } from './errors.svelte';
+import { settings } from './settings.svelte';
 
-/** What the page still owns, until the settings module and routes take them over. */
+/** What the page still owns, until routes take it over. */
 interface Hooks {
-	/** Resolves true once a download folder is set, asking for one if needed. */
-	ensureFolder: () => Promise<boolean>;
 	openQueue: () => void;
 }
 
@@ -25,7 +24,7 @@ class Downloads {
 		failures: [],
 		downloaded: [],
 	});
-	#hooks: Hooks = { ensureFolder: async () => false, openQueue: () => {} };
+	#hooks: Hooks = { openQueue: () => {} };
 
 	/** Queues the episode, asking for a download folder first if none is set. A failed one is retried, and the
 	 * download queue view opens to show it. */
@@ -33,7 +32,7 @@ class Downloads {
 		errors.clear();
 
 		try {
-			if (!(await this.#hooks.ensureFolder())) {
+			if (!(await settings.ensureFolder())) {
 				return;
 			}
 

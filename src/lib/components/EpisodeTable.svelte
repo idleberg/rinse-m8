@@ -8,6 +8,7 @@
 		type Episode,
 		formatDate,
 		type SortColumn,
+		showOf,
 		sortEpisodes,
 		toggleSort,
 	} from '#lib/episodes';
@@ -15,24 +16,18 @@
 	let {
 		episodes,
 		limit,
-		subscribed,
-		subscribing,
 		playing,
 		onplay,
 		onpause,
 		onenqueue,
 		markable = false,
 		onopenshow,
-		ontogglesubscription,
+		subscribable = false,
 		subscribeOnHover = false,
 	}: {
 		episodes: Episode[];
 		/** Shows only the first `limit` episodes, after sorting. */
 		limit?: number;
-		/** Show slugs. */
-		subscribed: string[];
-		/** Show slugs. */
-		subscribing: string[];
 		/** The id of the episode while it's playing. */
 		playing: string | null;
 		onplay: (episode: Episode) => void;
@@ -42,7 +37,7 @@
 		markable?: boolean;
 		onopenshow: (episode: Episode) => void;
 		/** Adds a subscribe button to each row. */
-		ontogglesubscription?: (episode: Episode) => void;
+		subscribable?: boolean;
 		/** Moves the subscribe button before the other actions, shown while the row is hovered. */
 		subscribeOnHover?: boolean;
 	} = $props();
@@ -98,13 +93,9 @@
 				</td>
 				<td>
 					<div class="buttons">
-						{#if ontogglesubscription && subscribeOnHover}
+						{#if subscribable && subscribeOnHover}
 							<span class="reveal">
-								<SubscribeButton
-									subscribed={subscribed.includes(episode.showSlug)}
-									disabled={subscribing.includes(episode.showSlug)}
-									onclick={() => ontogglesubscription(episode)}
-								/>
+								<SubscribeButton show={showOf(episode)} />
 							</span>
 						{/if}
 						{#if available(episode)}
@@ -133,12 +124,8 @@
 							</button>
 							<DownloadButton {episode} {markable} />
 						{/if}
-						{#if ontogglesubscription && !subscribeOnHover}
-							<SubscribeButton
-								subscribed={subscribed.includes(episode.showSlug)}
-								disabled={subscribing.includes(episode.showSlug)}
-								onclick={() => ontogglesubscription(episode)}
-							/>
+						{#if subscribable && !subscribeOnHover}
+							<SubscribeButton show={showOf(episode)} />
 						{/if}
 					</div>
 				</td>
