@@ -6,19 +6,11 @@
 	let {
 		show,
 		episodes,
-		playing,
-		onplay,
-		onpause,
-		onenqueue,
 		onopenshow,
 	}: {
 		show: Show;
 		/** The show's filtered episodes, at least one. */
 		episodes: Episode[];
-		playing: string | null;
-		onplay: (episode: Episode) => void;
-		onpause: () => void;
-		onenqueue: (episode: Episode) => void;
 		onopenshow: (show: Show) => void;
 	} = $props();
 
@@ -34,10 +26,6 @@
 	<EpisodeTable
 		{episodes}
 		limit={expanded ? undefined : limit}
-		{playing}
-		{onplay}
-		{onpause}
-		{onenqueue}
 		markable
 		onopenshow={(episode) => onopenshow(showOf(episode))}
 	/>

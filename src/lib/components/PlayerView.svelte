@@ -1,33 +1,12 @@
 <script lang="ts">
-	import type { ComponentProps } from 'svelte';
 	import PlayerControls from '#lib/components/PlayerControls.svelte';
-	import { type Episode, formatDate } from '#lib/episodes';
-
-	let {
-		controls,
-		queue,
-		onplay,
-		onremove,
-		onmove,
-		onclear,
-	}: {
-		/** The player's own, so this tab and the bottom bar show and change the same playback. */
-		controls: ComponentProps<typeof PlayerControls>;
-		/** Listed below the controls, in play order. */
-		queue: Episode[];
-		/** Takes a queue index, and plays that row's episode. */
-		onplay: (index: number) => void;
-		/** Takes a queue index out of the queue without playing it. */
-		onremove: (index: number) => void;
-		/** Takes a queue index and the index to move that row's episode to. */
-		onmove: (from: number, to: number) => void;
-		onclear: () => void;
-	} = $props();
+	import { formatDate } from '#lib/episodes';
+	import { player } from '#lib/player.svelte';
 
 	/** Images that failed to load, so the cover falls back past them. */
 	let failed = $state<string[]>([]);
 
-	const playable = $derived(controls.episode?.mp3 ? controls.episode : null);
+	const playable = $derived(player.episode?.mp3 ? player.episode : null);
 	const cover = $derived([playable?.image, playable?.showImage].find((src) => src && !failed.includes(src)));
 
 	/** The index of the row being dragged, and of the row it's over. */
@@ -47,8 +26,8 @@
 
 		const target = index + step;
 
-		if (target >= 0 && target < queue.length) {
-			onmove(index, target);
+		if (target >= 0 && target < player.queue.length) {
+			player.move(index, target);
 			rows[target]?.focus();
 		}
 	}
@@ -65,7 +44,7 @@
 	</div>
 	{#if playable}
 		<div class="controls">
-			<PlayerControls {...controls} layout="tab" />
+			<PlayerControls layout="tab" />
 		</div>
 	{:else}
 		<p class="empty">Nothing playing</p>
@@ -74,12 +53,12 @@
 
 <header>
 	<h2>Play Queue</h2>
-	{#if queue.length}
-		<button type="button" onclick={onclear}>Clear Queue</button>
+	{#if player.queue.length}
+		<button type="button" onclick={player.clearQueue}>Clear Queue</button>
 	{/if}
 </header>
 
-{#if queue.length}
+{#if player.queue.length}
 	<table>
 		<thead>
 			<tr>
@@ -90,7 +69,7 @@
 		</thead>
 		<tbody>
 			<!-- Unkeyed, since an episode can be queued more than once -->
-			{#each queue as episode, index}
+			{#each player.queue as episode, index}
 				<tr
 					bind:this={rows[index]}
 					class={{
@@ -119,7 +98,7 @@
 						event.preventDefault();
 
 						if (dragged !== null) {
-							onmove(dragged, index);
+							player.move(dragged, index);
 						}
 					}}
 					onkeydown={(event) => moveWithArrows(event, index)}
@@ -133,12 +112,12 @@
 					</td>
 					<td>
 						<div class="buttons">
-							<button type="button" class="icon reveal" aria-label="Play" title="Play" onclick={() => onplay(index)}>
+							<button type="button" class="icon reveal" aria-label="Play" title="Play" onclick={() => player.playFromQueue(index)}>
 								<svg viewBox="0 0 16 16" aria-hidden="true">
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>
-							<button type="button" class="icon" aria-label="Remove" title="Remove" onclick={() => onremove(index)}>
+							<button type="button" class="icon" aria-label="Remove" title="Remove" onclick={() => player.dequeue(index)}>
 								<svg viewBox="0 0 16 16" aria-hidden="true">
 									<path d="M4 4l8 8M12 4l-8 8" />
 								</svg>

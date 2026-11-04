@@ -9,10 +9,6 @@
 		show,
 		details,
 		refreshing,
-		playing,
-		onplay,
-		onpause,
-		onenqueue,
 		onopenshow,
 		onback,
 	}: {
@@ -20,10 +16,6 @@
 		/** Null until the show's fetch returns. */
 		details: ShowDetails | null;
 		refreshing: boolean;
-		playing: string | null;
-		onplay: (episode: Episode) => void;
-		onpause: () => void;
-		onenqueue: (episode: Episode) => void;
 		onopenshow: (episode: Episode) => void;
 		onback: () => void;
 	} = $props();
@@ -93,10 +85,6 @@
 
 <EpisodeTable
 	episodes={visibleEpisodes}
-	{playing}
-	{onplay}
-	{onpause}
-	{onenqueue}
 	{onopenshow}
 	subscribable
 />

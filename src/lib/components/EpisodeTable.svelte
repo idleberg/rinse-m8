@@ -12,14 +12,11 @@
 		sortEpisodes,
 		toggleSort,
 	} from '#lib/episodes';
+	import { player } from '#lib/player.svelte';
 
 	let {
 		episodes,
 		limit,
-		playing,
-		onplay,
-		onpause,
-		onenqueue,
 		markable = false,
 		onopenshow,
 		subscribable = false,
@@ -28,11 +25,6 @@
 		episodes: Episode[];
 		/** Shows only the first `limit` episodes, after sorting. */
 		limit?: number;
-		/** The id of the episode while it's playing. */
-		playing: string | null;
-		onplay: (episode: Episode) => void;
-		onpause: () => void;
-		onenqueue: (episode: Episode) => void;
 		/** Adds a "Mark as downloaded" button next to each download button. */
 		markable?: boolean;
 		onopenshow: (episode: Episode) => void;
@@ -99,14 +91,14 @@
 							</span>
 						{/if}
 						{#if available(episode)}
-							{#if playing === episode.id}
-								<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={onpause}>
+							{#if player.playing === episode.id}
+								<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={player.pause}>
 									<svg viewBox="0 0 16 16" aria-hidden="true">
 										<path d="M5 3v10M11 3v10" />
 									</svg>
 								</button>
 							{:else}
-								<button type="button" class="icon" aria-label="Play" title="Play" onclick={() => onplay(episode)}>
+								<button type="button" class="icon" aria-label="Play" title="Play" onclick={() => player.play(episode)}>
 									<svg viewBox="0 0 16 16" aria-hidden="true">
 										<path d="M4 2.5l9 5.5-9 5.5z" />
 									</svg>
@@ -116,7 +108,7 @@
 								class="icon"
 								aria-label="Add to play queue"
 								title="Add to play queue"
-								onclick={() => onenqueue(episode)}
+								onclick={() => player.enqueue(episode)}
 							>
 								<svg viewBox="0 0 16 16" aria-hidden="true">
 									<path d="M2 3.5h12M2 7.5h12M2 11.5h6M10 9.5l4 2.5-4 2.5z" />

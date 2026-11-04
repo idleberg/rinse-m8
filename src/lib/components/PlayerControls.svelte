@@ -1,50 +1,12 @@
 <script lang="ts">
 	import { prefersReducedMotion } from 'svelte/motion';
-	import { type Episode, episodeLabel, formatDate } from '#lib/episodes';
+	import { episodeLabel, formatDate } from '#lib/episodes';
 	import { formatTime, type Repeat } from '#lib/listen';
+	import { player } from '#lib/player.svelte';
 
 	let {
-		episode,
-		paused,
-		currentTime,
-		duration,
-		showRemaining,
-		queued,
-		repeat,
-		loved,
-		onplay,
-		onpause,
-		onprevious,
-		onnext,
-		onseek,
-		ontoggletime,
-		onrepeat,
-		onlove,
 		layout = 'bar',
 	}: {
-		/** Null until an episode is loaded, which leaves the label empty. */
-		episode: Episode | null;
-		paused: boolean;
-		/** The playhead, in seconds. */
-		currentTime: number;
-		/** In seconds, 0 until the metadata loads. */
-		duration: number;
-		/** Whether the time reads as remaining rather than elapsed. */
-		showRemaining: boolean;
-		/** Whether NEXT has an episode to play: one in the play queue, or the current one under repeat all. */
-		queued: boolean;
-		/** Repeats the play queue (`all`), the current episode (`one`), or nothing. */
-		repeat: Repeat;
-		/** Whether the episode is loved, which fills the heart. */
-		loved: boolean;
-		onplay: () => void;
-		onpause: () => void;
-		onprevious: () => void;
-		onnext: () => void;
-		onseek: (time: number) => void;
-		ontoggletime: () => void;
-		onrepeat: () => void;
-		onlove: () => void;
 		/** The Player tab puts the label on a line of its own, and adds the full length to the time. */
 		layout?: 'bar' | 'tab';
 	} = $props();
@@ -56,6 +18,8 @@
 
 	/** The Player tab shows the show as a heading, so its label leaves it out. */
 	const label = $derived.by(() => {
+		const { episode } = player;
+
 		if (!episode) {
 			return '';
 		}
@@ -130,27 +94,27 @@
 <div class="row">
 	<div class="buttons">
 		{#if layout === 'tab'}
-			<button type="button" class="icon" aria-label="Previous" title="Previous" onclick={onprevious}>
+			<button type="button" class="icon" aria-label="Previous" title="Previous" onclick={player.previous}>
 				<svg viewBox="0 0 16 16" aria-hidden="true">
 					<path d="M3 3v10M13 3l-8 5 8 5z" />
 				</svg>
 			</button>
 		{/if}
-		{#if paused}
-			<button type="button" class="icon" aria-label="Play" title="Play" onclick={onplay}>
+		{#if player.paused}
+			<button type="button" class="icon" aria-label="Play" title="Play" onclick={player.resume}>
 				<svg viewBox="0 0 16 16" aria-hidden="true">
 					<path d="M4 2.5l9 5.5-9 5.5z" />
 				</svg>
 			</button>
 		{:else}
-			<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={onpause}>
+			<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={player.pause}>
 				<svg viewBox="0 0 16 16" aria-hidden="true">
 					<path d="M5 3v10M11 3v10" />
 				</svg>
 			</button>
 		{/if}
 		{#if layout === 'tab'}
-			<button type="button" class="icon" aria-label="Next" title="Next" disabled={!queued} onclick={onnext}>
+			<button type="button" class="icon" aria-label="Next" title="Next" disabled={!player.queued} onclick={player.skip}>
 				<svg viewBox="0 0 16 16" aria-hidden="true">
 					<path d="M3 3l8 5-8 5zM13 3v10" />
 				</svg>
@@ -164,29 +128,31 @@
 		type="range"
 		aria-label="Seek"
 		min="0"
-		max={duration || 0}
+		max={player.duration || 0}
 		step="any"
-		disabled={!duration}
-		style:--progress={duration ? currentTime / duration : 0}
-		value={currentTime}
-		oninput={(e) => onseek(e.currentTarget.valueAsNumber)}
+		disabled={!player.duration}
+		style:--progress={player.duration ? player.currentTime / player.duration : 0}
+		value={player.currentTime}
+		oninput={(e) => {
+			player.currentTime = e.currentTarget.valueAsNumber;
+		}}
 	/>
-	<button type="button" class="time" title={showRemaining ? 'Show elapsed time' : 'Show remaining time'} onclick={ontoggletime}
-		><span class:hidden={!showRemaining}>-</span>{showRemaining
-			? formatTime((duration || 0) - currentTime)
-			: formatTime(currentTime)}{#if layout === 'tab'}{` / ${formatTime(duration || 0)}`}{/if}</button
+	<button type="button" class="time" title={player.showRemaining ? 'Show elapsed time' : 'Show remaining time'} onclick={player.toggleTime}
+		><span class:hidden={!player.showRemaining}>-</span>{player.showRemaining
+			? formatTime((player.duration || 0) - player.currentTime)
+			: formatTime(player.currentTime)}{#if layout === 'tab'}{` / ${formatTime(player.duration || 0)}`}{/if}</button
 	>
 	<div class="buttons">
 		{#if layout === 'tab'}
 			<!-- Pressed in both repeat states, in the accent colour for repeat one -->
-			<button type="button" class="icon" class:one={repeat === 'one'} aria-label="Repeat" title={repeatTitles[repeat]} aria-pressed={repeat !== 'off'} onclick={onrepeat}>
+			<button type="button" class="icon" class:one={player.repeat === 'one'} aria-label="Repeat" title={repeatTitles[player.repeat]} aria-pressed={player.repeat !== 'off'} onclick={player.cycleRepeat}>
 				<svg viewBox="0 0 16 16" aria-hidden="true">
 					<path d="M2 9V4h11M10.5 1.5L13 4M14 7v5H3M5.5 14.5L3 12" />
 				</svg>
 			</button>
 		{/if}
 		<!-- Outlined, or filled in the accent colour when loved -->
-		<button type="button" class="icon" class:loved aria-label="Love" title={loved ? 'Unlove' : 'Love'} aria-pressed={loved} onclick={onlove}>
+		<button type="button" class="icon" class:loved={player.loved} aria-label="Love" title={player.loved ? 'Unlove' : 'Love'} aria-pressed={player.loved} onclick={player.toggleLove}>
 			<svg viewBox="0 0 16 16" aria-hidden="true">
 				<path d="M8 13.5C8 13.5 1.5 9.5 1.5 5.5 1.5 3.5 3 2 4.75 2 6.25 2 7.5 3 8 4.25 8.5 3 9.75 2 11.25 2 13 2 14.5 3.5 14.5 5.5 14.5 9.5 8 13.5 8 13.5z" />
 			</svg>
@@ -195,7 +161,7 @@
 </div>
 
 {#if layout === 'tab'}
-	<h2>{episode?.showTitle}</h2>
+	<h2>{player.episode?.showTitle}</h2>
 	<div class="label">
 		{@render title()}
 	</div>

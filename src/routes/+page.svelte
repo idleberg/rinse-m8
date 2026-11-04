@@ -13,14 +13,14 @@
 	import ShowSection from '#lib/components/ShowSection.svelte';
 	import ShowView from '#lib/components/ShowView.svelte';
 	import UpdateBanner from '#lib/components/UpdateBanner.svelte';
-	import { confirm } from '#lib/confirm.svelte';
 	import { directory } from '#lib/directory.svelte';
 	import { downloads } from '#lib/downloads.svelte';
-	import { type Episode, monthsAgo, type Show, type ShowDetails, type ShowPage, showOf } from '#lib/episodes';
+	import { monthsAgo, type Show, type ShowDetails, type ShowPage, showOf } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { errors } from '#lib/errors.svelte';
 	import { filters } from '#lib/filters.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
+	import { player } from '#lib/player.svelte';
 	import { settings } from '#lib/settings.svelte';
 	import { updates } from '#lib/updates.svelte';
 
@@ -70,10 +70,6 @@
 			) ?? null
 		);
 	});
-
-	let player = $state<ReturnType<typeof Player>>();
-	let playing = $state<string | null>(null);
-	let queue = $state<Episode[]>([]);
 
 	let view = $state<'dashboard' | 'player' | 'schedule' | 'shows' | 'queue' | 'settings'>('dashboard');
 	let openedShow = $state<Show | null>(null);
@@ -128,12 +124,6 @@
 		}
 	}
 
-	async function clearQueue() {
-		if (await confirm({ title: 'Clear Queue', message: 'Clear the play queue?', action: 'Clear' })) {
-			player?.clearQueue();
-		}
-	}
-
 	errors.init();
 	settings.init();
 	lastfm.init();
@@ -142,6 +132,7 @@
 	episodes.init();
 	filters.init();
 	directory.init();
+	player.init();
 	downloads.init({
 		openQueue: () => openView('queue'),
 	});
@@ -149,13 +140,8 @@
 	// A click on a new-episode notification opens its show, refetched so the new episode is listed
 	listen<Show>('open-show', (event) => openShow(event.payload).catch(errors.report));
 
-	// The tray menu's play/pause item and its Settings item, which has already shown the window
-	listen('toggle-playback', () => (playing ? player?.pause() : player?.controls.onplay()));
+	// The tray menu's Settings item, which has already shown the window
 	listen('open-settings', () => openView('settings'));
-
-	$effect(() => {
-		invoke('set_tray_playing', { playing: playing !== null }).catch(errors.report);
-	});
 </script>
 
 <!-- With Tauri's file drop off, a dropped file would otherwise open in the window -->
@@ -194,10 +180,6 @@
 				show={openedShow}
 				details={showDetails}
 				refreshing={refreshing.includes(openedShow.slug)}
-				{playing}
-				onplay={(episode) => player?.play(episode).catch(errors.report)}
-				onpause={() => player?.pause()}
-				onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
 				onback={() => {
 					openedShow = null;
@@ -205,16 +187,7 @@
 			/>
 		{/key}
 	{:else if view === 'player'}
-		{#if player}
-			<PlayerView
-				controls={player.controls}
-				{queue}
-				onplay={(index) => player?.playFromQueue(index).catch(errors.report)}
-				onremove={(index) => player?.dequeue(index)}
-				onmove={(from, to) => player?.move(from, to)}
-				onclear={() => clearQueue().catch(errors.report)}
-			/>
-		{/if}
+		<PlayerView />
 	{:else if view === 'queue'}
 		<QueueView />
 	{:else if view === 'settings'}
@@ -254,10 +227,6 @@
 					{#if latestEpisodes.length}
 						<EpisodeTable
 							episodes={latestEpisodes}
-							{playing}
-							onplay={(episode) => player?.play(episode).catch(errors.report)}
-							onpause={() => player?.pause()}
-							onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
 							markable
 							onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
 							subscribable
@@ -277,10 +246,6 @@
 					<ShowSection
 						show={section.show}
 						episodes={section.episodes}
-						{playing}
-						onplay={(episode) => player?.play(episode).catch(errors.report)}
-						onpause={() => player?.pause()}
-						onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
 						onopenshow={(show) => openShow(show).catch(errors.report)}
 					/>
 				{/if}
@@ -308,10 +273,6 @@
 		{:else if scheduleEpisodes.length}
 			<EpisodeTable
 				episodes={scheduleEpisodes}
-				{playing}
-				onplay={(episode) => player?.play(episode).catch(errors.report)}
-				onpause={() => player?.pause()}
-				onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
 				subscribable
 			/>
@@ -325,7 +286,7 @@
 
 <div class="bars">
 	<DownloadStatus onviewqueue={() => openView('queue')} />
-	<Player bind:this={player} bind:playing bind:queue />
+	<Player />
 </div>
 
 <ConfirmDialog />

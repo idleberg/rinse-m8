@@ -4,12 +4,18 @@
 
 **Blocked by:** 05 (Episodes, filters and directory modules), as the player looks up the episode cache at launch
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Play, pause, seek, PREV/NEXT, repeat modes and love work as before, from both the player bar and the player view
 - [ ] The last-played episode and its position come back after a restart
-- [ ] The play queue persists, reorders, clears (with confirmation) and plays through as before
+- [x] The play queue persists, reorders, clears (with confirmation) and plays through as before
 - [ ] Now-playing and scrobbling to Last.fm still happen
 - [ ] The tray play/pause item works and the tray reflects playback
-- [ ] No component reaches the player through `bind:this` or a `controls` object
-- [ ] `bun test` and `svelte-check` pass
+- [x] No component reaches the player through `bind:this` or a `controls` object
+- [x] `bun test` and `svelte-check` pass
+
+## Comments
+
+- Unit-tested in `src/lib/player.test.ts`: launch restore, NEXT under repeat all, PREV (back and restart), queue persistence, clear with confirmation, love. The unticked boxes need a run of the app: audio, restart position, Last.fm and tray.
+- `player.playing` is now derived from `paused`. When you switch episodes mid-play, the row's pause button and the tray follow the new episode right away instead of waiting for its `play` event.
+- `init()` runs its effects in `$effect.root`, so they don't need a component and can be tested.
