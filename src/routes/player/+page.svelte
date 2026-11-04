@@ -166,6 +166,16 @@
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>
+							<button type="button"
+								class="icon"
+								aria-label="Add to play queue"
+								title="Add to play queue"
+								onclick={() => player.enqueue(episode)}
+							>
+								<svg viewBox="0 0 16 16" aria-hidden="true">
+									<path d="M2 3.5h12M2 7.5h12M2 11.5h6M10 9.5l4 2.5-4 2.5z" />
+								</svg>
+							</button>
 						</div>
 					</td>
 				</tr>
