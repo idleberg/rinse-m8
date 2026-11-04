@@ -1,25 +1,18 @@
 <script lang="ts">
+	import { confirmation } from '#lib/confirm.svelte';
+
 	const id = $props.id();
 
 	let dialog: HTMLDialogElement;
 	let cancel: HTMLButtonElement;
 
-	let title = $state('');
-	let message = $state('');
-	let action = $state('');
-	let resolve: ((confirmed: boolean) => void) | undefined;
-
 	/** The button last clicked outside the dialog. WebKit doesn't focus buttons on click, so the native focus return misses it. */
 	let opener: HTMLElement | null = null;
 
-	/** Resolves `true` only when the action button closes the dialog, and `false` on Cancel, `[×]` or Esc. */
-	export function confirm(options: { title: string; message: string; action: string }): Promise<boolean> {
-		// Declines a second request rather than replacing the question already showing
-		if (dialog.open) {
-			return Promise.resolve(false);
+	$effect(() => {
+		if (!confirmation.question || dialog.open) {
+			return;
 		}
-
-		({ title, message, action } = options);
 
 		// Esc closes without setting it, so the last choice would linger
 		dialog.returnValue = '';
@@ -27,11 +20,7 @@
 
 		// Not the first button, `[×]`, so pressing Enter by accident does nothing
 		cancel.focus();
-
-		return new Promise((r) => {
-			resolve = r;
-		});
-	}
+	});
 </script>
 
 <!-- Captured, so it's recorded before the click's own handler opens the dialog -->
@@ -49,18 +38,18 @@
 	aria-labelledby="{id}-title"
 	onclose={() => {
 		opener?.focus();
-		resolve?.(dialog.returnValue === 'confirm');
+		confirmation.answer(dialog.returnValue === 'confirm');
 	}}
 >
 	<form method="dialog">
 		<header>
-			<h2 id="{id}-title">{title}</h2>
+			<h2 id="{id}-title">{confirmation.question?.title}</h2>
 			<button type="submit" class="close" value="cancel" aria-label="Close">[×]</button>
 		</header>
-		<p>{message}</p>
+		<p>{confirmation.question?.message}</p>
 		<footer>
 			<button type="submit" value="cancel" bind:this={cancel}>Cancel</button>
-			<button type="submit" value="confirm">{action}</button>
+			<button type="submit" value="confirm">{confirmation.question?.action}</button>
 		</footer>
 	</form>
 </dialog>

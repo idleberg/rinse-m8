@@ -13,10 +13,10 @@ Conventions (decided in grilling):
 
 **Blocked by:** 01 (Components folder and `$lib` imports)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] An error banner shows, dismisses, and the offline message clears on going back online as before
-- [ ] Unsubscribe, clear play queue, clear downloads, clear image cache and disconnect Last.fm each confirm as before, through `confirm()`
-- [ ] The confirm dialog is no longer driven through `bind:this`
-- [ ] An ADR in `docs/adr/` records routes plus singleton rune modules read directly by components, with the conventions above
-- [ ] `bun test` and `svelte-check` pass
+- [x] An error banner shows, dismisses, and the offline message clears on going back online as before
+- [x] Unsubscribe, clear play queue, clear downloads, clear image cache and disconnect Last.fm each confirm as before, through `confirm()`
+- [x] The confirm dialog is no longer driven through `bind:this`
+- [x] An ADR in `docs/adr/` records routes plus singleton rune modules read directly by components, with the conventions above
+- [x] `bun test` and `svelte-check` pass

@@ -4,13 +4,13 @@
 	import { type ComponentProps, tick } from 'svelte';
 	import PlayerControls from '#lib/components/PlayerControls.svelte';
 	import { type Episode, moveItem } from '#lib/episodes';
+	import { errors } from '#lib/errors.svelte';
 	import { heardBetween, millisecondsPerSecond, type Repeat, repeatModes, scrobbleAfter } from '#lib/listen';
 
 	let {
 		episodes,
 		playing = $bindable(null),
 		queue = $bindable([]),
-		onerror,
 	}: {
 		/** The episode cache, where the last-played episode is looked up at launch. */
 		episodes: Episode[];
@@ -18,7 +18,6 @@
 		playing?: string | null;
 		/** The play queue, played from the front once the current episode ends. */
 		queue?: Episode[];
-		onerror: (e: unknown) => void;
 	} = $props();
 
 	/** Of the last-played episode, in seconds. Only that episode resumes, the others start over. */
@@ -63,7 +62,7 @@
 		return store;
 	});
 
-	ready.catch((e) => onerror(e));
+	ready.catch(errors.report);
 
 	// At launch the last-played episode comes back paused, once the cache has loaded
 	$effect(() => {
@@ -121,7 +120,7 @@
 		await store.set('loved', $state.snapshot(lovedIds));
 
 		if (loving) {
-			invoke('love', { episode }).catch(onerror);
+			invoke('love', { episode }).catch(errors.report);
 		}
 	}
 
@@ -180,7 +179,7 @@
 
 		queue.unshift(episode);
 		persistQueue();
-		play(last, true).catch(onerror);
+		play(last, true).catch(errors.report);
 	}
 
 	/** Plays the first queued episode, from the start even if it's the current one. Repeat all queues the current episode last, so the queue loops. */
@@ -228,10 +227,10 @@
 		get loved() {
 			return episode !== null && lovedIds.includes(episode.id);
 		},
-		onplay: () => episode && play(episode).catch(onerror),
+		onplay: () => episode && play(episode).catch(errors.report),
 		onpause: pause,
 		onprevious: previous,
-		onnext: () => skip().catch(onerror),
+		onnext: () => skip().catch(errors.report),
 		onseek: (time: number) => {
 			currentTime = time;
 		},
@@ -243,15 +242,15 @@
 			repeat = repeatModes[(repeatModes.indexOf(repeat) + 1) % repeatModes.length];
 			localStorage.setItem('repeat', repeat);
 		},
-		onlove: () => toggleLove().catch(onerror),
+		onlove: () => toggleLove().catch(errors.report),
 	};
 
 	function persistPosition() {
-		ready.then((store) => store.set('position', position)).catch((e) => onerror(e));
+		ready.then((store) => store.set('position', position)).catch(errors.report);
 	}
 
 	function persistQueue() {
-		ready.then((store) => store.set('queue', $state.snapshot(queue))).catch((e) => onerror(e));
+		ready.then((store) => store.set('queue', $state.snapshot(queue))).catch(errors.report);
 	}
 
 	function restorePosition() {
@@ -286,7 +285,7 @@
 
 		if (!scrobbled && started !== null && heard >= scrobbleAfter(audio.duration)) {
 			scrobbled = true;
-			invoke('scrobble', { episode, started }).catch(onerror);
+			invoke('scrobble', { episode, started }).catch(errors.report);
 		}
 	}
 
@@ -328,7 +327,7 @@
 				started ??= Math.floor(Date.now() / millisecondsPerSecond);
 
 				if (episode) {
-					invoke('now_playing', { episode }).catch(onerror);
+					invoke('now_playing', { episode }).catch(errors.report);
 				}
 			}}
 			onpause={() => {
@@ -341,12 +340,12 @@
 
 				// Starting over counts as a new listen
 				if (repeat === 'one' && episode) {
-					play(episode).catch(onerror);
+					play(episode).catch(errors.report);
 				} else {
-					skip().catch(onerror);
+					skip().catch(errors.report);
 				}
 			}}
-			onerror={() => episode && invoke('recheck_mp3', { id: episode.id }).catch(onerror)}
+			onerror={() => episode && invoke('recheck_mp3', { id: episode.id }).catch(errors.report)}
 		></audio>
 	</footer>
 {/if}

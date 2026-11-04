@@ -2,6 +2,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
 	import { type DownloadQueue, type Episode, formatDate } from '#lib/episodes';
+	import { errors } from '#lib/errors.svelte';
 
 	let {
 		downloads,
@@ -12,7 +13,6 @@
 		onretryall,
 		onunmark,
 		onclear,
-		onerror,
 	}: {
 		downloads: DownloadQueue;
 		/** Takes an episode id. */
@@ -29,7 +29,6 @@
 		onunmark: (id: string) => void;
 		/** Empties the previous downloads. */
 		onclear: () => void;
-		onerror: (error: unknown) => void;
 	} = $props();
 
 	/** Downloaded and marked episodes, newest first, with the mp3 when it's in the download folder. */
@@ -50,7 +49,7 @@
 			.then((loaded) => {
 				previous = loaded;
 			})
-			.catch(onerror);
+			.catch(errors.report);
 	});
 
 	/** The row being dragged, and the index of the row it's over. */
@@ -235,7 +234,7 @@
 									class="icon"
 									aria-label="Show in folder"
 									title="Show in folder"
-									onclick={() => revealItemInDir(file).catch(onerror)}
+									onclick={() => revealItemInDir(file).catch(errors.report)}
 								>
 									<svg viewBox="0 0 16 16" aria-hidden="true">
 										<circle cx="7" cy="7" r="4.5" />

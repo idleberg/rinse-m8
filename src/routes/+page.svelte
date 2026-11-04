@@ -16,7 +16,9 @@
 	import ShowSection from '#lib/components/ShowSection.svelte';
 	import ShowView from '#lib/components/ShowView.svelte';
 	import UpdateBanner from '#lib/components/UpdateBanner.svelte';
+	import { confirm } from '#lib/confirm.svelte';
 	import { available, type DirectoryShow, type DownloadQueue, dead, type Episode, monthsAgo, type Show, type ShowDetails, type ShowPage, showOf, stations } from '#lib/episodes';
+	import { errors } from '#lib/errors.svelte';
 
 	interface Settings {
 		subscriptions: Show[];
@@ -33,7 +35,6 @@
 	let episodes = $state<Episode[]>([]);
 	/** True until the first episode fetch settles, so an empty list isn't mistaken for filtered out. */
 	let loadingEpisodes = $state(true);
-	let errorMessage = $state('');
 
 	// The checkboxes are remembered across restarts, the search isn't
 	let savedFilters: { shownStations?: string[]; mp3Only?: boolean; hideRebroadcasts?: boolean } = {};
@@ -122,7 +123,6 @@
 	});
 
 	let player = $state<ReturnType<typeof Player>>();
-	let confirmDialog = $state<ReturnType<typeof ConfirmDialog>>();
 	let playing = $state<string | null>(null);
 	let queue = $state<Episode[]>([]);
 
@@ -149,7 +149,7 @@
 	/** Queues the episode, asking for a download folder first if none is set. A failed one is retried, and the
 	 * downloads view opens to show it. */
 	async function download(episode: Episode) {
-		errorMessage = '';
+		errors.clear();
 
 		if (!(settings.downloadFolder || (await chooseFolder()))) {
 			return;
@@ -171,7 +171,7 @@
 
 	/** Saves a checkbox bound to `settings`, and unticks it again if saving fails. */
 	async function saveCheckbox(key: 'autoDownload' | 'keepRunning') {
-		errorMessage = '';
+		errors.clear();
 
 		try {
 			await invoke('set_settings', { patch: { [key]: settings[key] } });
@@ -185,7 +185,7 @@
 	async function saveInterval(key: 'updateInterval' | 'appUpdateInterval', hours: number) {
 		const stored = settings[key];
 
-		errorMessage = '';
+		errors.clear();
 		settings[key] = hours;
 
 		try {
@@ -205,7 +205,7 @@
 
 	/** Shows the cached episodes and details at once, then merges the show's fetched ones in. */
 	async function openShow(show: Show) {
-		errorMessage = '';
+		errors.clear();
 
 		// Reopening the open show, as a notification click can, keeps its details on screen while they refresh
 		const reopening = openedShow?.slug === show.slug;
@@ -243,14 +243,14 @@
 	let subscribing = $state<string[]>([]);
 
 	async function toggleSubscription(show: Show) {
-		errorMessage = '';
+		errors.clear();
 
 		// Read before the dialog, so what the user confirmed is what happens
 		const unsubscribing = subscribed.includes(show.slug);
 
 		if (
 			unsubscribing &&
-			!(await confirmDialog?.confirm({
+			!(await confirm({
 				title: 'Unsubscribe',
 				message: `Unsubscribe from ${show.title}?`,
 				action: 'Unsubscribe',
@@ -282,7 +282,7 @@
 				.then((size) => {
 					imageCacheSize = size;
 				})
-				.catch(showError);
+				.catch(errors.report);
 		}
 
 		// Show views and schedule fetches record newer dates
@@ -291,15 +291,15 @@
 				.then((loaded) => {
 					lastAired = loaded;
 				})
-				.catch(showError);
+				.catch(errors.report);
 		}
 	}
 
 	/** Keeps the old size showing if clearing fails. */
 	async function clearImageCache() {
-		errorMessage = '';
+		errors.clear();
 
-		if (!(await confirmDialog?.confirm({ title: 'Clear Image Cache', message: 'Clear the cached show images?', action: 'Clear' }))) {
+		if (!(await confirm({ title: 'Clear Image Cache', message: 'Clear the cached show images?', action: 'Clear' }))) {
 			return;
 		}
 
@@ -307,12 +307,24 @@
 		imageCacheSize = 0;
 	}
 
+	async function clearQueue() {
+		if (await confirm({ title: 'Clear Queue', message: 'Clear the play queue?', action: 'Clear' })) {
+			player?.clearQueue();
+		}
+	}
+
+	async function clearDownloads() {
+		if (await confirm({ title: 'Clear Downloads', message: 'Clear the list of previous downloads?', action: 'Clear' })) {
+			await invoke('clear_downloaded');
+		}
+	}
+
 	const jsonFilters = [{ name: 'JSON', extensions: ['json'] }];
 	let importing = $state(false);
 
 	/** Subscribes to the shows in a file chosen by the user, keeping the existing subscriptions. */
 	async function importSubscriptions() {
-		errorMessage = '';
+		errors.clear();
 
 		const path = await open({ title: 'Import subscriptions', filters: jsonFilters });
 
@@ -330,7 +342,7 @@
 	}
 
 	async function exportSubscriptions() {
-		errorMessage = '';
+		errors.clear();
 
 		const path = await save({ title: 'Export subscriptions', defaultPath: 'rinse-m8-subscriptions.json', filters: jsonFilters });
 
@@ -344,7 +356,7 @@
 
 	/** Resolves once the user approves on Last.fm or cancels, or fails when approval times out. */
 	async function connectLastfm() {
-		errorMessage = '';
+		errors.clear();
 		connectingLastfm = true;
 
 		try {
@@ -359,10 +371,10 @@
 	}
 
 	async function disconnectLastfm() {
-		errorMessage = '';
+		errors.clear();
 
 		if (
-			!(await confirmDialog?.confirm({
+			!(await confirm({
 				title: 'Disconnect Last.fm',
 				message: `Disconnect ${lastfm?.user} from Last.fm?`,
 				action: 'Disconnect',
@@ -470,7 +482,7 @@
 		let total = 0;
 		let received = 0;
 
-		errorMessage = '';
+		errors.clear();
 		update = { version, percent: 0 };
 
 		try {
@@ -485,28 +497,24 @@
 
 			await relaunch();
 		} catch (e) {
-			showError(e);
+			errors.report(e);
 			update = { version, percent: null };
 		}
 	}
 
-	function showError(e: unknown) {
-		errorMessage = String(e);
-	}
-
-	const offlineMessage = 'You are offline';
+	errors.init();
 
 	invoke<Settings>('get_settings')
 		.then((loaded) => {
 			settings = loaded;
 		})
-		.catch(showError);
+		.catch(errors.report);
 
 	invoke<{ user: string | null } | null>('get_lastfm')
 		.then((loaded) => {
 			lastfm = loaded;
 		})
-		.catch(showError);
+		.catch(errors.report);
 
 	// Sent when Last.fm rejects the session, for example after the user revoked access
 	listen('lastfm-disconnected', () => {
@@ -515,7 +523,7 @@
 
 	invoke<Episode[]>('get_episodes')
 		.then(setEpisodes)
-		.catch(showError)
+		.catch(errors.report)
 		.finally(() => {
 			loadingEpisodes = false;
 		});
@@ -527,7 +535,7 @@
 		.then((loaded) => {
 			downloads = loaded;
 		})
-		.catch(showError);
+		.catch(errors.report);
 
 	listen<DownloadQueue>('download-queue', (event) => {
 		downloads = event.payload;
@@ -537,17 +545,17 @@
 		.then((loaded) => {
 			directory ??= loaded;
 		})
-		.catch(showError);
+		.catch(errors.report);
 
 	// A click on a new-episode notification opens its show, refetched so the new episode is listed
-	listen<Show>('open-show', (event) => openShow(event.payload).catch(showError));
+	listen<Show>('open-show', (event) => openShow(event.payload).catch(errors.report));
 
 	// The tray menu's play/pause item and its Settings item, which has already shown the window
 	listen('toggle-playback', () => (playing ? player?.pause() : player?.controls.onplay()));
 	listen('open-settings', () => openView('settings'));
 
 	$effect(() => {
-		invoke('set_tray_playing', { playing: playing !== null }).catch(showError);
+		invoke('set_tray_playing', { playing: playing !== null }).catch(errors.report);
 	});
 
 	// The background refresh sends the whole directory once it has every page
@@ -557,16 +565,9 @@
 </script>
 
 <!-- With Tauri's file drop off, a dropped file would otherwise open in the window -->
-<!-- Going back online clears only the offline banner, not an error shown since -->
 <svelte:window
 	ondragover={(event) => event.dataTransfer?.types.includes('Files') && event.preventDefault()}
 	ondrop={(event) => event.dataTransfer?.types.includes('Files') && event.preventDefault()}
-	onoffline={() => showError(offlineMessage)}
-	ononline={() => {
-		if (errorMessage === offlineMessage) {
-			errorMessage = '';
-		}
-	}}
 />
 
 {#if update}
@@ -591,12 +592,10 @@
 
 <!-- Settings swap light and dark, to stand apart from the other pages -->
 <main class:inverted={view === 'settings' && !openedShow}>
-	{#if errorMessage}
+	{#if errors.message}
 		<p role="alert">
-			{errorMessage}
-			<button type="button" class="icon" aria-label="Dismiss" title="Dismiss" onclick={() => {
-					errorMessage = '';
-				}}>
+			{errors.message}
+			<button type="button" class="icon" aria-label="Dismiss" title="Dismiss" onclick={errors.clear}>
 				<svg viewBox="0 0 16 16" aria-hidden="true">
 					<path d="M4 4l8 8M12 4l-8 8" />
 				</svg>
@@ -616,12 +615,12 @@
 				{downloads}
 				{subscribing}
 				{playing}
-				onplay={(episode) => player?.play(episode).catch(showError)}
+				onplay={(episode) => player?.play(episode).catch(errors.report)}
 				onpause={() => player?.pause()}
-				onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
-				ondownload={(episode) => download(episode).catch(showError)}
-				onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
-				ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
+				onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
+				ondownload={(episode) => download(episode).catch(errors.report)}
+				onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
+				ontogglesubscription={(show) => toggleSubscription(show).catch(errors.report)}
 				onback={() => {
 					openedShow = null;
 				}}
@@ -632,37 +631,22 @@
 			<PlayerView
 				controls={player.controls}
 				{queue}
-				onplay={(index) => player?.playFromQueue(index).catch(showError)}
+				onplay={(index) => player?.playFromQueue(index).catch(errors.report)}
 				onremove={(index) => player?.dequeue(index)}
 				onmove={(from, to) => player?.move(from, to)}
-				onclear={async () => {
-					if (await confirmDialog?.confirm({ title: 'Clear Queue', message: 'Clear the play queue?', action: 'Clear' })) {
-						player?.clearQueue();
-					}
-				}}
+				onclear={() => clearQueue().catch(errors.report)}
 			/>
 		{/if}
 	{:else if view === 'queue'}
 		<QueueView
 			{downloads}
-			onremove={(id) => invoke('remove_download', { id }).catch(showError)}
-			onmove={(id, index) => invoke('move_download', { id, index }).catch(showError)}
-			oncancel={() => invoke('cancel_download').catch(showError)}
-			onretry={(id) => invoke('retry_download', { id }).catch(showError)}
-			onretryall={() => invoke('retry_all_downloads').catch(showError)}
-			onunmark={(id) => invoke('unmark_downloaded', { id }).catch(showError)}
-			onclear={async () => {
-				if (
-					await confirmDialog?.confirm({
-						title: 'Clear Downloads',
-						message: 'Clear the list of previous downloads?',
-						action: 'Clear',
-					})
-				) {
-					invoke('clear_downloaded').catch(showError);
-				}
-			}}
-			onerror={showError}
+			onremove={(id) => invoke('remove_download', { id }).catch(errors.report)}
+			onmove={(id, index) => invoke('move_download', { id, index }).catch(errors.report)}
+			oncancel={() => invoke('cancel_download').catch(errors.report)}
+			onretry={(id) => invoke('retry_download', { id }).catch(errors.report)}
+			onretryall={() => invoke('retry_all_downloads').catch(errors.report)}
+			onunmark={(id) => invoke('unmark_downloaded', { id }).catch(errors.report)}
+			onclear={() => clearDownloads().catch(errors.report)}
 		/>
 	{:else if view === 'settings'}
 		<SettingsView
@@ -670,28 +654,28 @@
 			bind:autoDownload={settings.autoDownload}
 			bind:keepRunning={settings.keepRunning}
 			onchoosefolder={() => {
-				errorMessage = '';
-				chooseFolder().catch(showError);
+				errors.clear();
+				chooseFolder().catch(errors.report);
 			}}
-			onautodownloadchange={() => saveCheckbox('autoDownload').catch(showError)}
-			onkeeprunningchange={() => saveCheckbox('keepRunning').catch(showError)}
+			onautodownloadchange={() => saveCheckbox('autoDownload').catch(errors.report)}
+			onkeeprunningchange={() => saveCheckbox('keepRunning').catch(errors.report)}
 			updateInterval={settings.updateInterval}
-			onupdateintervalchange={(hours) => saveInterval('updateInterval', hours).catch(showError)}
+			onupdateintervalchange={(hours) => saveInterval('updateInterval', hours).catch(errors.report)}
 			appUpdateInterval={settings.appUpdateInterval}
-			onappupdateintervalchange={(hours) => saveInterval('appUpdateInterval', hours).catch(showError)}
+			onappupdateintervalchange={(hours) => saveInterval('appUpdateInterval', hours).catch(errors.report)}
 			canCheckAppUpdate={!checkedUpdateManually}
 			oncheckappupdate={checkForUpdateNow}
 			{imageCacheSize}
-			onclearimagecache={() => clearImageCache().catch(showError)}
+			onclearimagecache={() => clearImageCache().catch(errors.report)}
 			{importing}
 			canExport={subscribed.length > 0}
-			onimport={() => importSubscriptions().catch(showError)}
-			onexport={() => exportSubscriptions().catch(showError)}
+			onimport={() => importSubscriptions().catch(errors.report)}
+			onexport={() => exportSubscriptions().catch(errors.report)}
 			{lastfm}
 			{connectingLastfm}
-			onconnectlastfm={() => connectLastfm().catch(showError)}
-			oncancellastfm={() => invoke('cancel_lastfm_connect').catch(showError)}
-			ondisconnectlastfm={() => disconnectLastfm().catch(showError)}
+			onconnectlastfm={() => connectLastfm().catch(errors.report)}
+			oncancellastfm={() => invoke('cancel_lastfm_connect').catch(errors.report)}
+			ondisconnectlastfm={() => disconnectLastfm().catch(errors.report)}
 		/>
 	{:else if view === 'shows'}
 		<EpisodeFilters bind:shownStations bind:search>
@@ -712,8 +696,8 @@
 			{lastAired}
 			{subscribed}
 			{subscribing}
-			onopenshow={(show) => openShow(show).catch(showError)}
-			ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
+			onopenshow={(show) => openShow(show).catch(errors.report)}
+			ontogglesubscription={(show) => toggleSubscription(show).catch(errors.report)}
 		/>
 	{:else}
 		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:search>
@@ -736,13 +720,13 @@
 							{downloads}
 							{subscribing}
 							{playing}
-							onplay={(episode) => player?.play(episode).catch(showError)}
+							onplay={(episode) => player?.play(episode).catch(errors.report)}
 							onpause={() => player?.pause()}
-							onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
-							ondownload={(episode) => download(episode).catch(showError)}
-							onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
-							onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
-							ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
+							onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
+							ondownload={(episode) => download(episode).catch(errors.report)}
+							onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(errors.report)}
+							onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
+							ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(errors.report)}
 							subscribeOnHover
 						/>
 					{:else if loadingEpisodes}
@@ -763,13 +747,13 @@
 						{downloads}
 						{subscribing}
 						{playing}
-						onplay={(episode) => player?.play(episode).catch(showError)}
+						onplay={(episode) => player?.play(episode).catch(errors.report)}
 						onpause={() => player?.pause()}
-						onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
-						ondownload={(episode) => download(episode).catch(showError)}
-						onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(showError)}
-						onopenshow={(show) => openShow(show).catch(showError)}
-						ontogglesubscription={(show) => toggleSubscription(show).catch(showError)}
+						onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
+						ondownload={(episode) => download(episode).catch(errors.report)}
+						onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(errors.report)}
+						onopenshow={(show) => openShow(show).catch(errors.report)}
+						ontogglesubscription={(show) => toggleSubscription(show).catch(errors.report)}
 					/>
 				{/if}
 			{:else}
@@ -800,12 +784,12 @@
 				{downloads}
 				{subscribing}
 				{playing}
-				onplay={(episode) => player?.play(episode).catch(showError)}
+				onplay={(episode) => player?.play(episode).catch(errors.report)}
 				onpause={() => player?.pause()}
-				onenqueue={(episode) => player?.enqueue(episode).catch(showError)}
-				ondownload={(episode) => download(episode).catch(showError)}
-				onopenshow={(episode) => openShow(showOf(episode)).catch(showError)}
-				ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(showError)}
+				onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
+				ondownload={(episode) => download(episode).catch(errors.report)}
+				onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
+				ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(errors.report)}
 			/>
 		{:else if loadingEpisodes}
 			<p class="empty" role="status">Loading episodes…</p>
@@ -818,13 +802,13 @@
 <div class="bars">
 	<DownloadStatus
 		{downloads}
-		oncancel={() => invoke('cancel_download').catch(showError)}
+		oncancel={() => invoke('cancel_download').catch(errors.report)}
 		onviewqueue={() => openView('queue')}
 	/>
-	<Player bind:this={player} bind:playing bind:queue {episodes} onerror={showError} />
+	<Player bind:this={player} bind:playing bind:queue {episodes} />
 </div>
 
-<ConfirmDialog bind:this={confirmDialog} />
+<ConfirmDialog />
 
 <style>
 	/* Pinned to the top of the window while the page scrolls under it */
