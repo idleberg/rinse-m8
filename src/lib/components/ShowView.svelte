@@ -2,13 +2,13 @@
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
-	import { available, type Episode, paragraphs, type Show, type ShowDetails } from '#lib/episodes';
+	import { type Episode, paragraphs, passesCheckboxes, type Show, type ShowDetails } from '#lib/episodes';
+	import { episodes } from '#lib/episodes.svelte';
 
 	let {
 		show,
 		details,
 		refreshing,
-		episodes,
 		playing,
 		onplay,
 		onpause,
@@ -20,8 +20,6 @@
 		/** Null until the show's fetch returns. */
 		details: ShowDetails | null;
 		refreshing: boolean;
-		/** All cached episodes; the view keeps the show's own. */
-		episodes: Episode[];
 		playing: string | null;
 		onplay: (episode: Episode) => void;
 		onpause: () => void;
@@ -30,14 +28,11 @@
 		onback: () => void;
 	} = $props();
 
-	let mp3Only = $state(true);
-	let hideRebroadcasts = $state(false);
+	/** Its own, not the shared filters, so each show opens with fresh ones. */
+	const checkboxes = $state({ mp3Only: true, hideRebroadcasts: false });
 
 	const visibleEpisodes = $derived(
-		episodes.filter(
-			(episode) =>
-				episode.showSlug === show.slug && (!mp3Only || available(episode)) && (!(hideRebroadcasts && episode.rebroadcast)),
-		),
+		episodes.list.filter((episode) => episode.showSlug === show.slug && passesCheckboxes(episode, checkboxes)),
 	);
 
 	const description = $derived(details?.description ? paragraphs(details.description) : []);
@@ -94,7 +89,7 @@
 	<p role="status">Refreshing…</p>
 {/if}
 
-<EpisodeFilters bind:mp3Only bind:hideRebroadcasts />
+<EpisodeFilters bind:mp3Only={checkboxes.mp3Only} bind:hideRebroadcasts={checkboxes.hideRebroadcasts} />
 
 <EpisodeTable
 	episodes={visibleEpisodes}

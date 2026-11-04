@@ -1,16 +1,14 @@
 <script lang="ts">
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
+	import { directory } from '#lib/directory.svelte';
 	import { type DirectoryShow, formatDate, type Show, type ShowSortColumn, type Sort, sortShows, toggleSort } from '#lib/episodes';
 
 	let {
 		shows,
-		lastAired,
 		onopenshow,
 	}: {
 		/** The filtered directory, or null until the first refresh finishes. */
 		shows: DirectoryShow[] | null;
-		/** Dates keyed by show slug. */
-		lastAired: Record<string, string>;
 		onopenshow: (show: Show) => void;
 	} = $props();
 
@@ -24,7 +22,7 @@
 	let sort = $state<Sort<ShowSortColumn> | null>(null);
 	const direction = $derived(sort?.ascending ? 'ascending' : 'descending');
 
-	const rows = $derived(shows && sortShows(shows, sort, lastAired));
+	const rows = $derived(shows && sortShows(shows, sort, directory.lastAired));
 </script>
 
 {#if rows === null}
@@ -51,10 +49,11 @@
 		</thead>
 		<tbody>
 			{#each rows as show (show.slug)}
+				{@const aired = directory.lastAired[show.slug]}
 				<tr>
 					<td><button type="button" class="link" onclick={() => onopenshow(show)}>{show.title}</button></td>
 					<td title={show.station}>{show.station}</td>
-					<td>{lastAired[show.slug] ? formatDate(lastAired[show.slug]) : ''}</td>
+					<td>{aired ? formatDate(aired) : ''}</td>
 					<td title={show.genres.join(', ')}>{show.genres.join(', ')}</td>
 					<td>
 						<div class="buttons">

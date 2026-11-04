@@ -1,34 +1,34 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { stations } from '#lib/episodes';
+	import { filters } from '#lib/filters.svelte';
 
-	/** Each filter renders only when its prop is bound, so a view picks its filters by binding them. */
+	/** `shared` adds the shared filters. The other checkboxes render only when bound, to `filters` or a view's own state. */
 	let {
-		shownStations = $bindable(),
+		shared = false,
 		mp3Only = $bindable(),
 		hideRebroadcasts = $bindable(),
-		search = $bindable(),
 		children,
 	}: {
-		shownStations?: string[];
+		/** Adds the search and station checkboxes, which every view shares. */
+		shared?: boolean;
 		mp3Only?: boolean;
 		hideRebroadcasts?: boolean;
-		search?: string;
 		/** More checkboxes for the options row, such as a setting the view wants next to its filters. */
 		children?: Snippet;
 	} = $props();
 </script>
 
 <!-- Outside the fieldset, so it scrolls away while the checkboxes stay pinned -->
-{#if search !== undefined}
-	<input type="search" bind:value={search} placeholder="Filter title, show, genres" aria-label="Search" />
+{#if shared}
+	<input type="search" bind:value={filters.search} placeholder="Filter title, show, genres" aria-label="Search" />
 {/if}
 
 <fieldset aria-label="Filters">
-	{#if shownStations !== undefined}
+	{#if shared}
 		<div class="row">
 			{#each stations as station (station)}
-				<label><input type="checkbox" bind:group={shownStations} value={station} /> {station}</label>
+				<label><input type="checkbox" bind:group={filters.shownStations} value={station} /> {station}</label>
 			{/each}
 		</div>
 	{/if}

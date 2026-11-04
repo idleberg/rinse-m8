@@ -101,6 +101,29 @@ export function showOf(episode: Episode): Show {
 
 export const stations = ['Rinse FM', 'Rinse FR', 'Kool FM', 'SWU FM'];
 
+/** Whether the episode passes the "download available" and "hide rebroadcasts" checkboxes. */
+export function passesCheckboxes(
+	episode: Episode,
+	{ mp3Only, hideRebroadcasts }: { mp3Only: boolean; hideRebroadcasts: boolean },
+): boolean {
+	return (!mp3Only || available(episode)) && !(hideRebroadcasts && episode.rebroadcast);
+}
+
+/** Whether an episode or show on `station`, described by `texts`, passes the station checkboxes and the search. A station
+ * without a checkbox always passes, so it stays visible rather than unreachable. */
+export function matchesFilters(
+	station: string,
+	texts: string[],
+	{ shownStations, search }: { shownStations: string[]; search: string },
+): boolean {
+	const query = search.trim().toLowerCase();
+
+	return (
+		(!stations.includes(station) || shownStations.includes(station)) &&
+		texts.some((text) => text.toLowerCase().includes(query))
+	);
+}
+
 /** The backend's download queue, as sent with every `download-queue` event. */
 export interface DownloadQueue {
 	current: Episode | null;

@@ -4,16 +4,14 @@
 	import { type ComponentProps, tick } from 'svelte';
 	import PlayerControls from '#lib/components/PlayerControls.svelte';
 	import { type Episode, moveItem } from '#lib/episodes';
+	import { episodes } from '#lib/episodes.svelte';
 	import { errors } from '#lib/errors.svelte';
 	import { heardBetween, millisecondsPerSecond, type Repeat, repeatModes, scrobbleAfter } from '#lib/listen';
 
 	let {
-		episodes,
 		playing = $bindable(null),
 		queue = $bindable([]),
 	}: {
-		/** The episode cache, where the last-played episode is looked up at launch. */
-		episodes: Episode[];
 		/** The id of the episode while it's playing, not paused. */
 		playing?: string | null;
 		/** The play queue, played from the front once the current episode ends. */
@@ -67,7 +65,7 @@
 	// At launch the last-played episode comes back paused, once the cache has loaded
 	$effect(() => {
 		if (!episode && lastPlayed) {
-			episode = episodes.find((e) => e.id === lastPlayed) ?? null;
+			episode = episodes.list.find((e) => e.id === lastPlayed) ?? null;
 		}
 	});
 
@@ -76,7 +74,7 @@
 		const store = await ready;
 
 		// Queued and past episodes are stored copies, which can predate the cache's artwork and mp3
-		const next = episodes.find((e) => e.id === chosen.id) ?? chosen;
+		const next = episodes.list.find((e) => e.id === chosen.id) ?? chosen;
 
 		if (next.id === episode?.id) {
 			savePosition(false);

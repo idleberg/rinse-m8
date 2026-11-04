@@ -10,10 +10,10 @@ The station/search predicate that the episode and directory filtering each spell
 
 **Blocked by:** 02 (Errors and confirm modules, init pattern, ADR)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The dashboard, schedule and Shows tab list and filter exactly as before, including the hide-older-than filter
-- [ ] Filter checkboxes survive a restart; the search doesn't
-- [ ] A test covers the shared station/search predicate
-- [ ] Episode tables no longer receive state that is the same for every instance
-- [ ] `bun test` and `svelte-check` pass
+- [x] The dashboard, schedule and Shows tab list and filter exactly as before, including the hide-older-than filter
+- [x] Filter checkboxes survive a restart; the search doesn't
+- [x] A test covers the shared station/search predicate
+- [x] Episode tables no longer receive state that is the same for every instance
+- [x] `bun test` and `svelte-check` pass

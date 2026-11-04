@@ -14,48 +14,19 @@
 	import ShowView from '#lib/components/ShowView.svelte';
 	import UpdateBanner from '#lib/components/UpdateBanner.svelte';
 	import { confirm } from '#lib/confirm.svelte';
+	import { directory } from '#lib/directory.svelte';
 	import { downloads } from '#lib/downloads.svelte';
-	import { available, type DirectoryShow, dead, type Episode, monthsAgo, type Show, type ShowDetails, type ShowPage, showOf, stations } from '#lib/episodes';
+	import { type Episode, monthsAgo, type Show, type ShowDetails, type ShowPage, showOf } from '#lib/episodes';
+	import { episodes } from '#lib/episodes.svelte';
 	import { errors } from '#lib/errors.svelte';
+	import { filters } from '#lib/filters.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
 	import { settings } from '#lib/settings.svelte';
 	import { updates } from '#lib/updates.svelte';
 
-	let episodes = $state<Episode[]>([]);
-	/** True until the first episode fetch settles, so an empty list isn't mistaken for filtered out. */
-	let loadingEpisodes = $state(true);
-
-	// The checkboxes are remembered across restarts, the search isn't
-	let savedFilters: { shownStations?: string[]; mp3Only?: boolean; hideRebroadcasts?: boolean } = {};
-
-	try {
-		savedFilters = JSON.parse(localStorage.getItem('filters') ?? '{}');
-	} catch {
-		// Unreadable filters fall back to the defaults
-	}
-
-	let shownStations = $state(savedFilters.shownStations ?? [...stations]);
-	let mp3Only = $state(savedFilters.mp3Only ?? true);
-	let hideRebroadcasts = $state(savedFilters.hideRebroadcasts ?? false);
-	let search = $state('');
 	let showDownloaded = $state(false);
 
-	$effect(() => {
-		localStorage.setItem('filters', JSON.stringify({ shownStations, mp3Only, hideRebroadcasts }));
-	});
-
-	const filteredEpisodes = $derived.by(() => {
-		const query = search.trim().toLowerCase();
-
-		// Stations without a checkbox stay visible rather than unreachable
-		return episodes.filter(
-			(episode) =>
-				(!stations.includes(episode.station) || shownStations.includes(episode.station)) &&
-				(!mp3Only || available(episode)) &&
-				(!(hideRebroadcasts && episode.rebroadcast)) &&
-				[episode.title, episode.showTitle, episode.displayTitle ?? '', ...episode.genres].some((text) => text.toLowerCase().includes(query)),
-		);
-	});
+	const filteredEpisodes = $derived(episodes.list.filter(filters.matchesEpisode));
 
 	const showSections = $derived(
 		settings.stored.subscriptions.map((show) => ({
@@ -84,26 +55,18 @@
 	});
 	const scheduleEpisodes = $derived(filteredEpisodes.filter((episode) => episode.scheduled));
 
-	/** Null until the first refresh finishes. */
-	let directory = $state<DirectoryShow[] | null>(null);
-
-	/** Keyed by show slug, refetched each time the Shows tab opens. */
-	let lastAired = $state<Record<string, string>>({});
-
 	/** Hides shows last aired more than this many months ago, or none when null. */
 	let hideOlderThan = $state<number | null>(24);
 
 	const filteredDirectory = $derived.by(() => {
-		const query = search.trim().toLowerCase();
 		const cutoff = hideOlderThan === null ? '' : monthsAgo(hideOlderThan);
+		const { lastAired } = directory;
 
 		// A show without a known date is kept, as its age is unknown
 		return (
-			directory?.filter(
+			directory.shows?.filter(
 				(show) =>
-					(!stations.includes(show.station) || shownStations.includes(show.station)) &&
-					(!lastAired[show.slug] || lastAired[show.slug] >= cutoff) &&
-					[show.title, ...show.genres].some((text) => text.toLowerCase().includes(query)),
+					filters.matchesShow(show) && (!lastAired[show.slug] || lastAired[show.slug] >= cutoff),
 			) ?? null
 		);
 	});
@@ -111,11 +74,6 @@
 	let player = $state<ReturnType<typeof Player>>();
 	let playing = $state<string | null>(null);
 	let queue = $state<Episode[]>([]);
-
-	/** Dead episodes are dropped here, so no table shows them, whatever the filters. */
-	function setEpisodes(list: Episode[]) {
-		episodes = list.filter((episode) => !dead(episode)).sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
-	}
 
 	let view = $state<'dashboard' | 'player' | 'schedule' | 'shows' | 'queue' | 'settings'>('dashboard');
 	let openedShow = $state<Show | null>(null);
@@ -151,7 +109,7 @@
 		try {
 			const page = await invoke<ShowPage>('refresh_show', { slug: show.slug });
 
-			setEpisodes(page.episodes);
+			episodes.replace(page.episodes);
 
 			if (openedShow?.slug === show.slug) {
 				showDetails = page.details;
@@ -165,13 +123,8 @@
 		view = value;
 		openedShow = null;
 
-		// Show views and schedule fetches record newer dates
 		if (value === 'shows') {
-			invoke<Record<string, string>>('get_last_aired')
-				.then((loaded) => {
-					lastAired = loaded;
-				})
-				.catch(errors.report);
+			directory.refreshLastAired();
 		}
 	}
 
@@ -186,25 +139,12 @@
 	lastfm.init();
 	updates.init();
 
-	invoke<Episode[]>('get_episodes')
-		.then(setEpisodes)
-		.catch(errors.report)
-		.finally(() => {
-			loadingEpisodes = false;
-		});
-
-	// The poller sends the whole cache after each update
-	listen<Episode[]>('episodes-updated', (event) => setEpisodes(event.payload));
-
+	episodes.init();
+	filters.init();
+	directory.init();
 	downloads.init({
 		openQueue: () => openView('queue'),
 	});
-
-	invoke<DirectoryShow[] | null>('get_show_directory')
-		.then((loaded) => {
-			directory ??= loaded;
-		})
-		.catch(errors.report);
 
 	// A click on a new-episode notification opens its show, refetched so the new episode is listed
 	listen<Show>('open-show', (event) => openShow(event.payload).catch(errors.report));
@@ -215,11 +155,6 @@
 
 	$effect(() => {
 		invoke('set_tray_playing', { playing: playing !== null }).catch(errors.report);
-	});
-
-	// The background refresh sends the whole directory once it has every page
-	listen<DirectoryShow[]>('show-directory', (event) => {
-		directory = event.payload;
 	});
 </script>
 
@@ -259,7 +194,6 @@
 				show={openedShow}
 				details={showDetails}
 				refreshing={refreshing.includes(openedShow.slug)}
-				{episodes}
 				{playing}
 				onplay={(episode) => player?.play(episode).catch(errors.report)}
 				onpause={() => player?.pause()}
@@ -286,7 +220,7 @@
 	{:else if view === 'settings'}
 		<SettingsView />
 	{:else if view === 'shows'}
-		<EpisodeFilters bind:shownStations bind:search>
+		<EpisodeFilters shared>
 			<label>
 				hide shows
 				<select bind:value={hideOlderThan}>
@@ -301,11 +235,10 @@
 
 		<ShowDirectory
 			shows={filteredDirectory}
-			{lastAired}
 			onopenshow={(show) => openShow(show).catch(errors.report)}
 		/>
 	{:else}
-		<EpisodeFilters bind:shownStations bind:mp3Only bind:hideRebroadcasts bind:search>
+		<EpisodeFilters shared bind:mp3Only={filters.mp3Only} bind:hideRebroadcasts={filters.hideRebroadcasts}>
 			{#if view === 'dashboard'}
 				<label>
 					<input type="checkbox" bind:checked={showDownloaded} />
@@ -330,7 +263,7 @@
 							subscribable
 							subscribeOnHover
 						/>
-					{:else if loadingEpisodes}
+					{:else if episodes.loading}
 						<p role="status">Loading episodes…</p>
 					{:else}
 						<p>No episodes match the filters</p>
@@ -382,7 +315,7 @@
 				onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
 				subscribable
 			/>
-		{:else if loadingEpisodes}
+		{:else if episodes.loading}
 			<p class="empty" role="status">Loading episodes…</p>
 		{:else}
 			<p class="empty">No episodes match the filters</p>
@@ -392,7 +325,7 @@
 
 <div class="bars">
 	<DownloadStatus onviewqueue={() => openView('queue')} />
-	<Player bind:this={player} bind:playing bind:queue {episodes} />
+	<Player bind:this={player} bind:playing bind:queue />
 </div>
 
 <ConfirmDialog />

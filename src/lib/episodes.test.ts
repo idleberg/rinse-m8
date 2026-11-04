@@ -7,8 +7,10 @@ import {
 	defaultSort,
 	type Episode,
 	episodeLabel,
+	matchesFilters,
 	monthsAgo,
 	moveItem,
+	passesCheckboxes,
 	sortEpisodes,
 	sortShows,
 	toggleSort,
@@ -119,4 +121,31 @@ it('months ago lands on the same day, or the last day of a shorter month', () =>
 	expect(monthsAgo(24, new Date('2026-11-03T12:00:00Z'))).toBe('2024-11-03');
 	expect(monthsAgo(6, new Date('2026-08-31T12:00:00Z'))).toBe('2026-02-28');
 	expect(monthsAgo(12, new Date('2026-01-15T12:00:00Z'))).toBe('2025-01-15');
+});
+
+it('a station passes only while its checkbox is ticked, and a station without one always does', () => {
+	const filters = { shownStations: ['Kool FM'], search: '' };
+
+	expect(matchesFilters('Kool FM', ['A'], filters)).toBe(true);
+	expect(matchesFilters('Rinse FM', ['A'], filters)).toBe(false);
+	expect(matchesFilters('', ['A'], filters)).toBe(true);
+});
+
+it('the search matches any text, ignoring case and surrounding spaces', () => {
+	const filters = { shownStations: ['Rinse FM'], search: '  GRIME ' };
+
+	expect(matchesFilters('Rinse FM', ['Show', 'grime'], filters)).toBe(true);
+	expect(matchesFilters('Rinse FM', ['Show', 'garage'], filters)).toBe(false);
+});
+
+it('the checkboxes hide episodes without a download, and rebroadcasts', () => {
+	const withMp3 = { ...episode('a', '2026-10-01', 'A'), mp3: 'a.mp3' };
+	const rebroadcast = { ...withMp3, rebroadcast: true };
+
+	expect(passesCheckboxes(withMp3, { mp3Only: true, hideRebroadcasts: true })).toBe(true);
+	expect(
+		passesCheckboxes(episode('b', '2026-10-01', 'B'), { mp3Only: true, hideRebroadcasts: false }),
+	).toBe(false);
+	expect(passesCheckboxes(rebroadcast, { mp3Only: false, hideRebroadcasts: true })).toBe(false);
+	expect(passesCheckboxes(rebroadcast, { mp3Only: false, hideRebroadcasts: false })).toBe(true);
 });
