@@ -5,7 +5,7 @@ import type { DownloadQueue, Episode } from './episodes';
 import { errors } from './errors.svelte';
 import { settings } from './settings.svelte';
 
-/** What the page still owns, until routes take it over. */
+/** Navigation, which the root layout supplies so the module needn't import SvelteKit and stays testable. */
 interface Hooks {
 	openQueue: () => void;
 }

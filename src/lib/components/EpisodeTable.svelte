@@ -12,13 +12,13 @@
 		sortEpisodes,
 		toggleSort,
 	} from '#lib/episodes';
+	import { openShow } from '#lib/navigation';
 	import { player } from '#lib/player.svelte';
 
 	let {
 		episodes,
 		limit,
 		markable = false,
-		onopenshow,
 		subscribable = false,
 		subscribeOnHover = false,
 	}: {
@@ -27,7 +27,6 @@
 		limit?: number;
 		/** Adds a "Mark as downloaded" button next to each download button. */
 		markable?: boolean;
-		onopenshow: (episode: Episode) => void;
 		/** Adds a subscribe button to each row. */
 		subscribable?: boolean;
 		/** Moves the subscribe button before the other actions, shown while the row is hovered. */
@@ -73,7 +72,7 @@
 				<td>{episode.time}</td>
 				<td>{episode.station}</td>
 				<td class="show">
-					<button type="button" class="link" onclick={() => onopenshow(episode)}>{episode.showTitle}</button>
+					<button type="button" class="link" onclick={() => openShow(episode.showSlug)}>{episode.showTitle}</button>
 					{#if episode.displayTitle}
 						<span class="subtitle">{episode.displayTitle}</span>
 					{/if}

@@ -9,9 +9,9 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
 	plugins: [
 		// Tauri doesn't have a Node.js server to do proper SSR
-		// so we use adapter-static to prerender the app (SSG)
+		// so adapter-static serves an SPA fallback, which Tauri falls back to for every route
 		// See: https://v2.tauri.app/start/frontend/sveltekit/ for more info
-		sveltekit({ adapter: adapter() }),
+		sveltekit({ adapter: adapter({ fallback: 'index.html' }) }),
 	],
 
 	// Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

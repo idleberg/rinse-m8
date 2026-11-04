@@ -2,8 +2,7 @@
 	import { untrack } from 'svelte';
 	import { downloads } from '#lib/downloads.svelte';
 	import { episodeLabel } from '#lib/episodes';
-
-	let { onviewqueue }: { onviewqueue: () => void } = $props();
+	import { goto } from '$app/navigation';
 
 	const queue = $derived(downloads.queue);
 
@@ -35,14 +34,14 @@
 					<path d="M4 4l8 8M12 4l-8 8" />
 				</svg>
 			</button>
-			<button type="button" onclick={onviewqueue}>View queue</button>
+			<button type="button" onclick={() => goto('/downloads')}>View queue</button>
 		</div>
 	</footer>
 {:else if queue.failures.length}
 	<footer role="alert">
 		{queue.failures.length === 1 ? `Failed: ${episodeLabel(queue.failures[0])}` : `${queue.failures.length} downloads failed`}
 		<div class="buttons">
-			<button type="button" onclick={onviewqueue}>View queue</button>
+			<button type="button" onclick={() => goto('/downloads')}>View queue</button>
 		</div>
 	</footer>
 {/if}

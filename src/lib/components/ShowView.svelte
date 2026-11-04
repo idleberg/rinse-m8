@@ -2,22 +2,19 @@
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
-	import { type Episode, paragraphs, passesCheckboxes, type Show, type ShowDetails } from '#lib/episodes';
+	import { paragraphs, passesCheckboxes, type Show, type ShowDetails } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
+	import { goto } from '$app/navigation';
 
 	let {
 		show,
 		details,
 		refreshing,
-		onopenshow,
-		onback,
 	}: {
 		show: Show;
-		/** Null until the show's fetch returns. */
+		/** The show record until the show's fetch returns, or null when there's none. */
 		details: ShowDetails | null;
 		refreshing: boolean;
-		onopenshow: (episode: Episode) => void;
-		onback: () => void;
 	} = $props();
 
 	/** Its own, not the shared filters, so each show opens with fresh ones. */
@@ -48,7 +45,8 @@
 </script>
 
 <header>
-	<button type="button" onclick={onback}>Back</button>
+	<!-- A show opened by a reload or a notification has nothing to go back to, so it goes to the Shows tab -->
+	<button type="button" onclick={() => (history.length > 1 ? history.back() : goto('/shows'))}>Back</button>
 	<h1>{show.title}</h1>
 	<SubscribeButton {show} />
 </header>
@@ -83,11 +81,7 @@
 
 <EpisodeFilters bind:mp3Only={checkboxes.mp3Only} bind:hideRebroadcasts={checkboxes.hideRebroadcasts} />
 
-<EpisodeTable
-	episodes={visibleEpisodes}
-	{onopenshow}
-	subscribable
-/>
+<EpisodeTable episodes={visibleEpisodes} subscribable />
 
 <style>
 	header {

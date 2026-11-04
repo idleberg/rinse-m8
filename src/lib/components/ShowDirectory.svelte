@@ -1,15 +1,14 @@
 <script lang="ts">
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
 	import { directory } from '#lib/directory.svelte';
-	import { type DirectoryShow, formatDate, type Show, type ShowSortColumn, type Sort, sortShows, toggleSort } from '#lib/episodes';
+	import { type DirectoryShow, formatDate, type ShowSortColumn, type Sort, sortShows, toggleSort } from '#lib/episodes';
+	import { openShow } from '#lib/navigation';
 
 	let {
 		shows,
-		onopenshow,
 	}: {
 		/** The filtered directory, or null until the first refresh finishes. */
 		shows: DirectoryShow[] | null;
-		onopenshow: (show: Show) => void;
 	} = $props();
 
 	const columns: [ShowSortColumn, string][] = [
@@ -51,7 +50,7 @@
 			{#each rows as show (show.slug)}
 				{@const aired = directory.lastAired[show.slug]}
 				<tr>
-					<td><button type="button" class="link" onclick={() => onopenshow(show)}>{show.title}</button></td>
+					<td><button type="button" class="link" onclick={() => openShow(show.slug)}>{show.title}</button></td>
 					<td title={show.station}>{show.station}</td>
 					<td>{aired ? formatDate(aired) : ''}</td>
 					<td title={show.genres.join(', ')}>{show.genres.join(', ')}</td>
