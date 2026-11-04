@@ -4,9 +4,9 @@
 
 **Blocked by:** 01 (Persisted play history on the Player tab)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The button appears only when History has entries, placed like Clear Queue
-- [ ] Cancelling the confirmation leaves History untouched
-- [ ] Confirming empties History, and it stays empty after a relaunch
-- [ ] PREV still works after clearing, since its session stack is separate
+- [x] The button appears only when History has entries, placed like Clear Queue
+- [x] Cancelling the confirmation leaves History untouched
+- [x] Confirming empties History, and it stays empty after a relaunch
+- [x] PREV still works after clearing, since its session stack is separate

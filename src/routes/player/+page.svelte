@@ -138,6 +138,9 @@
 
 <header>
 	<h2>History</h2>
+	{#if player.playHistory.length}
+		<button type="button" onclick={player.clearHistory}>Clear History</button>
+	{/if}
 </header>
 
 {#if player.playHistory.length}

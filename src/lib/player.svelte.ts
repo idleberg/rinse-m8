@@ -127,6 +127,16 @@ class Player {
 		}
 	};
 
+	/** Empties the play history, once confirmed. PREV keeps its own session stack. */
+	clearHistory = async () => {
+		if (
+			await confirm({ title: 'Clear History', message: 'Clear the play history?', action: 'Clear' })
+		) {
+			this.playHistory = [];
+			this.#save('history', []);
+		}
+	};
+
 	playFromQueue = (index: number) => this.play(this.dequeue(index));
 
 	/** Plays the first queued episode, from the start even if it's the current one. Repeat all queues the current
