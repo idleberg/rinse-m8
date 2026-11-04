@@ -1,41 +1,17 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
-	import { type DownloadQueue, type Episode, formatDate } from '#lib/episodes';
+	import { downloads } from '#lib/downloads.svelte';
+	import { type Episode, formatDate } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
 
-	let {
-		downloads,
-		onremove,
-		onmove,
-		oncancel,
-		onretry,
-		onretryall,
-		onunmark,
-		onclear,
-	}: {
-		downloads: DownloadQueue;
-		/** Takes an episode id. */
-		onremove: (id: string) => void;
-		/** Takes an episode id and its new index among the waiting downloads. */
-		onmove: (id: string, index: number) => void;
-		/** Stops the running download. */
-		oncancel: () => void;
-		/** Takes a failed episode's id. */
-		onretry: (id: string) => void;
-		/** Retries every failed download. */
-		onretryall: () => void;
-		/** Takes an episode id to drop from the previous downloads. */
-		onunmark: (id: string) => void;
-		/** Empties the previous downloads. */
-		onclear: () => void;
-	} = $props();
+	const queue = $derived(downloads.queue);
 
 	/** Downloaded and marked episodes, newest first, with the mp3 when it's in the download folder. */
 	let previous = $state<(Episode & { file: string | null })[]>([]);
 
 	// Joined, so progress updates that leave the ids as they were don't refetch
-	const downloadedKey = $derived(downloads.downloaded.join());
+	const downloadedKey = $derived(queue.downloaded.join());
 
 	// Fetched when the view opens and again whenever a download is recorded
 	$effect(() => {
@@ -61,7 +37,7 @@
 
 	// Svelte moves a reordered row's element, which drops its focus
 	$effect(() => {
-		if (moved && downloads.waiting[moved.index]?.id === moved.id) {
+		if (moved && queue.waiting[moved.index]?.id === moved.id) {
 			rows[moved.id]?.focus();
 			moved = null;
 		}
@@ -78,21 +54,21 @@
 
 		const target = index + step;
 
-		if (target >= 0 && target < downloads.waiting.length) {
+		if (target >= 0 && target < queue.waiting.length) {
 			moved = { id, index: target };
-			onmove(id, target);
+			downloads.move(id, target);
 		}
 	}
 </script>
 
 <header class="first">
 	<h2>Active Downloads</h2>
-	{#if downloads.failures.length > 1}
-		<button type="button" onclick={onretryall}>Retry All</button>
+	{#if queue.failures.length > 1}
+		<button type="button" onclick={downloads.retryAll}>Retry All</button>
 	{/if}
 </header>
 
-{#if downloads.current || downloads.waiting.length || downloads.failures.length}
+{#if queue.current || queue.waiting.length || queue.failures.length}
 	<table>
 		<thead>
 			<tr>
@@ -103,18 +79,18 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#if downloads.current}
+			{#if queue.current}
 				<tr>
-					<td>{formatDate(downloads.current.date)}</td>
+					<td>{formatDate(queue.current.date)}</td>
 					<td>
-						{downloads.current.showTitle}
-						{#if downloads.current.displayTitle}
-							<span class="subtitle">{downloads.current.displayTitle}</span>
+						{queue.current.showTitle}
+						{#if queue.current.displayTitle}
+							<span class="subtitle">{queue.current.displayTitle}</span>
 						{/if}
 					</td>
-					<td class="status">{downloads.percent === null ? 'Downloading…' : `${downloads.percent}%`}</td>
+					<td class="status">{queue.percent === null ? 'Downloading…' : `${queue.percent}%`}</td>
 					<td>
-						<button type="button" class="icon" aria-label="Cancel" title="Cancel" onclick={oncancel}>
+						<button type="button" class="icon" aria-label="Cancel" title="Cancel" onclick={downloads.cancel}>
 							<svg viewBox="0 0 16 16" aria-hidden="true">
 								<path d="M4 4l8 8M12 4l-8 8" />
 							</svg>
@@ -122,7 +98,7 @@
 					</td>
 				</tr>
 			{/if}
-			{#each downloads.waiting as episode, index (episode.id)}
+			{#each queue.waiting as episode, index (episode.id)}
 				<tr
 					bind:this={rows[episode.id]}
 					class={{
@@ -151,7 +127,7 @@
 						event.preventDefault();
 
 						if (dragged) {
-							onmove(dragged.id, index);
+							downloads.move(dragged.id, index);
 						}
 					}}
 					onkeydown={(event) => moveWithArrows(event, episode.id, index)}
@@ -164,10 +140,10 @@
 						{/if}
 					</td>
 					<td></td>
-					<td><button type="button" onclick={() => onremove(episode.id)}>Remove</button></td>
+					<td><button type="button" onclick={() => downloads.remove(episode.id)}>Remove</button></td>
 				</tr>
 			{/each}
-			{#each downloads.failures as episode (episode.id)}
+			{#each queue.failures as episode (episode.id)}
 				<tr class="failed">
 					<td>{formatDate(episode.date)}</td>
 					<td>
@@ -179,12 +155,12 @@
 					<td class="status">Failed</td>
 					<td>
 						<div class="buttons">
-							<button type="button" onclick={() => onretry(episode.id)}>Retry</button>
+							<button type="button" onclick={() => downloads.retry(episode.id)}>Retry</button>
 							<button type="button"
 								class="icon"
 								aria-label="Remove"
 								title="Remove"
-								onclick={() => onremove(episode.id)}
+								onclick={() => downloads.remove(episode.id)}
 							>
 								<svg viewBox="0 0 16 16" aria-hidden="true">
 									<path d="M4 4l8 8M12 4l-8 8" />
@@ -203,7 +179,7 @@
 <header>
 	<h2>Previous Downloads</h2>
 	{#if previous.length}
-		<button type="button" onclick={onclear}>Clear Downloads</button>
+		<button type="button" onclick={downloads.clear}>Clear Downloads</button>
 	{/if}
 </header>
 
@@ -246,7 +222,7 @@
 								class="icon"
 								aria-label="Remove"
 								title="Remove"
-								onclick={() => onunmark(episode.id)}
+								onclick={() => downloads.unmark(episode.id)}
 							>
 								<svg viewBox="0 0 16 16" aria-hidden="true">
 									<path d="M4 4l8 8M12 4l-8 8" />

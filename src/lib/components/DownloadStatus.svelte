@@ -1,24 +1,18 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { type DownloadQueue, episodeLabel } from '#lib/episodes';
+	import { downloads } from '#lib/downloads.svelte';
+	import { episodeLabel } from '#lib/episodes';
 
-	let {
-		downloads,
-		oncancel,
-		onviewqueue,
-	}: {
-		downloads: DownloadQueue;
-		/** Stops the running download; the next waiting one starts. */
-		oncancel: () => void;
-		onviewqueue: () => void;
-	} = $props();
+	let { onviewqueue }: { onviewqueue: () => void } = $props();
+
+	const queue = $derived(downloads.queue);
 
 	/** Downloads started since the queue was last idle, so the count runs on as the queue drains. */
 	let started = $state(0);
 	let lastId: string | null = null;
 
 	$effect.pre(() => {
-		const id = downloads.current?.id ?? null;
+		const id = queue.current?.id ?? null;
 
 		if (id === null) {
 			started = 0;
@@ -30,13 +24,13 @@
 	});
 </script>
 
-{#if downloads.current}
+{#if queue.current}
 	<footer role="status">
-		<span>Downloading {started} / {started + downloads.waiting.length}…</span>
-		<progress max="100" value={downloads.percent ?? undefined} aria-label={episodeLabel(downloads.current)}></progress>
-		{downloads.percent === null ? '' : `${downloads.percent}%`}
+		<span>Downloading {started} / {started + queue.waiting.length}…</span>
+		<progress max="100" value={queue.percent ?? undefined} aria-label={episodeLabel(queue.current)}></progress>
+		{queue.percent === null ? '' : `${queue.percent}%`}
 		<div class="buttons">
-			<button type="button" class="icon" aria-label="Cancel" title="Cancel" onclick={oncancel}>
+			<button type="button" class="icon" aria-label="Cancel" title="Cancel" onclick={downloads.cancel}>
 				<svg viewBox="0 0 16 16" aria-hidden="true">
 					<path d="M4 4l8 8M12 4l-8 8" />
 				</svg>
@@ -44,9 +38,9 @@
 			<button type="button" onclick={onviewqueue}>View queue</button>
 		</div>
 	</footer>
-{:else if downloads.failures.length}
+{:else if queue.failures.length}
 	<footer role="alert">
-		{downloads.failures.length === 1 ? `Failed: ${episodeLabel(downloads.failures[0])}` : `${downloads.failures.length} downloads failed`}
+		{queue.failures.length === 1 ? `Failed: ${episodeLabel(queue.failures[0])}` : `${queue.failures.length} downloads failed`}
 		<div class="buttons">
 			<button type="button" onclick={onviewqueue}>View queue</button>
 		</div>

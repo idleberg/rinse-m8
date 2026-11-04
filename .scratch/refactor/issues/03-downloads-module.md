@@ -4,10 +4,10 @@
 
 **Blocked by:** 02 (Errors and confirm modules, init pattern, ADR)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Queueing, cancelling, retrying (one and all), reordering, removing, marking and unmarking downloads work as before
-- [ ] A retried failure still opens the download queue view
-- [ ] The download status bar and the "show downloaded" dashboard toggle still reflect the queue
-- [ ] No component receives the download queue or download callbacks as props
-- [ ] `bun test` and `svelte-check` pass
+- [x] Queueing, cancelling, retrying (one and all), reordering, removing, marking and unmarking downloads work as before
+- [x] A retried failure still opens the download queue view
+- [x] The download status bar and the "show downloaded" dashboard toggle still reflect the queue
+- [x] No component receives the download queue or download callbacks as props
+- [x] `bun test` and `svelte-check` pass

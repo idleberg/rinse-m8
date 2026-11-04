@@ -2,7 +2,7 @@
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
-	import { available, type DownloadQueue, type Episode, paragraphs, type Show, type ShowDetails, showOf } from '#lib/episodes';
+	import { available, type Episode, paragraphs, type Show, type ShowDetails, showOf } from '#lib/episodes';
 
 	let {
 		show,
@@ -10,13 +10,11 @@
 		refreshing,
 		episodes,
 		subscribed,
-		downloads,
 		subscribing,
 		playing,
 		onplay,
 		onpause,
 		onenqueue,
-		ondownload,
 		onopenshow,
 		ontogglesubscription,
 		onback,
@@ -29,14 +27,12 @@
 		episodes: Episode[];
 		/** Show slugs. */
 		subscribed: string[];
-		downloads: DownloadQueue;
 		/** Show slugs. */
 		subscribing: string[];
 		playing: string | null;
 		onplay: (episode: Episode) => void;
 		onpause: () => void;
 		onenqueue: (episode: Episode) => void;
-		ondownload: (episode: Episode) => void;
 		onopenshow: (episode: Episode) => void;
 		ontogglesubscription: (show: Show) => void;
 		onback: () => void;
@@ -115,13 +111,11 @@
 <EpisodeTable
 	episodes={visibleEpisodes}
 	{subscribed}
-	{downloads}
 	{subscribing}
 	{playing}
 	{onplay}
 	{onpause}
 	{onenqueue}
-	{ondownload}
 	{onopenshow}
 	ontogglesubscription={(episode) => ontogglesubscription(showOf(episode))}
 />

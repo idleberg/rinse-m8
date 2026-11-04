@@ -1,20 +1,17 @@
 <script lang="ts">
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
-	import { type DownloadQueue, type Episode, type Show, showOf } from '#lib/episodes';
+	import { type Episode, type Show, showOf } from '#lib/episodes';
 
 	let {
 		show,
 		episodes,
 		subscribed,
-		downloads,
 		subscribing,
 		playing,
 		onplay,
 		onpause,
 		onenqueue,
-		ondownload,
-		onmark,
 		onopenshow,
 		ontogglesubscription,
 	}: {
@@ -23,15 +20,12 @@
 		episodes: Episode[];
 		/** Show slugs. */
 		subscribed: string[];
-		downloads: DownloadQueue;
 		/** Show slugs. */
 		subscribing: string[];
 		playing: string | null;
 		onplay: (episode: Episode) => void;
 		onpause: () => void;
 		onenqueue: (episode: Episode) => void;
-		ondownload: (episode: Episode) => void;
-		onmark: (episode: Episode) => void;
 		onopenshow: (show: Show) => void;
 		ontogglesubscription: (show: Show) => void;
 	} = $props();
@@ -53,14 +47,12 @@
 		{episodes}
 		limit={expanded ? undefined : limit}
 		{subscribed}
-		{downloads}
 		{subscribing}
 		{playing}
-			{onplay}
+		{onplay}
 		{onpause}
 		{onenqueue}
-		{ondownload}
-		{onmark}
+		markable
 		onopenshow={(episode) => onopenshow(showOf(episode))}
 	/>
 	{#if episodes.length > limit}

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import DownloadButton from '#lib/components/DownloadButton.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
+	import { downloads } from '#lib/downloads.svelte';
 	import {
 		available,
-		type DownloadQueue,
 		defaultSort,
 		type Episode,
 		formatDate,
@@ -16,14 +16,12 @@
 		episodes,
 		limit,
 		subscribed,
-		downloads,
 		subscribing,
 		playing,
 		onplay,
 		onpause,
 		onenqueue,
-		ondownload,
-		onmark,
+		markable = false,
 		onopenshow,
 		ontogglesubscription,
 		subscribeOnHover = false,
@@ -33,7 +31,6 @@
 		limit?: number;
 		/** Show slugs. */
 		subscribed: string[];
-		downloads: DownloadQueue;
 		/** Show slugs. */
 		subscribing: string[];
 		/** The id of the episode while it's playing. */
@@ -41,9 +38,8 @@
 		onplay: (episode: Episode) => void;
 		onpause: () => void;
 		onenqueue: (episode: Episode) => void;
-		ondownload: (episode: Episode) => void;
 		/** Adds a "Mark as downloaded" button next to each download button. */
-		onmark?: (episode: Episode) => void;
+		markable?: boolean;
 		onopenshow: (episode: Episode) => void;
 		/** Adds a subscribe button to each row. */
 		ontogglesubscription?: (episode: Episode) => void;
@@ -85,7 +81,7 @@
 	</thead>
 	<tbody>
 		{#each rows as episode (episode.id)}
-			<tr class={{ failed: downloads.failures.some((e) => e.id === episode.id) }}>
+			<tr class={{ failed: downloads.queue.failures.some((e) => e.id === episode.id) }}>
 				<td>{formatDate(episode.date)}</td>
 				<td>{episode.time}</td>
 				<td>{episode.station}</td>
@@ -135,7 +131,7 @@
 									<path d="M2 3.5h12M2 7.5h12M2 11.5h6M10 9.5l4 2.5-4 2.5z" />
 								</svg>
 							</button>
-							<DownloadButton {episode} {downloads} {ondownload} {onmark} />
+							<DownloadButton {episode} {markable} />
 						{/if}
 						{#if ontogglesubscription && !subscribeOnHover}
 							<SubscribeButton

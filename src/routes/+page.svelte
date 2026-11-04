@@ -17,7 +17,8 @@
 	import ShowView from '#lib/components/ShowView.svelte';
 	import UpdateBanner from '#lib/components/UpdateBanner.svelte';
 	import { confirm } from '#lib/confirm.svelte';
-	import { available, type DirectoryShow, type DownloadQueue, dead, type Episode, monthsAgo, type Show, type ShowDetails, type ShowPage, showOf, stations } from '#lib/episodes';
+	import { downloads } from '#lib/downloads.svelte';
+	import { available, type DirectoryShow, dead, type Episode, monthsAgo, type Show, type ShowDetails, type ShowPage, showOf, stations } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
 
 	interface Settings {
@@ -76,7 +77,7 @@
 			show,
 			episodes: filteredEpisodes.filter(
 				(episode) =>
-					episode.showSlug === show.slug && (showDownloaded || !downloads.downloaded.includes(episode.id)),
+					episode.showSlug === show.slug && (showDownloaded || !downloads.queue.downloaded.includes(episode.id)),
 			),
 		})),
 	);
@@ -93,7 +94,7 @@
 
 			seen.add(episode.showSlug);
 
-			return showDownloaded || !downloads.downloaded.includes(episode.id);
+			return showDownloaded || !downloads.queue.downloaded.includes(episode.id);
 		});
 	});
 	const scheduleEpisodes = $derived(filteredEpisodes.filter((episode) => episode.scheduled));
@@ -126,8 +127,6 @@
 	let playing = $state<string | null>(null);
 	let queue = $state<Episode[]>([]);
 
-	let downloads = $state<DownloadQueue>({ current: null, percent: null, waiting: [], failures: [], downloaded: [] });
-
 	/** Asks for a download folder and saves it, returning false if the dialog was cancelled. */
 	async function chooseFolder() {
 		const folder = await open({
@@ -144,24 +143,6 @@
 		settings.downloadFolder = folder;
 
 		return true;
-	}
-
-	/** Queues the episode, asking for a download folder first if none is set. A failed one is retried, and the
-	 * downloads view opens to show it. */
-	async function download(episode: Episode) {
-		errors.clear();
-
-		if (!(settings.downloadFolder || (await chooseFolder()))) {
-			return;
-		}
-
-		const failed = downloads.failures.some((e) => e.id === episode.id);
-
-		await invoke('download', { episode });
-
-		if (failed) {
-			openView('queue');
-		}
 	}
 
 	/** Dead episodes are dropped here, so no table shows them, whatever the filters. */
@@ -310,12 +291,6 @@
 	async function clearQueue() {
 		if (await confirm({ title: 'Clear Queue', message: 'Clear the play queue?', action: 'Clear' })) {
 			player?.clearQueue();
-		}
-	}
-
-	async function clearDownloads() {
-		if (await confirm({ title: 'Clear Downloads', message: 'Clear the list of previous downloads?', action: 'Clear' })) {
-			await invoke('clear_downloaded');
 		}
 	}
 
@@ -531,14 +506,9 @@
 	// The poller sends the whole cache after each update
 	listen<Episode[]>('episodes-updated', (event) => setEpisodes(event.payload));
 
-	invoke<DownloadQueue>('get_download_queue')
-		.then((loaded) => {
-			downloads = loaded;
-		})
-		.catch(errors.report);
-
-	listen<DownloadQueue>('download-queue', (event) => {
-		downloads = event.payload;
+	downloads.init({
+		ensureFolder: async () => Boolean(settings.downloadFolder) || chooseFolder(),
+		openQueue: () => openView('queue'),
 	});
 
 	invoke<DirectoryShow[] | null>('get_show_directory')
@@ -612,13 +582,11 @@
 				refreshing={refreshing.includes(openedShow.slug)}
 				{episodes}
 				{subscribed}
-				{downloads}
 				{subscribing}
 				{playing}
 				onplay={(episode) => player?.play(episode).catch(errors.report)}
 				onpause={() => player?.pause()}
 				onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
-				ondownload={(episode) => download(episode).catch(errors.report)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
 				ontogglesubscription={(show) => toggleSubscription(show).catch(errors.report)}
 				onback={() => {
@@ -638,16 +606,7 @@
 			/>
 		{/if}
 	{:else if view === 'queue'}
-		<QueueView
-			{downloads}
-			onremove={(id) => invoke('remove_download', { id }).catch(errors.report)}
-			onmove={(id, index) => invoke('move_download', { id, index }).catch(errors.report)}
-			oncancel={() => invoke('cancel_download').catch(errors.report)}
-			onretry={(id) => invoke('retry_download', { id }).catch(errors.report)}
-			onretryall={() => invoke('retry_all_downloads').catch(errors.report)}
-			onunmark={(id) => invoke('unmark_downloaded', { id }).catch(errors.report)}
-			onclear={() => clearDownloads().catch(errors.report)}
-		/>
+		<QueueView />
 	{:else if view === 'settings'}
 		<SettingsView
 			downloadFolder={settings.downloadFolder}
@@ -717,14 +676,12 @@
 						<EpisodeTable
 							episodes={latestEpisodes}
 							{subscribed}
-							{downloads}
 							{subscribing}
 							{playing}
 							onplay={(episode) => player?.play(episode).catch(errors.report)}
 							onpause={() => player?.pause()}
 							onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
-							ondownload={(episode) => download(episode).catch(errors.report)}
-							onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(errors.report)}
+							markable
 							onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
 							ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(errors.report)}
 							subscribeOnHover
@@ -744,14 +701,11 @@
 						show={section.show}
 						episodes={section.episodes}
 						{subscribed}
-						{downloads}
 						{subscribing}
 						{playing}
 						onplay={(episode) => player?.play(episode).catch(errors.report)}
 						onpause={() => player?.pause()}
 						onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
-						ondownload={(episode) => download(episode).catch(errors.report)}
-						onmark={(episode) => invoke('mark_downloaded', { id: episode.id }).catch(errors.report)}
 						onopenshow={(show) => openShow(show).catch(errors.report)}
 						ontogglesubscription={(show) => toggleSubscription(show).catch(errors.report)}
 					/>
@@ -781,13 +735,11 @@
 			<EpisodeTable
 				episodes={scheduleEpisodes}
 				{subscribed}
-				{downloads}
 				{subscribing}
 				{playing}
 				onplay={(episode) => player?.play(episode).catch(errors.report)}
 				onpause={() => player?.pause()}
 				onenqueue={(episode) => player?.enqueue(episode).catch(errors.report)}
-				ondownload={(episode) => download(episode).catch(errors.report)}
 				onopenshow={(episode) => openShow(showOf(episode)).catch(errors.report)}
 				ontogglesubscription={(episode) => toggleSubscription(showOf(episode)).catch(errors.report)}
 			/>
@@ -800,11 +752,7 @@
 </main>
 
 <div class="bars">
-	<DownloadStatus
-		{downloads}
-		oncancel={() => invoke('cancel_download').catch(errors.report)}
-		onviewqueue={() => openView('queue')}
-	/>
+	<DownloadStatus onviewqueue={() => openView('queue')} />
 	<Player bind:this={player} bind:playing bind:queue {episodes} />
 </div>
 
