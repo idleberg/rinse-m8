@@ -6,7 +6,8 @@
 :root,
 .inverted {
 	--paper: light-dark(rgb(242 239 232), rgb(20 20 20));
-	--ink: light-dark(rgb(20 20 20), rgb(233 229 220));
+	/* Each theme's ink is the other's paper, so the active Settings tab meets the inverted page without a seam */
+	--ink: light-dark(rgb(20 20 20), rgb(242 239 232));
 	--muted: light-dark(rgb(107 103 95), rgb(143 138 128));
 	--accent: light-dark(rgb(217 56 30), rgb(255 90 60));
 	--info: light-dark(rgb(30 80 200), rgb(45 105 215));
