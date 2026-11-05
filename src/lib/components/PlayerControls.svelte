@@ -264,8 +264,8 @@
 		background: var(--accent);
 	}
 
-	/* Pressed, but shown by the red heart rather than the inverted button */
-	.loved {
+	/* Pressed, but shown by the red heart rather than the inverted button. Hover still inverts, like every other button. */
+	.loved:not(:hover) {
 		background: none;
 		color: inherit;
 	}

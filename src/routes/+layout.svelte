@@ -158,7 +158,10 @@
 		/* Cancels main's padding, so the banner meets the window edges and the nav */
 		margin: -1rem -1rem 1rem;
 		padding: 0.5rem 1rem;
-		background: var(--accent);
-		color: white;
+		/* Redefined, so hovered buttons invert to white on red */
+		--ink: white;
+		--paper: var(--accent);
+		background: var(--paper);
+		color: var(--ink);
 	}
 </style>

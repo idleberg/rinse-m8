@@ -28,19 +28,17 @@
 		gap: 1rem;
 		align-items: center;
 		padding: 0.5rem 1rem;
-		background: var(--info);
-		color: white;
+		/* Redefined, so hovered buttons invert to white on blue */
+		--ink: white;
+		--paper: var(--info);
+		background: var(--paper);
+		color: var(--ink);
 		text-transform: uppercase;
 		font-variant-numeric: tabular-nums;
 	}
 
 	progress {
 		flex: 1;
-	}
-
-	/* The global fill is ink, which would vanish on blue in the dark theme */
-	progress::-webkit-progress-value {
-		background: currentColor;
 	}
 
 	.buttons {

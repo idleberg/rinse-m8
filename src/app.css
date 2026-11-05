@@ -99,8 +99,10 @@ button:disabled {
 	cursor: default;
 }
 
+/* Hover previews the pressed look. Kept at zero extra specificity, so components that restyle their pressed state (repeat-one, love) still win. */
 button[aria-pressed="true"],
-button[aria-current="page"] {
+button[aria-current="page"],
+button:where(:hover:not(:disabled, .plain)) {
 	border-color: var(--ink);
 	background: var(--ink);
 	color: var(--paper);
