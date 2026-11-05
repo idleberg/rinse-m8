@@ -206,6 +206,16 @@ input[type="search"] {
 	outline-offset: 2px;
 }
 
+/* Thickens the border instead: covers the 1px border and adds 1px outside, so nothing moves.
+   Lifted so neighbours that touch it, like the theme toggle's or the nav's, can't paint over it. */
+button:focus-visible,
+select:focus-visible {
+	position: relative;
+	z-index: 1;
+	outline-width: 2px;
+	outline-offset: -1px;
+}
+
 /* Reorderable rows. The drop line is an inset shadow, so it sits over the dashed row line instead of replacing it. */
 [draggable="true"] {
 	cursor: grab;

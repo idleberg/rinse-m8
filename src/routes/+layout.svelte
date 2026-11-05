@@ -100,25 +100,23 @@
 	nav {
 		position: sticky;
 		top: 0;
-		z-index: 1;
+		/* Above the window frame, so a focused tab can cover the top line. The nav draws that line itself instead. */
+		z-index: 3;
 		box-sizing: border-box;
 		display: flex;
-		/* As tall as the player bar, bottom line included */
+		gap: 1px;
+		/* As tall as the player bar, lines included */
 		height: 40px;
-		border-bottom: 1px solid currentColor;
+		border-block: 1px solid var(--ink);
 		background: var(--paper);
 	}
 
-	/* Full-height cells */
+	/* Full-height cells. Each draws a 1px ring just outside itself, onto the nav's lines and into the gaps, so every tab is boxed on all four sides. Ink, not currentColor, so it doesn't vanish beside the active tab. */
 	nav button {
 		border: none;
 		padding: 0 1rem;
 		white-space: nowrap;
-	}
-
-	/* One line before each tab but the first. Ink, not currentColor, so it doesn't vanish beside the active tab. */
-	nav button + button {
-		border-left: 1px solid var(--ink);
+		box-shadow: 0 0 0 1px var(--ink);
 	}
 
 	/* Settings sits at the right edge */
@@ -126,14 +124,13 @@
 		margin-left: auto;
 	}
 
-	/* Closes off the left group, since Settings' line moved away with it */
-	nav button:nth-last-child(2) {
-		border-right: 1px solid var(--ink);
+	/* The ring at the window's edge is offscreen, so the outline's outer pixel is too. The shadow restores the 2px there. */
+	nav button:first-child:focus-visible {
+		box-shadow: inset 2px 0 var(--accent);
 	}
 
-	/* Inset, since the cells touch each other and the window's top edge */
-	nav button:focus-visible {
-		outline-offset: -3px;
+	nav button:last-child:focus-visible {
+		box-shadow: inset -2px 0 var(--accent);
 	}
 
 	main {
