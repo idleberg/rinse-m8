@@ -202,7 +202,7 @@ input[type="search"] {
 }
 
 :focus-visible {
-	outline: 1px solid var(--accent);
+	outline: 2px solid var(--accent);
 	outline-offset: 2px;
 }
 
@@ -212,8 +212,17 @@ button:focus-visible,
 select:focus-visible {
 	position: relative;
 	z-index: 1;
-	outline-width: 2px;
 	outline-offset: -1px;
+}
+
+/* A button that reads as text, with no border for the focus to thicken */
+button.plain {
+	border: none;
+	padding: 0;
+}
+
+button.plain:focus-visible {
+	outline-offset: 2px;
 }
 
 /* Reorderable rows. The drop line is an inset shadow, so it sits over the dashed row line instead of replacing it. */

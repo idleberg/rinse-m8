@@ -51,7 +51,7 @@
 		<tr>
 			{#each columns as [column, label]}
 				<th class={column} aria-sort={sort.column === column ? direction : undefined}>
-					<button type="button" class="sort" onclick={() => {
+					<button type="button" class="plain sort" onclick={() => {
 						sort = toggleSort(sort, column);
 					}}>
 						{label}
@@ -72,7 +72,7 @@
 				<td>{episode.time}</td>
 				<td>{episode.station}</td>
 				<td class="show">
-					<button type="button" class="link" onclick={() => openShow(episode.showSlug)}>{episode.showTitle}</button>
+					<button type="button" class="plain link" onclick={() => openShow(episode.showSlug)}>{episode.showTitle}</button>
 					{#if episode.displayTitle}
 						<span class="subtitle">{episode.displayTitle}</span>
 					{/if}
@@ -139,7 +139,9 @@
 		white-space: nowrap;
 	}
 
+	/* Room for a focused sort button's outline, which sits 4px outside it, so it clears both lines by 3px like a focused button in a row */
 	th {
+		padding-block: calc(0.25rem + 3px);
 		border-bottom: 1px solid currentColor;
 		font-weight: 700;
 	}
@@ -147,6 +149,8 @@
 	/* A row of `-` characters: a 1ch-wide tile, mostly dash, repeated along the bottom edge */
 	td {
 		background: linear-gradient(to right, var(--muted) 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+		/* One more pixel below, since the line sits inside the padding, so a focused button is as far from it as from the row above */
+		padding-bottom: calc(0.25rem + 1px);
 	}
 
 	/* Each fits its longest value or heading with sort arrow, so columns line up across tables; Show takes the rest */
@@ -174,14 +178,10 @@
 	}
 
 	.sort {
-		border: none;
-		padding: 0;
 		font-weight: inherit;
 	}
 
 	.link {
-		border: none;
-		padding: 0;
 		text-align: left;
 		text-decoration: underline;
 		/* A button is an atomic inline, so it truncates its own text */

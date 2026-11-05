@@ -44,7 +44,7 @@
 	<form method="dialog">
 		<header>
 			<h2 id="{id}-title">{confirmation.question?.title}</h2>
-			<button type="submit" class="close" value="cancel" aria-label="Close">[×]</button>
+			<button type="submit" class="plain" value="cancel" aria-label="Close">[×]</button>
 		</header>
 		<p>{confirmation.question?.message}</p>
 		<footer>
@@ -73,18 +73,14 @@
 		justify-content: space-between;
 		align-items: center;
 		gap: 2ch;
-		padding: 0.25rem 1ch;
+		/* One more pixel below, since the line sits inside the padding */
+		padding: 0.25rem 1ch calc(0.25rem + 1px);
 	}
 
 	h2 {
 		margin: 0;
 		font-size: inherit;
 		text-transform: uppercase;
-	}
-
-	.close {
-		border: none;
-		padding: 0;
 	}
 
 	p {

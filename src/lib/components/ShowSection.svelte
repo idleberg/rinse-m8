@@ -19,7 +19,7 @@
 
 <section>
 	<header>
-		<h2><button type="button" class="link" onclick={() => openShow(show.slug)}>{show.title}</button></h2>
+		<h2><button type="button" class="plain link" onclick={() => openShow(show.slug)}>{show.title}</button></h2>
 		<SubscribeButton {show} />
 	</header>
 	<EpisodeTable {episodes} limit={expanded ? undefined : limit} markable />
@@ -51,8 +51,6 @@
 	}
 
 	.link {
-		border: none;
-		padding: 0;
 		font-weight: inherit;
 		text-align: left;
 	}

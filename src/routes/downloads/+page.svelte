@@ -275,7 +275,9 @@
 		white-space: nowrap;
 	}
 
+	/* Room for a focused sort button's outline, which sits 4px outside it, so it clears both lines by 3px like a focused button in a row */
 	th {
+		padding-block: calc(0.25rem + 3px);
 		border-bottom: 1px solid currentColor;
 		font-weight: 700;
 	}
@@ -283,6 +285,8 @@
 	/* A row of `-` characters, as in the episode tables */
 	td {
 		background: linear-gradient(to right, var(--muted) 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+		/* One more pixel below, since the line sits inside the padding, so a focused button is as far from it as from the row above */
+		padding-bottom: calc(0.25rem + 1px);
 	}
 
 	/* Dates are all `YYYY/MM/DD`, so shrinking to them starts Show at the same x in both tables */

@@ -103,7 +103,7 @@
 {#snippet title()}
 	{#key label}
 		{#if scrollable}
-			<button type="button" class="title" title={stopped ? 'Scroll title' : 'Stop scrolling'} bind:this={box} onclick={toggleScrolling}>
+			<button type="button" class="plain title" title={stopped ? 'Scroll title' : 'Stop scrolling'} bind:this={box} onclick={toggleScrolling}>
 				{@render track()}
 			</button>
 		{:else}
@@ -163,7 +163,7 @@
 			}}
 		/>
 	</div>
-	<button type="button" class="time" title={player.showRemaining ? 'Show elapsed time' : 'Show remaining time'} onclick={player.toggleTime}
+	<button type="button" class="plain time" title={player.showRemaining ? 'Show elapsed time' : 'Show remaining time'} onclick={player.toggleTime}
 		><span class:hidden={!player.showRemaining}>-</span>{player.showRemaining
 			? formatTime((player.duration || 0) - player.currentTime)
 			: formatTime(player.currentTime)}{#if layout === 'tab'}{` / ${formatTime(player.duration || 0)}`}{/if}</button
@@ -220,11 +220,8 @@
 		white-space: nowrap;
 	}
 
-	/* Reads as plain text, like the time */
 	button.title {
 		width: 100%;
-		border: none;
-		padding: 0;
 		text-align: inherit;
 	}
 
@@ -282,10 +279,7 @@
 		stroke: var(--accent);
 	}
 
-	/* Reads as plain text */
 	.time {
-		border: none;
-		padding: 0;
 		font-variant-numeric: tabular-nums;
 	}
 

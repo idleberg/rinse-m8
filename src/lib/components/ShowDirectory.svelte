@@ -32,7 +32,7 @@
 			<tr>
 				{#each columns as [column, label]}
 					<th class={column} aria-sort={sort?.column === column ? direction : undefined}>
-						<button type="button" class="sort" onclick={() => {
+						<button type="button" class="plain sort" onclick={() => {
 							sort = toggleSort(sort, column, column !== 'lastAired');
 						}}>
 							{label}
@@ -50,7 +50,7 @@
 			{#each rows as show (show.slug)}
 				{@const aired = directory.lastAired[show.slug]}
 				<tr>
-					<td><button type="button" class="link" onclick={() => openShow(show.slug)}>{show.title}</button></td>
+					<td><button type="button" class="plain link" onclick={() => openShow(show.slug)}>{show.title}</button></td>
 					<td title={show.station}>{show.station}</td>
 					<td>{aired ? formatDate(aired) : ''}</td>
 					<td title={show.genres.join(', ')}>{show.genres.join(', ')}</td>
@@ -81,7 +81,9 @@
 		white-space: nowrap;
 	}
 
+	/* Room for a focused sort button's outline, which sits 4px outside it, so it clears both lines by 3px like a focused button in a row */
 	th {
+		padding-block: calc(0.25rem + 3px);
 		border-bottom: 1px solid currentColor;
 		font-weight: 700;
 	}
@@ -90,6 +92,8 @@
 	/* Only values truncate, so a sort arrow never turns into an ellipsis */
 	td {
 		background: linear-gradient(to right, var(--muted) 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+		/* One more pixel below, since the line sits inside the padding, so a focused button is as far from it as from the row above */
+		padding-bottom: calc(0.25rem + 1px);
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
@@ -118,14 +122,10 @@
 	}
 
 	.sort {
-		border: none;
-		padding: 0;
 		font-weight: inherit;
 	}
 
 	.link {
-		border: none;
-		padding: 0;
 		text-align: left;
 		text-decoration: underline;
 		/* A button is an atomic inline, so it truncates its own text */
