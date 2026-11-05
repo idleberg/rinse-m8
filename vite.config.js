@@ -11,7 +11,10 @@ export default defineConfig(async () => ({
 		// Tauri doesn't have a Node.js server to do proper SSR
 		// so adapter-static serves an SPA fallback, which Tauri falls back to for every route
 		// See: https://v2.tauri.app/start/frontend/sveltekit/ for more info
-		sveltekit({ adapter: adapter({ fallback: 'index.html' }) }),
+
+		// Runes everywhere: a component without runes compiles in legacy mode, where every binding write to an imported
+		// rune module invalidates the whole import, so bind:paused re-plays the audio before its pause event lands
+		sveltekit({ adapter: adapter({ fallback: 'index.html' }), compilerOptions: { runes: true } }),
 	],
 
 	// Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
