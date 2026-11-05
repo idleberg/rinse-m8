@@ -17,12 +17,15 @@
 
 	let {
 		episodes,
+		groupDates = false,
 		limit,
 		markable = false,
 		subscribable = false,
 		subscribeOnHover = false,
 	}: {
 		episodes: Episode[];
+		/** Shows each date only in the first of its rows, while sorted by date. */
+		groupDates?: boolean;
 		/** Shows only the first `limit` episodes, after sorting. */
 		limit?: number;
 		/** Adds a "Mark as downloaded" button next to each download button. */
@@ -66,9 +69,15 @@
 		</tr>
 	</thead>
 	<tbody>
-		{#each rows as episode (episode.id)}
+		{#each rows as episode, i (episode.id)}
 			<tr class={{ failed: downloads.queue.failures.some((e) => e.id === episode.id) }}>
-				<td>{formatDate(episode.date)}</td>
+				<td>
+					{#if !groupDates || sort.column !== 'date'}
+						{formatDate(episode.date)}
+					{:else if rows[i - 1]?.date !== episode.date}
+						<strong>{formatDate(episode.date)}</strong>
+					{/if}
+				</td>
 				<td>{episode.time}</td>
 				<td>{episode.station}</td>
 				<td class="show">

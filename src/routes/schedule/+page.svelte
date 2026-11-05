@@ -10,7 +10,7 @@
 <EpisodeFilters shared bind:mp3Only={filters.mp3Only} bind:hideRebroadcasts={filters.hideRebroadcasts} />
 
 {#if scheduleEpisodes.length}
-	<EpisodeTable episodes={scheduleEpisodes} subscribable />
+	<EpisodeTable episodes={scheduleEpisodes} subscribable groupDates />
 {:else if episodes.loading}
 	<p role="status">Loading episodes…</p>
 {:else}
