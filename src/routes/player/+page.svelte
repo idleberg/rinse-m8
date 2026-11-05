@@ -38,8 +38,8 @@
 	}
 </script>
 
-<section>
-	<Artwork src={cover} empty={playable ? 'No artwork for this show' : undefined} onerror={() => cover && failed.push(cover)} />
+<section class:idle={!playable}>
+	<Artwork src={cover} empty={playable ? 'No artwork for this show' : '•︵•'} onerror={() => cover && failed.push(cover)} />
 	{#if playable}
 		<div class="controls">
 			<PlayerControls layout="tab" />
@@ -195,6 +195,11 @@
 		display: flex;
 		gap: 1rem;
 		align-items: center;
+	}
+
+	/* The emoticon on the empty square */
+	.idle :global(.artwork p) {
+		font-size: 1.5rem;
 	}
 
 	/* "Nothing playing" takes the controls' place, so it stretches like them */
