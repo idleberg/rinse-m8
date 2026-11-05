@@ -74,6 +74,11 @@
 		cursor: pointer;
 	}
 
+	/* Room for the checkbox's focus outline, which reaches 4px past the box */
+	label + label {
+		margin-top: 0.5rem;
+	}
+
 	/* One per line, under the checkboxes, apart from the player's Load and Clear pair */
 	aside > button,
 	.buttons {
