@@ -2,6 +2,7 @@
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
+	import { dither } from '#lib/dither-prototype.svelte'; // PROTOTYPE
 	import { paragraphs, passesCheckboxes, type Show, type ShowDetails } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { goto } from '$app/navigation';
@@ -54,7 +55,7 @@
 {#if details?.image || description.length}
 	<section>
 		{#if details?.image}
-			<img src={details.image} alt="" bind:clientHeight={imageHeight} />
+			<img src={details.image} alt="" {@attach dither(details.image)} bind:clientHeight={imageHeight} />
 		{/if}
 		<div class="description">
 			<!-- On the clip itself: WebKit doesn't shrink a flex item to a column container's max-height.

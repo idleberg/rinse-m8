@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PlayerControls from '#lib/components/PlayerControls.svelte';
+	import { dither } from '#lib/dither-prototype.svelte'; // PROTOTYPE
 	import { formatDate } from '#lib/episodes';
 	import { player } from '#lib/player.svelte';
 
@@ -41,7 +42,7 @@
 	<div class="cover">
 		{#if cover}
 			<!-- biome-ignore lint/a11y/noNoninteractiveElementInteractions: a load error, not an interaction -->
-			<img src={cover} alt="" onerror={() => failed.push(cover)} />
+			<img src={cover} alt="" {@attach dither(cover)} onerror={() => failed.push(cover)} />
 		{:else if playable}
 			<p>No artwork for this show</p>
 		{/if}

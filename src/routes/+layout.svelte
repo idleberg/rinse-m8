@@ -93,6 +93,10 @@
 	{#await import('#lib/components/DevPanel.svelte') then { default: DevPanel }}
 		<DevPanel />
 	{/await}
+	<!-- PROTOTYPE: dithering variants -->
+	{#await import('#lib/components/DitherPrototypeSwitcher.svelte') then { default: DitherPrototypeSwitcher }}
+		<DitherPrototypeSwitcher />
+	{/await}
 {/if}
 
 <style>
