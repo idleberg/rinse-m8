@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { load, type Store } from '@tauri-apps/plugin-store';
 import { tick } from 'svelte';
-import { confirm } from './confirm.svelte';
+import { choose, confirm } from './confirm.svelte';
 import { type Episode, moveItem } from './episodes';
 import { episodes } from './episodes.svelte';
 import { errors } from './errors.svelte';
@@ -85,6 +85,33 @@ class Player {
 
 	/** Resumes the current episode, or starts another from the beginning. */
 	play = (chosen: Episode) => this.#play(chosen).catch(errors.report);
+
+	/** PLAY on an episode row. While another episode plays, it plays, queues or asks, as the Play behaviour setting
+	 * says. Otherwise it just plays. */
+	playOrQueue = async (chosen: Episode) => {
+		if (this.playing === null || chosen.id === this.playing) {
+			return this.play(chosen);
+		}
+
+		let behaviour = settings.stored.playBehaviour;
+
+		if (behaviour === 'ask') {
+			const choice = await choose({
+				title: 'Play',
+				message: 'Another episode is playing. Play this one now, or add it to the play queue?',
+				primaryAction: 'Play',
+				secondaryAction: 'Queue',
+			});
+
+			if (!choice) {
+				return;
+			}
+
+			behaviour = choice === 'primary' ? 'play' : 'queue';
+		}
+
+		return behaviour === 'play' ? this.play(chosen) : this.enqueue(chosen);
+	};
 
 	/** Resumes the current episode, if one is loaded. */
 	resume = () => this.episode && this.play(this.episode);

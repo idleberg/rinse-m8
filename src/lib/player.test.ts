@@ -1,6 +1,6 @@
 /// <reference types="bun" />
 
-import { beforeEach, expect, test as it, mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test as it, mock } from 'bun:test';
 import type { Episode } from './episodes';
 
 function episode(id: string): Episode {
@@ -226,4 +226,83 @@ it('empties the player when the last episode ends, only if the setting is on', a
 	expect(player.episode).toBeNull();
 	expect(stored.get('lastPlayed')).toBeNull();
 	settings.stored.clearPlayer = false;
+});
+
+describe('PLAY while another episode plays', () => {
+	beforeEach(async () => {
+		player.playQueue = [];
+		await player.play(a);
+		player.paused = false;
+	});
+
+	afterEach(() => {
+		settings.stored.playBehaviour = 'ask';
+	});
+
+	it('plays it when set to always play, leaving the queue', async () => {
+		settings.stored.playBehaviour = 'play';
+		player.playQueue = [c];
+		await player.playOrQueue(b);
+
+		expect(player.episode?.id).toBe('b');
+		expect(player.playQueue.map((e) => e.id)).toEqual(['c']);
+	});
+
+	it('queues it when set to always queue', async () => {
+		settings.stored.playBehaviour = 'queue';
+		await player.playOrQueue(b);
+
+		expect(player.episode?.id).toBe('a');
+		expect(player.playQueue.map((e) => e.id)).toEqual(['b']);
+	});
+
+	it('asks when set to always ask, defaulting to QUEUE', async () => {
+		const asked = player.playOrQueue(b);
+
+		expect(confirmation.question?.primaryAction).toBe('Play');
+		expect(confirmation.question?.secondaryAction).toBe('Queue');
+
+		confirmation.answer('secondary');
+		await asked;
+
+		expect(player.episode?.id).toBe('a');
+		expect(player.playQueue.map((e) => e.id)).toEqual(['b']);
+	});
+
+	it('plays it once asked and PLAY is chosen', async () => {
+		const asked = player.playOrQueue(b);
+
+		confirmation.answer('primary');
+		await asked;
+
+		expect(player.episode?.id).toBe('b');
+		expect(player.playQueue).toEqual([]);
+	});
+
+	it('does nothing once asked and dismissed', async () => {
+		const asked = player.playOrQueue(b);
+
+		confirmation.answer();
+		await asked;
+
+		expect(player.episode?.id).toBe('a');
+		expect(player.playQueue).toEqual([]);
+	});
+
+	it('just plays the episode already playing, without asking', async () => {
+		await player.playOrQueue(a);
+
+		expect(confirmation.question).toBeNull();
+		expect(player.episode?.id).toBe('a');
+		expect(player.playQueue).toEqual([]);
+	});
+
+	it('just plays when nothing is playing, whatever the setting', async () => {
+		settings.stored.playBehaviour = 'queue';
+		player.paused = true;
+		await player.playOrQueue(b);
+
+		expect(player.episode?.id).toBe('b');
+		expect(player.playQueue).toEqual([]);
+	});
 });

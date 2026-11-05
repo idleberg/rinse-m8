@@ -7,7 +7,7 @@
 	import type { ShowOrder } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
-	import { type ImageStyle, settings } from '#lib/settings.svelte';
+	import { type ImageStyle, type PlayBehaviour, settings } from '#lib/settings.svelte';
 	import { updates } from '#lib/updates.svelte';
 
 	/** In hours. */
@@ -25,6 +25,11 @@
 		['alphabetical', 'Alphabetical'],
 		['subscribed', 'Subscription date'],
 		['lastUpdated', 'Last updated'],
+	];
+	const playBehaviours: [PlayBehaviour, string][] = [
+		['ask', 'Always ask'],
+		['play', 'Always play'],
+		['queue', 'Always queue'],
 	];
 	const bytesPerMegabyte = 1e6;
 	const megabytes = new Intl.NumberFormat(undefined, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1, maximumSignificantDigits: 1, roundingPriority: 'morePrecision' });
@@ -159,6 +164,14 @@
 	<section>
 		<h2>Playback</h2>
 		<dl>
+			<dt>Play behaviour</dt>
+			<dd>
+				<select aria-label="Play behaviour" value={settings.stored.playBehaviour} onchange={(e) => settings.save('playBehaviour', e.currentTarget.value as PlayBehaviour)}>
+					{#each playBehaviours as [behaviour, label]}
+						<option value={behaviour}>{label}</option>
+					{/each}
+				</select>
+			</dd>
 			<dt>When finished</dt>
 			<dd>
 				<label>

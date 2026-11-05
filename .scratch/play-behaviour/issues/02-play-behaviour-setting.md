@@ -10,12 +10,12 @@ When nothing is playing (player empty or paused), or the clicked episode is the 
 
 **Blocked by:** 01 (Confirm dialog can offer a second answer).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The setting is stored with the other settings, defaults to Always ask, and survives a restart
-- [ ] Backend test: settings without the field load as Always ask
-- [ ] Settings view has a Play behaviour select in Playback, saving like the other menus
-- [ ] The "Add to play queue" button is gone from the episode tables and the play history
-- [ ] PLAY follows the setting while another episode plays, and always plays when idle or on the current episode
-- [ ] Always ask: dialog focuses QUEUE; PLAY plays, QUEUE enqueues, Esc / `[×]` changes nothing
-- [ ] Player tests cover each mode, the dialog's answers, and the idle case
+- [x] The setting is stored with the other settings, defaults to Always ask, and survives a restart
+- [x] Backend test: settings without the field load as Always ask
+- [x] Settings view has a Play behaviour select in Playback, saving like the other menus
+- [x] The "Add to play queue" button is gone from the episode tables and the play history
+- [x] PLAY follows the setting while another episode plays, and always plays when idle or on the current episode
+- [x] Always ask: dialog focuses QUEUE; PLAY plays, QUEUE enqueues, Esc / `[×]` changes nothing
+- [x] Player tests cover each mode, the dialog's answers, and the idle case

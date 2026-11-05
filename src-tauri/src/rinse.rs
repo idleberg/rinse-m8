@@ -117,6 +117,21 @@ pub struct Settings {
     pub image_style: ImageStyle,
     /// The order of the Dashboard's show sections.
     pub show_order: ShowOrder,
+    /// What PLAY on an episode row does while another episode plays.
+    pub play_behaviour: PlayBehaviour,
+}
+
+/// What PLAY on an episode row does while another episode plays, set in Settings.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PlayBehaviour {
+    /// Asks whether to play or queue it.
+    #[default]
+    Ask,
+    /// Plays it instead of the current episode.
+    Play,
+    /// Appends it to the play queue.
+    Queue,
 }
 
 /// The order of the Dashboard's show sections, set in Settings.
@@ -145,6 +160,7 @@ impl Default for Settings {
             app_update_interval: 24,
             image_style: ImageStyle::Original,
             show_order: ShowOrder::Subscribed,
+            play_behaviour: PlayBehaviour::Ask,
         }
     }
 }
@@ -1652,6 +1668,13 @@ mod tests {
         let settings: Settings = serde_json::from_str(r#"{"showOrder":"lastUpdated"}"#).unwrap();
 
         assert_eq!(settings.show_order, ShowOrder::LastUpdated);
+    }
+
+    #[test]
+    fn an_empty_store_asks_what_play_does() {
+        let settings: Settings = serde_json::from_str("{}").unwrap();
+
+        assert_eq!(settings.play_behaviour, PlayBehaviour::Ask);
     }
 
     const HOUR: i64 = 60 * 60;

@@ -18,10 +18,14 @@ export interface Stored {
 	appUpdateInterval: number;
 	imageStyle: ImageStyle;
 	showOrder: ShowOrder;
+	playBehaviour: PlayBehaviour;
 }
 
 /** How show and episode artwork looks in the Player tab and the show view. */
 export type ImageStyle = 'original' | 'dithered' | 'grayscale';
+
+/** What PLAY on an episode row does while another episode plays. */
+export type PlayBehaviour = 'ask' | 'play' | 'queue';
 
 const jsonFilters = [{ name: 'JSON', extensions: ['json'] }];
 
@@ -38,6 +42,7 @@ class Settings {
 		appUpdateInterval: 24,
 		imageStyle: 'original',
 		showOrder: 'subscribed',
+		playBehaviour: 'ask',
 	});
 	/** Show slugs. */
 	subscribed = $derived(this.stored.subscriptions.map((s) => s.slug));
@@ -94,7 +99,8 @@ class Settings {
 			| 'updateInterval'
 			| 'appUpdateInterval'
 			| 'imageStyle'
-			| 'showOrder',
+			| 'showOrder'
+			| 'playBehaviour',
 	>(key: K, value: Stored[K]) {
 		const previous = this.stored[key];
 
