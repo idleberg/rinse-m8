@@ -79,7 +79,7 @@
 					{/each}
 				</select>
 			</dd>
-			<dt>Show order</dt>
+			<dt>”My Shows” order</dt>
 			<dd>
 				<select aria-label="Show order" value={settings.stored.showOrder} onchange={(e) => settings.save('showOrder', e.currentTarget.value as ShowOrder)}>
 					{#each showOrders as [order, label]}
@@ -147,7 +147,7 @@
 				{/if}
 				<button type="button" onclick={settings.chooseFolder}>Change…</button>
 			</dd>
-			<dt>Automatic</dt>
+			<dt>Automatic Downloads</dt>
 			<dd>
 				<label>
 					<input type="checkbox" checked={settings.stored.autoDownload} onchange={(e) => settings.save('autoDownload', e.currentTarget.checked)} />
