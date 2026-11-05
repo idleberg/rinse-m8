@@ -954,6 +954,46 @@ pub fn image_cache_dir(root: &Path) -> PathBuf {
     root.join(format!("{IMAGE_CACHE_PREFIX}-{IMAGE_MAX_SHORT_SIDE}"))
 }
 
+/// The app identifier before 0.15, whose data folder sits next to the current one.
+const OLD_IDENTIFIER: &str = "org.idleberg.rinse-m8";
+
+/// Every file the store plugin writes, in the app's data folder.
+const STORE_FILES: [&str; 7] = [
+    "directory.json",
+    "downloads.json",
+    "episodes.json",
+    "lastfm.json",
+    "player.json",
+    "settings.json",
+    "shows.json",
+];
+
+/// Copies the store files that the data folder `data` lacks from the old identifier's folder beside it. The old folder stays as a backup.
+pub fn migrate_store_files(data: &Path) {
+    let Some(old) = data.parent().map(|parent| parent.join(OLD_IDENTIFIER)) else {
+        return;
+    };
+
+    if !old.is_dir() {
+        return;
+    }
+
+    if let Err(e) = std::fs::create_dir_all(data) {
+        eprintln!("creating {data:?} failed: {e}");
+        return;
+    }
+
+    for name in STORE_FILES {
+        let (source, target) = (old.join(name), data.join(name));
+
+        if source.exists() && !target.exists() {
+            if let Err(e) = std::fs::copy(&source, &target) {
+                eprintln!("copying {source:?} to {target:?} failed: {e}");
+            }
+        }
+    }
+}
+
 /// Deletes the image caches in `root` that hold images shrunk to another limit, or none at all.
 pub fn remove_stale_image_caches(root: &Path) {
     let current = image_cache_dir(root);
@@ -1603,6 +1643,56 @@ mod tests {
 
         assert_eq!(image_cache_size(&cache), 0);
         clear_image_cache(&cache).unwrap();
+    }
+
+    /// A temporary folder, deleted when the test ends, whether it passes or not.
+    struct TempDir(PathBuf);
+
+    impl TempDir {
+        fn new(name: &str) -> Self {
+            let path = std::env::temp_dir().join(format!("{name}-{}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&path);
+            std::fs::create_dir_all(&path).unwrap();
+
+            Self(path)
+        }
+    }
+
+    impl Drop for TempDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn copies_missing_store_files_from_the_old_data_folder() {
+        let root = TempDir::new("rinse-migrate");
+        let (old, new) = (root.0.join(OLD_IDENTIFIER), root.0.join("new"));
+
+        std::fs::create_dir_all(&old).unwrap();
+        std::fs::create_dir_all(&new).unwrap();
+        std::fs::write(old.join("settings.json"), "old").unwrap();
+        std::fs::write(old.join("shows.json"), "old").unwrap();
+        std::fs::write(old.join("notes.json"), "old").unwrap();
+        std::fs::write(new.join("shows.json"), "new").unwrap();
+
+        migrate_store_files(&new);
+
+        let read = |name: &str| std::fs::read_to_string(new.join(name)).ok();
+        assert_eq!(read("settings.json").as_deref(), Some("old"));
+        assert_eq!(read("shows.json").as_deref(), Some("new"));
+        assert_eq!(read("notes.json"), None);
+        assert_eq!(read("episodes.json"), None);
+    }
+
+    #[test]
+    fn migrating_without_an_old_data_folder_creates_nothing() {
+        let root = TempDir::new("rinse-migrate-none");
+        let new = root.0.join("new");
+
+        migrate_store_files(&new);
+
+        assert!(!new.exists());
     }
 
     #[test]

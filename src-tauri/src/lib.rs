@@ -624,6 +624,13 @@ fn load_lastfm_session(app: &tauri::AppHandle) -> Result<Option<lastfm::Session>
         .map_err(|e| e.to_string())
 }
 
+fn migrate_store_files(app: &tauri::AppHandle) {
+    match app.path().app_data_dir() {
+        Ok(data) => rinse::migrate_store_files(&data),
+        Err(e) => eprintln!("finding the data folder to migrate failed: {e}"),
+    }
+}
+
 fn image_cache(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
     app.path()
         .app_cache_dir()
@@ -1079,6 +1086,9 @@ pub fn run() {
             });
         })
         .setup(|app| {
+            // Before any store loads, so installs from before the identifier change keep their data
+            migrate_store_files(app.handle());
+
             let (cancel, cancelled) = tokio::sync::mpsc::unbounded_channel();
 
             app.manage(Downloads {
