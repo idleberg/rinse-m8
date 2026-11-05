@@ -192,6 +192,16 @@ export function sortShows<T extends DirectoryShow>(
 	);
 }
 
+/** The order of the Dashboard's show sections. */
+export type ShowOrder = 'subscribed' | 'alphabetical';
+
+/** `shows`, which are in subscription order, in `order`. */
+export function orderShows<T extends Show>(shows: T[], order: ShowOrder): T[] {
+	return order === 'alphabetical'
+		? shows.toSorted((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }))
+		: shows;
+}
+
 /** `YYYY-MM-DD` as `YYYY/MM/DD`. */
 export function formatDate(date: string): string {
 	return date.replaceAll('-', '/');

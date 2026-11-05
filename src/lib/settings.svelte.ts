@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { confirm } from './confirm.svelte';
-import type { Show } from './episodes';
+import type { Show, ShowOrder } from './episodes';
 import { errors } from './errors.svelte';
 
 export interface Stored {
@@ -17,6 +17,7 @@ export interface Stored {
 	/** In hours, or 0 to check only at launch. */
 	appUpdateInterval: number;
 	imageStyle: ImageStyle;
+	showOrder: ShowOrder;
 }
 
 /** How show and episode artwork looks in the Player tab and the show view. */
@@ -36,6 +37,7 @@ class Settings {
 		updateInterval: 6,
 		appUpdateInterval: 24,
 		imageStyle: 'original',
+		showOrder: 'subscribed',
 	});
 	/** Show slugs. */
 	subscribed = $derived(this.stored.subscriptions.map((s) => s.slug));
@@ -91,7 +93,8 @@ class Settings {
 			| 'clearPlayer'
 			| 'updateInterval'
 			| 'appUpdateInterval'
-			| 'imageStyle',
+			| 'imageStyle'
+			| 'showOrder',
 	>(key: K, value: Stored[K]) {
 		const previous = this.stored[key];
 

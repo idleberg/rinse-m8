@@ -10,6 +10,7 @@ import {
 	matchesFilters,
 	monthsAgo,
 	moveItem,
+	orderShows,
 	passesCheckboxes,
 	sortEpisodes,
 	sortShows,
@@ -115,6 +116,17 @@ it('sorting shows by last aired starts freshest first, and undated shows stay la
 		['old', 'also-old', 'new', 'undated', 'also-undated'],
 	);
 	expect(sortShows(shows, null, lastAired)).toEqual(shows);
+});
+
+it('orders shows by subscription, or A–Z by title ignoring case', () => {
+	const shows = [
+		{ slug: 'b', title: 'beta' },
+		{ slug: 'c', title: 'Charlie' },
+		{ slug: 'a', title: 'Alpha' },
+	];
+
+	expect(orderShows(shows, 'subscribed').map((s) => s.slug)).toEqual(['b', 'c', 'a']);
+	expect(orderShows(shows, 'alphabetical').map((s) => s.slug)).toEqual(['a', 'b', 'c']);
 });
 
 it('months ago lands on the same day, or the last day of a shorter month', () => {

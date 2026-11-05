@@ -4,6 +4,7 @@
 	import { openUrl } from '@tauri-apps/plugin-opener';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import { confirm } from '#lib/confirm.svelte';
+	import type { ShowOrder } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
 	import { type ImageStyle, settings } from '#lib/settings.svelte';
@@ -19,6 +20,10 @@
 		['original', 'Original'],
 		['grayscale', 'Black & white'],
 		['dithered', 'Dithered'],
+	];
+	const showOrders: [ShowOrder, string][] = [
+		['subscribed', 'Subscription date'],
+		['alphabetical', 'Alphabetical'],
 	];
 	const bytesPerMegabyte = 1e6;
 	const megabytes = new Intl.NumberFormat(undefined, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1, maximumSignificantDigits: 1, roundingPriority: 'morePrecision' });
@@ -70,6 +75,14 @@
 				<select aria-label="Image style" value={settings.stored.imageStyle} onchange={(e) => settings.save('imageStyle', e.currentTarget.value as ImageStyle)}>
 					{#each imageStyles as [style, label]}
 						<option value={style}>{label}</option>
+					{/each}
+				</select>
+			</dd>
+			<dt>Show order</dt>
+			<dd>
+				<select aria-label="Show order" value={settings.stored.showOrder} onchange={(e) => settings.save('showOrder', e.currentTarget.value as ShowOrder)}>
+					{#each showOrders as [order, label]}
+						<option value={order}>{label}</option>
 					{/each}
 				</select>
 			</dd>

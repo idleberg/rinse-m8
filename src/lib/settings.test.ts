@@ -90,3 +90,9 @@ it('puts the image style in the image URL, except for the original', async () =>
 		'image://localhost/a.jpg?style=grayscale',
 	);
 });
+
+it('keeps a saved show order', async () => {
+	await settings.save('showOrder', 'alphabetical');
+	expect(settings.stored.showOrder).toBe('alphabetical');
+	expect(calls).toContainEqual(['set_settings', { patch: { showOrder: 'alphabetical' } }]);
+});

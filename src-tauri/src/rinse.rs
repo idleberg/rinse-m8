@@ -115,6 +115,19 @@ pub struct Settings {
     pub app_update_interval: u32,
     /// How show and episode artwork looks in the Player tab and the show view.
     pub image_style: ImageStyle,
+    /// The order of the Dashboard's show sections.
+    pub show_order: ShowOrder,
+}
+
+/// The order of the Dashboard's show sections, set in Settings.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ShowOrder {
+    /// The order the shows were subscribed to.
+    #[default]
+    Subscribed,
+    /// A–Z by show title.
+    Alphabetical,
 }
 
 impl Default for Settings {
@@ -129,6 +142,7 @@ impl Default for Settings {
             update_interval: 6,
             app_update_interval: 24,
             image_style: ImageStyle::Original,
+            show_order: ShowOrder::Subscribed,
         }
     }
 }
@@ -1622,6 +1636,13 @@ mod tests {
         let settings: Settings = serde_json::from_str("{}").unwrap();
 
         assert_eq!(settings.app_update_interval, 24);
+    }
+
+    #[test]
+    fn an_empty_store_orders_shows_by_subscription() {
+        let settings: Settings = serde_json::from_str("{}").unwrap();
+
+        assert_eq!(settings.show_order, ShowOrder::Subscribed);
     }
 
     const HOUR: i64 = 60 * 60;
