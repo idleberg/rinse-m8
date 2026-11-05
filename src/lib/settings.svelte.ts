@@ -16,7 +16,11 @@ export interface Stored {
 	updateInterval: number;
 	/** In hours, or 0 to check only at launch. */
 	appUpdateInterval: number;
+	imageStyle: ImageStyle;
 }
+
+/** How show and episode artwork looks in the Player tab and the show view. */
+export type ImageStyle = 'original' | 'dithered' | 'grayscale';
 
 const jsonFilters = [{ name: 'JSON', extensions: ['json'] }];
 
@@ -31,6 +35,7 @@ class Settings {
 		clearPlayer: false,
 		updateInterval: 6,
 		appUpdateInterval: 24,
+		imageStyle: 'original',
 	});
 	/** Show slugs. */
 	subscribed = $derived(this.stored.subscriptions.map((s) => s.slug));
@@ -70,14 +75,23 @@ class Settings {
 	/** Resolves true once a download folder is set, asking for one if needed. */
 	ensureFolder = async () => Boolean(this.stored.downloadFolder) || this.chooseFolder();
 
-	/** Saves a checkbox or interval, and puts the stored value back if saving fails. */
+	/** The `image` scheme URL `src` in the stored image style. Each style has its own URL, so the webview never mixes
+	 * up copies from different styles. */
+	styled = (src: string) => {
+		const style = this.stored.imageStyle;
+
+		return style === 'original' ? src : `${src}?style=${style}`;
+	};
+
+	/** Saves a checkbox, interval or menu choice, and puts the stored value back if saving fails. */
 	async save<
 		K extends
 			| 'autoDownload'
 			| 'keepRunning'
 			| 'clearPlayer'
 			| 'updateInterval'
-			| 'appUpdateInterval',
+			| 'appUpdateInterval'
+			| 'imageStyle',
 	>(key: K, value: Stored[K]) {
 		const previous = this.stored[key];
 

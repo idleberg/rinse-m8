@@ -1,8 +1,8 @@
 <script lang="ts">
+	import Artwork from '#lib/components/Artwork.svelte';
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
-	import { dither } from '#lib/dither-prototype.svelte'; // PROTOTYPE
 	import { paragraphs, passesCheckboxes, type Show, type ShowDetails } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { goto } from '$app/navigation';
@@ -52,12 +52,10 @@
 	<SubscribeButton {show} />
 </header>
 
-{#if details?.image || description.length}
-	<section>
-		{#if details?.image}
-			<img src={details.image} alt="" {@attach dither(details.image)} bind:clientHeight={imageHeight} />
-		{/if}
-		<div class="description">
+<section>
+	<Artwork src={details?.image} empty={refreshing ? undefined : 'No artwork for this show'} bind:height={imageHeight} />
+	<div class="description">
+		{#if description.length}
 			<!-- On the clip itself: WebKit doesn't shrink a flex item to a column container's max-height.
 			     Rounded down to whole lines, so no half-cut line sits above the button. -->
 			<div
@@ -74,11 +72,11 @@
 						expanded = !expanded;
 					}}>{expanded ? 'Show less' : 'Show more'}</button>
 			{/if}
-		</div>
-	</section>
-{:else if refreshing}
-	<p role="status">Refreshing…</p>
-{/if}
+		{:else if refreshing}
+			<p role="status">Loading show data…</p>
+		{/if}
+	</div>
+</section>
 
 <EpisodeFilters bind:mp3Only={checkboxes.mp3Only} bind:hideRebroadcasts={checkboxes.hideRebroadcasts} />
 
@@ -106,16 +104,7 @@
 	}
 
 	[role='status'] {
-		margin: 0 0 1rem;
-	}
-
-	/* The player's cover: a square cropped to fit */
-	img {
-		flex: none;
-		width: min(20rem, 50%);
-		aspect-ratio: 1;
-		object-fit: cover;
-		background: black;
+		text-transform: uppercase;
 	}
 
 	.description {

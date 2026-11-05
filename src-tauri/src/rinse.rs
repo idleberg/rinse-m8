@@ -113,6 +113,8 @@ pub struct Settings {
     pub update_interval: u32,
     /// Hours between checks for a new app version, or 0 to check only at launch.
     pub app_update_interval: u32,
+    /// How show and episode artwork looks in the Player tab and the show view.
+    pub image_style: ImageStyle,
 }
 
 impl Default for Settings {
@@ -126,6 +128,7 @@ impl Default for Settings {
             clear_player: false,
             update_interval: 6,
             app_update_interval: 24,
+            image_style: ImageStyle::Original,
         }
     }
 }
@@ -732,20 +735,141 @@ pub async fn cached_image(name: &str, cache: &Path) -> Result<Vec<u8>, String> {
         .await
         .map_err(|e| e.to_string())?;
 
-    // Written aside and renamed, so a crash never leaves a truncated image behind.
+    write_cached(cache, name, &bytes).await?;
+
+    Ok(bytes)
+}
+
+/// Returns the show image `name` from `cache` in `style`. A styled copy is made from the cached original the first
+/// time and saved next to it as `{name}.{style}`.
+pub async fn styled_image(name: &str, style: ImageStyle, cache: &Path) -> Result<Vec<u8>, String> {
+    let original = cached_image(name, cache).await?;
+
+    if style == ImageStyle::Original {
+        return Ok(original);
+    }
+
+    let styled_name = format!("{name}.{}", style.as_str());
+
+    if let Ok(bytes) = tokio::fs::read(cache.join(&styled_name)).await {
+        return Ok(bytes);
+    }
+
+    let bytes = tokio::task::spawn_blocking(move || style_image(original, style))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    write_cached(cache, &styled_name, &bytes).await?;
+
+    Ok(bytes)
+}
+
+/// Saves `bytes` as `name` in `cache`, written aside and renamed so a crash never leaves a truncated image behind.
+async fn write_cached(cache: &Path, name: &str, bytes: &[u8]) -> Result<(), String> {
     let part = cache.join(format!("{name}.part"));
 
     tokio::fs::create_dir_all(cache)
         .await
         .map_err(|e| e.to_string())?;
-    tokio::fs::write(&part, &bytes)
+    tokio::fs::write(&part, bytes)
         .await
         .map_err(|e| e.to_string())?;
-    tokio::fs::rename(&part, &path)
+    tokio::fs::rename(&part, cache.join(name))
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())
+}
 
-    Ok(bytes)
+/// How artwork looks, set in Settings and passed to the `image` scheme as `?style=`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ImageStyle {
+    #[default]
+    Original,
+    /// Atkinson-dithered to pure black and white, as PNG, since JPEG would smear the dot pattern.
+    Dithered,
+    /// Shades of gray, in the original's format.
+    Grayscale,
+}
+
+impl ImageStyle {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Original => "original",
+            Self::Dithered => "dithered",
+            Self::Grayscale => "grayscale",
+        }
+    }
+
+    /// The `style` in an `image` scheme URL's query, or `Original` when it's missing or unknown.
+    pub fn from_query(query: Option<&str>) -> Self {
+        let style = query
+            .into_iter()
+            .flat_map(|q| q.split('&'))
+            .find_map(|pair| pair.strip_prefix("style="));
+
+        [Self::Dithered, Self::Grayscale]
+            .into_iter()
+            .find(|s| Some(s.as_str()) == style)
+            .unwrap_or_default()
+    }
+}
+
+/// Restyles an image. Bytes that don't decode, or the `Original` style, come back as they were.
+pub fn style_image(bytes: Vec<u8>, style: ImageStyle) -> Vec<u8> {
+    if style == ImageStyle::Original {
+        return bytes;
+    }
+
+    let Ok(format) = image::guess_format(&bytes) else {
+        return bytes;
+    };
+    let Ok(decoded) = image::load_from_memory_with_format(&bytes, format) else {
+        return bytes;
+    };
+    let (styled, format) = match style {
+        ImageStyle::Original => unreachable!(),
+        ImageStyle::Dithered => (
+            image::DynamicImage::ImageLuma8(atkinson(decoded.to_luma8())),
+            image::ImageFormat::Png,
+        ),
+        ImageStyle::Grayscale => (image::DynamicImage::ImageLuma8(decoded.to_luma8()), format),
+    };
+    let mut out = Vec::new();
+
+    match styled.write_to(&mut std::io::Cursor::new(&mut out), format) {
+        Ok(()) => out,
+        Err(_) => bytes,
+    }
+}
+
+/// Atkinson dithering: each pixel becomes black or white, and 1/8 of its error goes to each of six neighbours.
+fn atkinson(mut gray: image::GrayImage) -> image::GrayImage {
+    let (width, height) = (gray.width() as i64, gray.height() as i64);
+    let mut levels: Vec<i16> = gray.as_raw().iter().map(|&v| v.into()).collect();
+
+    for y in 0..height {
+        for x in 0..width {
+            let i = (y * width + x) as usize;
+            let new = if levels[i] >= 128 { 255 } else { 0 };
+            let error = (levels[i] - new) / 8;
+
+            levels[i] = new;
+
+            for (dx, dy) in [(1, 0), (2, 0), (-1, 1), (0, 1), (1, 1), (0, 2)] {
+                let (nx, ny) = (x + dx, y + dy);
+
+                if (0..width).contains(&nx) && ny < height {
+                    levels[(ny * width + nx) as usize] += error;
+                }
+            }
+        }
+    }
+
+    for (pixel, level) in gray.iter_mut().zip(levels) {
+        *pixel = level as u8;
+    }
+
+    gray
 }
 
 /// The largest shorter side a cached image keeps: the Player tab's 280px square cover at 2×.
@@ -1120,6 +1244,85 @@ mod tests {
     #[test]
     fn leaves_non_image_bytes_untouched() {
         assert_eq!(shrink_image(b"not an image".to_vec()), b"not an image");
+    }
+
+    fn encoded(image: image::RgbImage, format: image::ImageFormat) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        image
+            .write_to(&mut std::io::Cursor::new(&mut bytes), format)
+            .unwrap();
+
+        bytes
+    }
+
+    #[test]
+    fn dithering_a_mid_gray_image_gives_black_and_white() {
+        let gray = encoded(
+            image::RgbImage::from_pixel(32, 32, image::Rgb([128, 128, 128])),
+            image::ImageFormat::Jpeg,
+        );
+        let dithered = style_image(gray, ImageStyle::Dithered);
+        let decoded = image::load_from_memory(&dithered).unwrap().to_luma8();
+        let values: BTreeSet<u8> = decoded.pixels().map(|p| p.0[0]).collect();
+
+        assert_eq!(
+            image::guess_format(&dithered).unwrap(),
+            image::ImageFormat::Png
+        );
+        assert_eq!(values, BTreeSet::from([0, 255]));
+    }
+
+    #[test]
+    fn grayscale_keeps_the_format_and_drops_the_colour() {
+        for format in [
+            image::ImageFormat::Png,
+            image::ImageFormat::Jpeg,
+            image::ImageFormat::WebP,
+        ] {
+            let red = encoded(
+                image::RgbImage::from_pixel(8, 8, image::Rgb([200, 30, 30])),
+                format,
+            );
+            let gray = style_image(red, ImageStyle::Grayscale);
+            let decoded = image::load_from_memory(&gray).unwrap().to_rgb8();
+
+            assert_eq!(image::guess_format(&gray).unwrap(), format);
+            assert!(decoded
+                .pixels()
+                .all(|p| p.0[0] == p.0[1] && p.0[1] == p.0[2]));
+        }
+    }
+
+    #[test]
+    fn styling_leaves_non_image_bytes_untouched() {
+        for style in [
+            ImageStyle::Original,
+            ImageStyle::Dithered,
+            ImageStyle::Grayscale,
+        ] {
+            assert_eq!(
+                style_image(b"not an image".to_vec(), style),
+                b"not an image"
+            );
+        }
+    }
+
+    #[test]
+    fn the_style_comes_from_the_query() {
+        assert_eq!(ImageStyle::from_query(None), ImageStyle::Original);
+        assert_eq!(
+            ImageStyle::from_query(Some("style=dithered")),
+            ImageStyle::Dithered
+        );
+        assert_eq!(
+            ImageStyle::from_query(Some("a=b&style=grayscale")),
+            ImageStyle::Grayscale
+        );
+        assert_eq!(
+            ImageStyle::from_query(Some("style=sepia")),
+            ImageStyle::Original
+        );
     }
 
     #[test]

@@ -10,15 +10,21 @@ Write the dithering by hand on the `image` crate the app already uses, with no n
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Settings has an Image style choice (Original, Dithered) that is saved and survives a relaunch; Original is the default
+- [x] Settings has an Image style choice (Original, Dithered) that is saved and survives a relaunch; Original is the default
 - [ ] With Dithered, the Player cover and the show view image are Atkinson-dithered to black and white (error spread 1/8 to the six standard neighbours)
 - [ ] Changing the style updates the images on screen without a reload, and switching back and forth downloads nothing
-- [ ] The cache keeps one original per image, plus at most one dithered PNG made from it; images cached before this change still work as originals
-- [ ] Clearing the image cache removes the styled copies too, and the cache size counts them
-- [ ] Bytes that aren't an image come back unchanged in either style
-- [ ] No new crate dependency
-- [ ] All prototype code is gone from main, including the CORS header
-- [ ] **Image style** is defined in `GLOSSARY.md` next to **Image cache**
-- [ ] A test checks that dithering a mid-gray image gives only black and white pixels, both present, and that non-image bytes pass through unchanged
+- [x] The cache keeps one original per image, plus at most one dithered PNG made from it; images cached before this change still work as originals
+- [x] Clearing the image cache removes the styled copies too, and the cache size counts them
+- [x] Bytes that aren't an image come back unchanged in either style
+- [x] No new crate dependency
+- [x] All prototype code is gone from main, including the CORS header
+- [x] **Image style** is defined in `GLOSSARY.md` next to **Image cache**
+- [x] A test checks that dithering a mid-gray image gives only black and white pixels, both present, and that non-image bytes pass through unchanged
+
+## Comments
+
+Implemented together with 02. The setting is `imageStyle` (`original`, `dithered`, `grayscale`). The Rust side reads `?style=` in the `image` scheme, and `styled_image` in `rinse.rs` saves each styled copy as `{name}.{style}` next to the original. The frontend adds the query through `settings.styled(src)`.
+
+Not checked in the running app: whether the dithered Player cover and show view image look right, and whether switching updates them on screen without a reload.

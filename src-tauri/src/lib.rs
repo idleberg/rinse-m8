@@ -1058,10 +1058,11 @@ pub fn run() {
         .register_asynchronous_uri_scheme_protocol("image", |ctx, request, responder| {
             let app = ctx.app_handle().clone();
             let name = request.uri().path().trim_start_matches('/').to_owned();
+            let style = rinse::ImageStyle::from_query(request.uri().query());
 
             tauri::async_runtime::spawn(async move {
                 let image = match image_cache(&app) {
-                    Ok(dir) => rinse::cached_image(&name, &dir).await,
+                    Ok(dir) => rinse::styled_image(&name, style, &dir).await,
                     Err(e) => Err(e),
                 };
 

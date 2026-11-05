@@ -6,7 +6,7 @@
 	import { confirm } from '#lib/confirm.svelte';
 	import { errors } from '#lib/errors.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
-	import { settings } from '#lib/settings.svelte';
+	import { type ImageStyle, settings } from '#lib/settings.svelte';
 	import { updates } from '#lib/updates.svelte';
 
 	/** In hours. */
@@ -15,6 +15,11 @@
 	/** In hours, where 0 checks only at launch. */
 	// biome-ignore lint/style/noMagicNumbers: the list is the menu's choices
 	const appUpdateIntervals = [1, 6, 24];
+	const imageStyles: [ImageStyle, string][] = [
+		['original', 'Original'],
+		['grayscale', 'Black & white'],
+		['dithered', 'Dithered'],
+	];
 	const bytesPerMegabyte = 1e6;
 	const megabytes = new Intl.NumberFormat(undefined, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1, maximumSignificantDigits: 1, roundingPriority: 'morePrecision' });
 
@@ -59,6 +64,14 @@
 			<dt>Appearance</dt>
 			<dd>
 				<ThemeToggle />
+			</dd>
+			<dt>Image style</dt>
+			<dd>
+				<select aria-label="Image style" value={settings.stored.imageStyle} onchange={(e) => settings.save('imageStyle', e.currentTarget.value as ImageStyle)}>
+					{#each imageStyles as [style, label]}
+						<option value={style}>{label}</option>
+					{/each}
+				</select>
 			</dd>
 			<dt>Window</dt>
 			<dd>

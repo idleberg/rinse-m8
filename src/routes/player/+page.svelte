@@ -1,6 +1,6 @@
 <script lang="ts">
+	import Artwork from '#lib/components/Artwork.svelte';
 	import PlayerControls from '#lib/components/PlayerControls.svelte';
-	import { dither } from '#lib/dither-prototype.svelte'; // PROTOTYPE
 	import { formatDate } from '#lib/episodes';
 	import { player } from '#lib/player.svelte';
 
@@ -39,14 +39,7 @@
 </script>
 
 <section>
-	<div class="cover">
-		{#if cover}
-			<!-- biome-ignore lint/a11y/noNoninteractiveElementInteractions: a load error, not an interaction -->
-			<img src={cover} alt="" {@attach dither(cover)} onerror={() => failed.push(cover)} />
-		{:else if playable}
-			<p>No artwork for this show</p>
-		{/if}
-	</div>
+	<Artwork src={cover} empty={playable ? 'No artwork for this show' : undefined} onerror={() => cover && failed.push(cover)} />
 	{#if playable}
 		<div class="controls">
 			<PlayerControls layout="tab" />
@@ -202,33 +195,6 @@
 		display: flex;
 		gap: 1rem;
 		align-items: center;
-	}
-
-	.cover {
-		position: relative;
-		display: grid;
-		place-items: center;
-		flex: none;
-		width: min(20rem, 50%);
-		aspect-ratio: 1;
-		background: black;
-		color: white;
-		text-transform: uppercase;
-		text-align: center;
-	}
-
-	/* Laid over the square, so its size can't stretch the grid */
-	img {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.cover p {
-		margin: 0;
-		padding: 1rem;
 	}
 
 	/* "Nothing playing" takes the controls' place, so it stretches like them */

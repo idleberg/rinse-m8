@@ -34,6 +34,10 @@ _Avoid_: Last episode, latest date
 The show view images kept on disk once loaded, indefinitely, until cleared from Settings.
 _Avoid_: Thumbnail cache, bio cache
 
+**Image style**:
+How artwork looks in the Player tab and the show view: Original, Dithered (Atkinson-dithered black and white) or Black & white (grayscale). Styled copies are made from the image cache's originals and kept beside them.
+_Avoid_: Filter, image mode, theme
+
 ### Queues
 
 **Play queue**:

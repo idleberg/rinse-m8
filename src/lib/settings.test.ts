@@ -81,3 +81,12 @@ it('unsubscribes once confirmed', async () => {
 	expect(settings.subscribed).toEqual([]);
 	expect(settings.subscribing).toEqual([]);
 });
+
+it('puts the image style in the image URL, except for the original', async () => {
+	await settings.save('imageStyle', 'original');
+	expect(settings.styled('image://localhost/a.jpg')).toBe('image://localhost/a.jpg');
+	await settings.save('imageStyle', 'grayscale');
+	expect(settings.styled('image://localhost/a.jpg')).toBe(
+		'image://localhost/a.jpg?style=grayscale',
+	);
+});
