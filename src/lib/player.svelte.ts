@@ -98,7 +98,7 @@ class Player {
 		if (behaviour === 'ask') {
 			const choice = await choose({
 				title: 'Play',
-				message: "There's already an episode is playing.",
+				message: "You're already playing an episode.",
 				primaryAction: 'Play',
 				secondaryAction: 'Queue',
 			});
