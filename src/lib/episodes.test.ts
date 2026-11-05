@@ -10,8 +10,9 @@ import {
 	matchesFilters,
 	monthsAgo,
 	moveItem,
-	orderShows,
+	orderSections,
 	passesCheckboxes,
+	type ShowOrder,
 	sortEpisodes,
 	sortShows,
 	toggleSort,
@@ -118,15 +119,23 @@ it('sorting shows by last aired starts freshest first, and undated shows stay la
 	expect(sortShows(shows, null, lastAired)).toEqual(shows);
 });
 
-it('orders shows by subscription, or A–Z by title ignoring case', () => {
-	const shows = [
-		{ slug: 'b', title: 'beta' },
-		{ slug: 'c', title: 'Charlie' },
-		{ slug: 'a', title: 'Alpha' },
+it('orders sections by subscription, A–Z by title ignoring case, or newest shown episode first', () => {
+	const sections = [
+		{ show: { slug: 'b', title: 'beta' }, episodes: [episode('b1', '2026-01-01', 'beta')] },
+		{ show: { slug: 'c', title: 'Charlie' }, episodes: [] },
+		{
+			show: { slug: 'a', title: 'Alpha' },
+			episodes: [
+				episode('a2', '2025-12-01', 'Alpha'),
+				{ ...episode('a1', '2026-01-01', 'Alpha'), time: '13:00' },
+			],
+		},
 	];
+	const slugs = (order: ShowOrder) => orderSections(sections, order).map((s) => s.show.slug);
 
-	expect(orderShows(shows, 'subscribed').map((s) => s.slug)).toEqual(['b', 'c', 'a']);
-	expect(orderShows(shows, 'alphabetical').map((s) => s.slug)).toEqual(['a', 'b', 'c']);
+	expect(slugs('subscribed')).toEqual(['b', 'c', 'a']);
+	expect(slugs('alphabetical')).toEqual(['a', 'b', 'c']);
+	expect(slugs('lastUpdated')).toEqual(['a', 'b', 'c']);
 });
 
 it('months ago lands on the same day, or the last day of a shorter month', () => {

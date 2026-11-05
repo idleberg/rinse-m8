@@ -121,13 +121,15 @@ pub struct Settings {
 
 /// The order of the Dashboard's show sections, set in Settings.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "camelCase")]
 pub enum ShowOrder {
     /// The order the shows were subscribed to.
     #[default]
     Subscribed,
     /// A–Z by show title.
     Alphabetical,
+    /// By the newest episode each section shows, newest first.
+    LastUpdated,
 }
 
 impl Default for Settings {
@@ -1643,6 +1645,13 @@ mod tests {
         let settings: Settings = serde_json::from_str("{}").unwrap();
 
         assert_eq!(settings.show_order, ShowOrder::Subscribed);
+    }
+
+    #[test]
+    fn last_updated_show_order_is_saved_as_the_frontend_names_it() {
+        let settings: Settings = serde_json::from_str(r#"{"showOrder":"lastUpdated"}"#).unwrap();
+
+        assert_eq!(settings.show_order, ShowOrder::LastUpdated);
     }
 
     const HOUR: i64 = 60 * 60;

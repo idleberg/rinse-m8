@@ -22,8 +22,9 @@
 		['dithered', 'Dithered'],
 	];
 	const showOrders: [ShowOrder, string][] = [
-		['subscribed', 'Subscription date'],
 		['alphabetical', 'Alphabetical'],
+		['subscribed', 'Subscription date'],
+		['lastUpdated', 'Last updated'],
 	];
 	const bytesPerMegabyte = 1e6;
 	const megabytes = new Intl.NumberFormat(undefined, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1, maximumSignificantDigits: 1, roundingPriority: 'morePrecision' });

@@ -3,7 +3,7 @@
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import ShowSection from '#lib/components/ShowSection.svelte';
 	import { downloads } from '#lib/downloads.svelte';
-	import { orderShows } from '#lib/episodes';
+	import { orderSections } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { filters } from '#lib/filters.svelte';
 	import { settings } from '#lib/settings.svelte';
@@ -13,13 +13,16 @@
 	const filteredEpisodes = $derived(episodes.list.filter(filters.matchesEpisode));
 
 	const showSections = $derived(
-		orderShows(settings.stored.subscriptions, settings.stored.showOrder).map((show) => ({
-			show,
-			episodes: filteredEpisodes.filter(
-				(episode) =>
-					episode.showSlug === show.slug && (showDownloaded || !downloads.queue.downloaded.includes(episode.id)),
-			),
-		})),
+		orderSections(
+			settings.stored.subscriptions.map((show) => ({
+				show,
+				episodes: filteredEpisodes.filter(
+					(episode) =>
+						episode.showSlug === show.slug && (showDownloaded || !downloads.queue.downloaded.includes(episode.id)),
+				),
+			})),
+			settings.stored.showOrder,
+		),
 	);
 
 	/** The newest filtered episode of each subscribed show, newest first. */

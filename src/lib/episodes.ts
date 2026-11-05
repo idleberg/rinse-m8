@@ -193,13 +193,30 @@ export function sortShows<T extends DirectoryShow>(
 }
 
 /** The order of the Dashboard's show sections. */
-export type ShowOrder = 'subscribed' | 'alphabetical';
+export type ShowOrder = 'subscribed' | 'alphabetical' | 'lastUpdated';
 
-/** `shows`, which are in subscription order, in `order`. */
-export function orderShows<T extends Show>(shows: T[], order: ShowOrder): T[] {
-	return order === 'alphabetical'
-		? shows.toSorted((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }))
-		: shows;
+/** `sections`, which are in subscription order, in `order`. Last updated goes by the newest episode a section shows, and a
+ * section without any sorts last. */
+export function orderSections<T extends { show: Show; episodes: Episode[] }>(
+	sections: T[],
+	order: ShowOrder,
+): T[] {
+	const newest = (section: T) =>
+		section.episodes
+			.map(sortKeys.date)
+			.sort((a, b) => a.localeCompare(b))
+			.at(-1) ?? '';
+
+	switch (order) {
+		case 'alphabetical':
+			return sections.toSorted((a, b) =>
+				a.show.title.localeCompare(b.show.title, undefined, { sensitivity: 'base' }),
+			);
+		case 'lastUpdated':
+			return sections.toSorted((a, b) => newest(b).localeCompare(newest(a)));
+		default:
+			return sections;
+	}
 }
 
 /** `YYYY-MM-DD` as `YYYY/MM/DD`. */
