@@ -66,7 +66,7 @@ it('keeps the subscription when unsubscribing is declined', async () => {
 	const toggled = settings.toggle(show);
 
 	expect(confirmation.question?.title).toBe('Unsubscribe');
-	confirmation.answer(false);
+	confirmation.answer();
 	await toggled;
 	expect(settings.subscribed).toEqual(['a']);
 	expect(calls).toEqual([]);
@@ -76,7 +76,7 @@ it('unsubscribes once confirmed', async () => {
 	const toggled = settings.toggle(show);
 
 	expect(settings.subscribing).toEqual([]);
-	confirmation.answer(true);
+	confirmation.answer('primary');
 	await toggled;
 	expect(settings.subscribed).toEqual([]);
 	expect(settings.subscribing).toEqual([]);

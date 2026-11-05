@@ -53,7 +53,7 @@ it('disconnects once confirmed', async () => {
 	const disconnected = lastfm.disconnect();
 
 	expect(confirmation.question?.message).toBe('Disconnect dj from Last.fm?');
-	confirmation.answer(true);
+	confirmation.answer('primary');
 	await disconnected;
 	expect(lastfm.account).toEqual({ user: null });
 });

@@ -35,7 +35,7 @@
 		<button type="button" onclick={() => errors.report('Sample error: something went wrong')}>Set error</button>
 		<!-- Through the real event, which the errors module turns into its offline message -->
 		<button type="button" onclick={() => window.dispatchEvent(new Event('offline'))}>Set offline</button>
-		<button type="button" onclick={() => confirm({ title: 'Sample Question', message: 'Answer the sample question?', action: 'Answer' })}>Show dialog</button>
+		<button type="button" onclick={() => confirm({ title: 'Sample Question', message: 'Answer the sample question?', primaryAction: 'Answer', secondaryAction: 'Cancel' })}>Show dialog</button>
 	</aside>
 {/if}
 

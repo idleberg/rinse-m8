@@ -146,13 +146,13 @@ it('clears the play queue only once confirmed', async () => {
 
 	const declined = player.clearQueue();
 
-	confirmation.answer(false);
+	confirmation.answer();
 	await declined;
 	expect(player.playQueue).toHaveLength(1);
 
 	const confirmed = player.clearQueue();
 
-	confirmation.answer(true);
+	confirmation.answer('primary');
 	await confirmed;
 	await settle();
 	expect(player.playQueue).toEqual([]);
@@ -167,13 +167,13 @@ it('clears the history only once confirmed, leaving PREV its session stack', asy
 
 	const declined = player.clearHistory();
 
-	confirmation.answer(false);
+	confirmation.answer();
 	await declined;
 	expect(player.playHistory.map((e) => e.id)).toEqual(['b', 'a']);
 
 	const confirmed = player.clearHistory();
 
-	confirmation.answer(true);
+	confirmation.answer('primary');
 	await confirmed;
 	await settle();
 	expect(player.playHistory).toEqual([]);

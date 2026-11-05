@@ -81,7 +81,8 @@ class Downloads {
 			await confirm({
 				title: 'Clear Downloads',
 				message: 'Clear the list of previous downloads?',
-				action: 'Clear',
+				primaryAction: 'Clear',
+				secondaryAction: 'Cancel',
 			})
 		) {
 			await run('clear_downloaded');

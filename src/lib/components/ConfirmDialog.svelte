@@ -4,7 +4,7 @@
 	const id = $props.id();
 
 	let dialog: HTMLDialogElement;
-	let cancel: HTMLButtonElement;
+	let secondary: HTMLButtonElement;
 
 	/** The button last clicked outside the dialog. WebKit doesn't focus buttons on click, so the native focus return misses it. */
 	let opener: HTMLElement | null = null;
@@ -19,7 +19,7 @@
 		dialog.showModal();
 
 		// Not the first button, `[×]`, so pressing Enter by accident does nothing
-		cancel.focus();
+		secondary.focus();
 	});
 </script>
 
@@ -38,7 +38,10 @@
 	aria-labelledby="{id}-title"
 	onclose={() => {
 		opener?.focus();
-		confirmation.answer(dialog.returnValue === 'confirm');
+
+		const { returnValue } = dialog;
+
+		confirmation.answer(returnValue === 'primary' || returnValue === 'secondary' ? returnValue : undefined);
 	}}
 >
 	<form method="dialog">
@@ -48,8 +51,8 @@
 		</header>
 		<p>{confirmation.question?.message}</p>
 		<footer>
-			<button type="submit" value="cancel" bind:this={cancel}>Cancel</button>
-			<button type="submit" value="confirm">{confirmation.question?.action}</button>
+			<button type="submit" value="secondary" bind:this={secondary}>{confirmation.question?.secondaryAction}</button>
+			<button type="submit" value="primary">{confirmation.question?.primaryAction}</button>
 		</footer>
 	</form>
 </dialog>

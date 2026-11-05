@@ -39,7 +39,8 @@ class Lastfm {
 			!(await confirm({
 				title: 'Disconnect Last.fm',
 				message: `Disconnect ${this.account?.user} from Last.fm?`,
-				action: 'Disconnect',
+				primaryAction: 'Disconnect',
+				secondaryAction: 'Cancel',
 			}))
 		) {
 			return;

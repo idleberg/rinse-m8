@@ -43,7 +43,7 @@
 	async function clearImageCache() {
 		errors.clear();
 
-		if (!(await confirm({ title: 'Clear Image Cache', message: 'Clear the cached show images?', action: 'Clear' }))) {
+		if (!(await confirm({ title: 'Clear Image Cache', message: 'Clear the cached show images?', primaryAction: 'Clear', secondaryAction: 'Cancel' }))) {
 			return;
 		}
 

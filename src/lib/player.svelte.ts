@@ -120,7 +120,12 @@ class Player {
 	/** Empties the play queue, once confirmed. */
 	clearQueue = async () => {
 		if (
-			await confirm({ title: 'Clear Queue', message: 'Clear the play queue?', action: 'Clear' })
+			await confirm({
+				title: 'Clear Queue',
+				message: 'Clear the play queue?',
+				primaryAction: 'Clear',
+				secondaryAction: 'Cancel',
+			})
 		) {
 			this.playQueue = [];
 			this.#persistQueue();
@@ -130,7 +135,12 @@ class Player {
 	/** Empties the play history, once confirmed. PREV keeps its own session stack. */
 	clearHistory = async () => {
 		if (
-			await confirm({ title: 'Clear History', message: 'Clear the play history?', action: 'Clear' })
+			await confirm({
+				title: 'Clear History',
+				message: 'Clear the play history?',
+				primaryAction: 'Clear',
+				secondaryAction: 'Cancel',
+			})
 		) {
 			this.playHistory = [];
 			this.#save('history', []);

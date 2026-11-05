@@ -121,7 +121,8 @@ class Settings {
 			!(await confirm({
 				title: 'Unsubscribe',
 				message: `Unsubscribe from ${show.title}?`,
-				action: 'Unsubscribe',
+				primaryAction: 'Unsubscribe',
+				secondaryAction: 'Cancel',
 			}))
 		) {
 			return;
