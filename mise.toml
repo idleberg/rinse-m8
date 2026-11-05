@@ -25,8 +25,11 @@ run = "bun tauri build"
 # Linux needs a Linux host. Windows cross-builds the NSIS installer elsewhere
 # (needs Homebrew llvm, lld and nsis on macOS).
 [tasks."build:macos"]
-description = "Build a universal macOS app (run on macOS)"
-run = "bun tauri build --target universal-apple-darwin"
+description = "Build the Apple Silicon and Intel macOS apps (run on macOS)"
+run = [
+  "bun tauri build --target aarch64-apple-darwin",
+  "bun tauri build --target x86_64-apple-darwin",
+]
 
 [tasks."build:windows"]
 description = "Build the Windows installer"

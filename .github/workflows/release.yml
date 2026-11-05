@@ -19,7 +19,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: universal-apple-darwin
+          # The arm64 runner cross-compiles the Intel build.
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            bundles: app,dmg
+          - target: x86_64-apple-darwin
             os: macos-latest
             bundles: app,dmg
           - target: x86_64-pc-windows-msvc
@@ -85,13 +89,17 @@ jobs:
             --config '{"bundle":{"createUpdaterArtifacts":true}}'
 
       # GitHub turns the space in "Rinse M8" into a dot on upload; dashes read better.
+      # The macOS updater archive has no arch in its name, so both Mac builds would
+      # upload the same file name; add the arch (aarch64, x86_64) to it.
       - name: Collect bundles
         shell: bash
         run: |
           mkdir dist
-          for f in src-tauri/target/${{ matrix.target }}/release/bundle/*/*.{dmg,exe,deb,rpm,AppImage,tar.gz,sig}; do
+          target=${{ matrix.target }}
+          for f in src-tauri/target/$target/release/bundle/*/*.{dmg,exe,deb,rpm,AppImage,tar.gz,sig}; do
             [[ -f "$f" ]] || continue
             name=$(basename "$f")
+            name=${name/.app.tar.gz/_${target%%-*}.app.tar.gz}
             cp "$f" "dist/${name// /-}"
           done
           ls dist
@@ -119,8 +127,7 @@ jobs:
       - name: Generate checksums
         run: sha256sum Rinse-M8* > SHA256SUMS
 
-      # The universal macOS archive serves both Apple architectures. deb and rpm
-      # aren't listed, so those users keep updating manually.
+      # deb and rpm aren't listed, so those users keep updating manually.
       - name: Generate update manifest
         run: |
           BASE="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME"
@@ -129,17 +136,19 @@ jobs:
             jq -n --rawfile sig "$1.sig" --arg url "$BASE/$1" '{signature: ($sig | rtrimstr("\n")), url: $url}'
           }
 
-          mac=$(entry Rinse-M8.app.tar.gz)
+          mac_arm=$(entry Rinse-M8_aarch64.app.tar.gz)
+          mac_intel=$(entry Rinse-M8_x86_64.app.tar.gz)
           win=$(entry Rinse-M8_*-setup.exe)
           linux=$(entry Rinse-M8_*.AppImage)
 
           jq -n \
             --arg version "${GITHUB_REF_NAME#v}" \
             --arg pub_date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --argjson mac "$mac" --argjson win "$win" --argjson linux "$linux" \
+            --argjson mac_arm "$mac_arm" --argjson mac_intel "$mac_intel" \
+            --argjson win "$win" --argjson linux "$linux" \
             '{version: $version, pub_date: $pub_date, platforms: {
-              "darwin-x86_64": $mac,
-              "darwin-aarch64": $mac,
+              "darwin-x86_64": $mac_intel,
+              "darwin-aarch64": $mac_arm,
               "windows-x86_64": $win,
               "linux-x86_64": $linux
             }}' > latest.json
