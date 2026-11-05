@@ -137,7 +137,7 @@
 			<dd>
 				<label>
 					<input type="checkbox" checked={settings.stored.autoDownload} onchange={(e) => settings.save('autoDownload', e.currentTarget.checked)} />
-					new episodes of subscribed shows
+					download new episodes of subscribed shows
 				</label>
 			</dd>
 		</dl>
