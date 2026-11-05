@@ -210,10 +210,6 @@
 		margin-block: 0.5rem 0;
 	}
 
-	.label {
-		margin-top: 0.5rem;
-	}
-
 	.title {
 		display: block;
 		overflow: hidden;
