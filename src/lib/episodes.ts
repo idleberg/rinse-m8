@@ -95,6 +95,29 @@ export function monthsAgo(months: number, now = new Date()): string {
 		.slice(0, 10);
 }
 
+/** The genre and show dropdown options for `episodes`: every genre once and every show once, each sorted. */
+export function favOptions(episodes: Episode[]): { genres: string[]; shows: Show[] } {
+	const genres = new Set(episodes.flatMap((episode) => episode.genres));
+	const shows = new Map(episodes.map((episode) => [episode.showSlug, showOf(episode)]));
+
+	return {
+		genres: [...genres].sort((a, b) => a.localeCompare(b)),
+		shows: [...shows.values()].sort((a, b) => a.title.localeCompare(b.title)),
+	};
+}
+
+/** Whether the episode passes the genre and show dropdowns, where null is "All". An episode without genres only passes
+ * "All genres". */
+export function matchesFavFilters(
+	episode: Episode,
+	{ genre, show }: { genre: string | null; show: string | null },
+): boolean {
+	return (
+		(genre === null || episode.genres.includes(genre)) &&
+		(show === null || episode.showSlug === show)
+	);
+}
+
 export function showOf(episode: Episode): Show {
 	return { slug: episode.showSlug, title: episode.showTitle };
 }

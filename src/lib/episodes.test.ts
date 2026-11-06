@@ -7,6 +7,8 @@ import {
 	defaultSort,
 	type Episode,
 	episodeLabel,
+	favOptions,
+	matchesFavFilters,
 	matchesFilters,
 	monthsAgo,
 	moveItem,
@@ -169,4 +171,32 @@ it('the checkboxes hide episodes without a download, and rebroadcasts', () => {
 	).toBe(false);
 	expect(passesCheckboxes(rebroadcast, { mp3Only: false, hideRebroadcasts: true })).toBe(false);
 	expect(passesCheckboxes(rebroadcast, { mp3Only: false, hideRebroadcasts: false })).toBe(true);
+});
+
+it('the fav options are the sorted genre union and each show once, sorted by title', () => {
+	const loved = [
+		{ ...episode('a', '2026-10-01', 'Beta'), genres: ['Jungle', 'Dubstep'] },
+		{ ...episode('b', '2026-10-02', 'Alpha'), genres: [] },
+		{ ...episode('c', '2026-10-03', 'Beta'), showSlug: 'a', genres: ['Dubstep', 'Grime'] },
+	];
+
+	expect(favOptions(loved)).toEqual({
+		genres: ['Dubstep', 'Grime', 'Jungle'],
+		shows: [
+			{ slug: 'b', title: 'Alpha' },
+			{ slug: 'a', title: 'Beta' },
+		],
+	});
+});
+
+it('an episode without genres only matches all genres, and a show matches by slug', () => {
+	const tagged = { ...episode('a', '2026-10-01', 'Beta'), genres: ['Jungle'] };
+	const untagged = episode('b', '2026-10-02', 'Alpha');
+
+	expect(matchesFavFilters(tagged, { genre: 'Jungle', show: null })).toBe(true);
+	expect(matchesFavFilters(tagged, { genre: 'Grime', show: null })).toBe(false);
+	expect(matchesFavFilters(untagged, { genre: null, show: null })).toBe(true);
+	expect(matchesFavFilters(untagged, { genre: 'Jungle', show: null })).toBe(false);
+	expect(matchesFavFilters(tagged, { genre: 'Jungle', show: 'a' })).toBe(true);
+	expect(matchesFavFilters(tagged, { genre: 'Jungle', show: 'b' })).toBe(false);
 });

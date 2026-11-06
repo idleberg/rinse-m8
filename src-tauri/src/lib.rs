@@ -292,6 +292,26 @@ fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<PreviousDownload>
         .collect())
 }
 
+/// The download-folder file of each of `episodes` that has one, by episode id.
+#[tauri::command]
+fn get_downloaded_files(
+    app: tauri::AppHandle,
+    episodes: Vec<rinse::Episode>,
+) -> Result<BTreeMap<String, PathBuf>, String> {
+    let Some(folder) = load_settings(&app, serde_json::Map::new())?.download_folder else {
+        return Ok(Default::default());
+    };
+
+    Ok(episodes
+        .into_iter()
+        .filter_map(|episode| {
+            let file = rinse::downloaded_file(&folder, &episode)?;
+
+            Some((episode.id, file))
+        })
+        .collect())
+}
+
 /// Drops a waiting or failed download along with its partial file; a missing one is no error.
 #[tauri::command]
 async fn remove_download(app: tauri::AppHandle, id: String) {
@@ -1242,6 +1262,7 @@ pub fn run() {
             download,
             get_download_queue,
             get_previous_downloads,
+            get_downloaded_files,
             remove_download,
             retry_download,
             retry_all_downloads,
