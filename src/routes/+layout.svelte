@@ -49,10 +49,19 @@
 	listen('open-settings', () => goto('/settings')).catch(errors.report);
 </script>
 
-<!-- With Tauri's file drop off, a dropped file would otherwise open in the window -->
+<!-- With Tauri's file drop off, a dropped file would otherwise open in the window. Cmd+K (Ctrl+K off macOS) focuses the page's filter input -->
 <svelte:window
 	ondragover={(event) => event.dataTransfer?.types.includes('Files') && event.preventDefault()}
 	ondrop={(event) => event.dataTransfer?.types.includes('Files') && event.preventDefault()}
+	onkeydown={(event) => {
+		const modifier = navigator.userAgent.includes('Mac') ? event.metaKey : event.ctrlKey;
+		const search = document.querySelector<HTMLInputElement>('main input[type="search"]');
+
+		if (modifier && event.key.toLowerCase() === 'k' && search) {
+			event.preventDefault();
+			search.select();
+		}
+	}}
 />
 
 <UpdateBanner />
