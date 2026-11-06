@@ -7,7 +7,7 @@
 	let {
 		shows,
 	}: {
-		/** The filtered directory, or null until the first refresh finishes. */
+		/** Listed in the given order, such as the filtered directory or a show's recommendations; null while loading. */
 		shows: DirectoryShow[] | null;
 	} = $props();
 

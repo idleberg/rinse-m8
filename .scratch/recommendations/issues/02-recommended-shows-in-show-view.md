@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** ready-for-human (needs a check in the app with a connected Last.fm account: the list, a click, a cached reopen, and one while disconnected)
 
 - [ ] A show with matches lists its recommended shows below its episodes, best first
 - [ ] The episodes appear without waiting for the lookup

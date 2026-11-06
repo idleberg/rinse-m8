@@ -10,13 +10,13 @@ Nothing in the UI calls these yet. Each follow-up ticket adds a caller.
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-human (needs a check against a real Last.fm account: a lookup, a cached repeat, and one while disconnected)
+**Status:** done
 
-- [ ] Looking up an artist while connected caches its similar artists with their match values
-- [ ] Asking again for the same artist within 30 days doesn't fetch again
-- [ ] An unknown artist is cached as an empty list
-- [ ] Nothing is looked up while disconnected
-- [ ] A failed lookup is logged and gives no recommendations
+- [x] Looking up an artist while connected caches its similar artists with their match values
+- [x] Asking again for the same artist within 30 days doesn't fetch again
+- [x] An unknown artist is cached as an empty list
+- [x] Nothing is looked up while disconnected
+- [x] A failed lookup is logged and gives no recommendations
 - [x] A similar artist found in a show's title recommends that show
 - [x] A similar artist found in an episode's display title ("B2B …", "with …", "/w …") recommends that episode's show
 - [x] The artist's own show is never recommended

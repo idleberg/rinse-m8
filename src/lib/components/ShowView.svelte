@@ -1,10 +1,14 @@
 <script lang="ts">
+	import { invoke } from '@tauri-apps/api/core';
 	import Artwork from '#lib/components/Artwork.svelte';
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
+	import ShowDirectory from '#lib/components/ShowDirectory.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
-	import { paragraphs, passesCheckboxes, type Show, type ShowDetails } from '#lib/episodes';
+	import { type DirectoryShow, paragraphs, passesCheckboxes, type Show, type ShowDetails } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
+	import { errors } from '#lib/errors.svelte';
+	import { lastfm } from '#lib/lastfm.svelte';
 	import { goto } from '$app/navigation';
 
 	let {
@@ -24,6 +28,34 @@
 	const visibleEpisodes = $derived(
 		episodes.list.filter((episode) => episode.showSlug === show.slug && passesCheckboxes(episode, checkboxes)),
 	);
+
+	/** The 5 best shows for fans of this one, best first. Empty until the lookup finishes or when nothing matches. */
+	let recommended = $state<DirectoryShow[]>([]);
+
+	// Strings, so the lookup only runs again when the title changes, not whenever the parent builds a new `show`
+	const slug = $derived(show.slug);
+	const title = $derived(show.title);
+
+	// The title is the artist on Last.fm, so the lookup waits for the real one to replace the slug standing in for it
+	$effect(() => {
+		let current = true;
+
+		if (!lastfm.account?.user || title === slug) {
+			return;
+		}
+
+		invoke<DirectoryShow[]>('get_recommended_shows', { artist: title })
+			.then((shows) => {
+				if (current) {
+					recommended = shows.slice(0, 5);
+				}
+			})
+			.catch(errors.report);
+
+		return () => {
+			current = false;
+		};
+	});
 
 	const description = $derived(details?.description ? paragraphs(details.description) : []);
 
@@ -82,6 +114,11 @@
 
 <EpisodeTable episodes={visibleEpisodes} subscribable />
 
+{#if lastfm.account?.user && recommended.length > 0}
+	<h2>Recommended shows</h2>
+	<ShowDirectory shows={recommended} />
+{/if}
+
 <style>
 	header {
 		display: flex;
@@ -93,6 +130,12 @@
 	h1 {
 		margin: 0;
 		font-size: 1.5rem;
+		text-transform: uppercase;
+	}
+
+	h2 {
+		margin: 2rem 0 1rem;
+		font-size: 1.25rem;
 		text-transform: uppercase;
 	}
 
