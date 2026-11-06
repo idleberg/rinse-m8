@@ -4,7 +4,7 @@
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
-	import { type DirectoryShow, paragraphs, passesCheckboxes, type Show, type ShowDetails } from '#lib/episodes';
+	import { type DirectoryShow, paragraphs, passesCheckboxes, type Show, type ShowDetails, type ShowPage } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { errors } from '#lib/errors.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
@@ -32,11 +32,25 @@
 	/** The 5 best shows for fans of this one, best first. Empty until the lookup finishes or when nothing matches. */
 	let recommended = $state<(DirectoryShow & { image: string | null })[]>([]);
 
-	/** The directory has no artwork, so it comes from a cached episode or, for a show opened before, its record. */
-	const artwork = async (showSlug: string) =>
-		episodes.list.find((episode) => episode.showSlug === showSlug && episode.showImage)?.showImage ??
-		(await invoke<ShowDetails | null>('get_show_record', { slug: showSlug }).catch(() => null))?.image ??
-		null;
+	/** The directory has no artwork, so it comes from a cached episode, the show's record, or else fetching the show,
+	 * which records it for next time. A record without an image means Rinse has none. */
+	const artwork = async (showSlug: string) => {
+		const cached = episodes.list.find((episode) => episode.showSlug === showSlug && episode.showImage)?.showImage;
+
+		if (cached) {
+			return cached;
+		}
+
+		const record = await invoke<ShowDetails | null>('get_show_record', { slug: showSlug }).catch(() => null);
+
+		if (record) {
+			return record.image;
+		}
+
+		const page = await invoke<ShowPage>('refresh_show', { slug: showSlug }).catch(() => null);
+
+		return page?.details.image ?? null;
+	};
 
 	// Strings, so the lookup only runs again when the title changes, not whenever the parent builds a new `show`
 	const slug = $derived(show.slug);
