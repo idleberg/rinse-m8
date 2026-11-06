@@ -6,8 +6,8 @@
 
 **Status:** ready-for-human (needs a check in the app with a connected Last.fm account: the list, a click, a cached reopen, and one while disconnected)
 
-- [ ] A show with matches lists its recommended shows below its episodes, best first
-- [ ] The episodes appear without waiting for the lookup
-- [ ] Clicking a recommended show opens its show view
+- [x] A show with matches lists its recommended shows below its episodes, best first
+- [x] The episodes appear without waiting for the lookup
+- [x] Clicking a recommended show opens its show view
 - [ ] No section appears while disconnected or when nothing matches
 - [ ] Reopening the show within 30 days uses the cache
