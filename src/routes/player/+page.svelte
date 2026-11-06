@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Artwork from '#lib/components/Artwork.svelte';
 	import PlayerControls from '#lib/components/PlayerControls.svelte';
+	import Recommendations from '#lib/components/Recommendations.svelte';
 	import { formatDate } from '#lib/episodes';
 	import { player } from '#lib/player.svelte';
 
@@ -179,6 +180,13 @@
 {:else}
 	<p class="empty">Nothing played yet</p>
 {/if}
+
+<!-- Something to queue next, for fans of what's playing -->
+<Recommendations artist={player.episode?.showTitle ?? null}>
+	<header>
+		<h2>Recommended shows</h2>
+	</header>
+</Recommendations>
 
 <style>
 	section {
