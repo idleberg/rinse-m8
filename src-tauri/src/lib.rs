@@ -135,7 +135,14 @@ fn save_episodes(
 
     cache.save().map_err(|e| e.to_string())?;
 
-    Ok(cache
+    load_episodes(app)
+}
+
+/// The whole episode cache. Entries that no longer parse are skipped.
+fn load_episodes(app: &tauri::AppHandle) -> Result<Vec<rinse::Episode>, String> {
+    Ok(app
+        .store("episodes.json")
+        .map_err(|e| e.to_string())?
         .values()
         .into_iter()
         .filter_map(|v| serde_json::from_value(v).ok())
@@ -590,6 +597,73 @@ async fn love(app: tauri::AppHandle, episode: rinse::Episode) -> Result<(), Stri
     let result = lastfm::love(&session, &lastfm::track(&episode)).await;
 
     lastfm_outcome(&app, "love", result)
+}
+
+/// The shows recommended for fans of `artist`, usually a show title, best first. None while disconnected or when the lookup fails.
+#[tauri::command]
+async fn get_recommended_shows(
+    app: tauri::AppHandle,
+    artist: String,
+) -> Result<Vec<rinse::DirectoryShow>, String> {
+    let Some(similar) = similar_artists(&app, &artist).await? else {
+        return Ok(Vec::new());
+    };
+
+    let shows: Vec<rinse::DirectoryShow> = get_show_directory(app.clone())?.unwrap_or_default();
+    let episodes = load_episodes(&app)?;
+
+    Ok(lastfm::recommend(&artist, &similar, &shows, &episodes))
+}
+
+/// The artists Last.fm finds similar to `artist`, cached for 30 days, unknown artists included.
+/// None while disconnected or when the lookup fails, which is only logged.
+async fn similar_artists(
+    app: &tauri::AppHandle,
+    artist: &str,
+) -> Result<Option<Vec<lastfm::Similar>>, String> {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Cached {
+        fetched_at: u64,
+        artists: Vec<lastfm::Similar>,
+    }
+
+    if load_lastfm_session(app)?.is_none() {
+        return Ok(None);
+    }
+
+    let store = app.store("similar.json").map_err(|e| e.to_string())?;
+    let key = artist.to_lowercase();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_secs();
+    let cached: Option<Cached> = store.get(&key).and_then(|v| serde_json::from_value(v).ok());
+
+    if let Some(cached) = cached.filter(|c| now.saturating_sub(c.fetched_at) < 30 * 24 * 60 * 60) {
+        return Ok(Some(cached.artists));
+    }
+
+    let artists = match lastfm::similar(artist).await {
+        Ok(artists) => artists,
+        Err(e) => {
+            eprintln!("Last.fm similar artists for {artist} failed: {e}");
+
+            return Ok(None);
+        }
+    };
+    let cached = Cached {
+        fetched_at: now,
+        artists,
+    };
+
+    store.set(
+        key,
+        serde_json::to_value(&cached).map_err(|e| e.to_string())?,
+    );
+    store.save().map_err(|e| e.to_string())?;
+
+    Ok(Some(cached.artists))
 }
 
 /// Drops a session Last.fm rejects and tells the Settings row. Other failures are only logged, so being offline doesn't show an error.
@@ -1193,7 +1267,8 @@ pub fn run() {
             unsubscribe,
             export_subscriptions,
             import_subscriptions,
-            get_show_directory
+            get_show_directory,
+            get_recommended_shows
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

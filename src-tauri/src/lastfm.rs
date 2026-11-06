@@ -1,7 +1,8 @@
-use crate::rinse::Episode;
+use crate::rinse::{DirectoryShow, Episode};
 use chrono::NaiveDate;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::time::Duration;
 use tokio::sync::oneshot;
@@ -151,6 +152,142 @@ async fn post(method: &str, params: &[(&str, &str)]) -> Result<(), Failure> {
         Err((Some(9), _)) => Err(Failure::InvalidSession),
         Err((_, message)) => Err(Failure::Other(message)),
     }
+}
+
+/// An artist Last.fm finds similar to another, with how similar from 0 to 1.
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct Similar {
+    pub name: String,
+    #[serde(rename = "match")]
+    pub score: f64,
+}
+
+/// The artists in an `artist.getSimilar` reply. An artist Last.fm doesn't know has none.
+pub fn parse_similar(reply: &str) -> Result<Vec<Similar>, String> {
+    #[derive(Deserialize)]
+    struct Body {
+        similarartists: Artists,
+    }
+
+    #[derive(Deserialize)]
+    struct Artists {
+        artist: Vec<Artist>,
+    }
+
+    // Last.fm sends the match as a string
+    #[derive(Deserialize)]
+    struct Artist {
+        name: String,
+        #[serde(rename = "match")]
+        score: String,
+    }
+
+    match parse::<Body>(reply) {
+        Ok(body) => body
+            .similarartists
+            .artist
+            .into_iter()
+            .map(|a| {
+                let score = a
+                    .score
+                    .parse()
+                    .map_err(|e| format!("match {}: {e}", a.score))?;
+
+                Ok(Similar {
+                    name: a.name,
+                    score,
+                })
+            })
+            .collect(),
+        // 6 is "The artist you supplied could not be found"
+        Err((Some(6), _)) => Ok(Vec::new()),
+        Err((_, message)) => Err(message),
+    }
+}
+
+/// The artists Last.fm finds similar to `artist`, most similar first.
+pub async fn similar(artist: &str) -> Result<Vec<Similar>, String> {
+    parse_similar(&call("artist.getSimilar", &[("artist", artist)]).await?)
+}
+
+/// The shows among `shows` that mention one of `similar` in their title or an episode's display title, best first.
+/// A show scores its best match plus 0.2 × its genre overlap with `artist`'s own show, which is never recommended.
+pub fn recommend(
+    artist: &str,
+    similar: &[Similar],
+    shows: &[DirectoryShow],
+    episodes: &[Episode],
+) -> Vec<DirectoryShow> {
+    // Shorter names hit too many unrelated titles
+    let similar: Vec<(String, f64)> = similar
+        .iter()
+        .map(|s| (words(&s.name), s.score))
+        .filter(|(name, _)| name.chars().count() >= 3)
+        .collect();
+
+    // Guests show up in display titles, such as "B2B X" or "with X"
+    let mut texts: HashMap<&str, Vec<String>> = HashMap::new();
+
+    for show in shows {
+        texts
+            .entry(&show.slug)
+            .or_default()
+            .push(words(&show.title));
+    }
+
+    for episode in episodes {
+        if let (Some(texts), Some(display_title)) = (
+            texts.get_mut(episode.show_slug.as_str()),
+            &episode.display_title,
+        ) {
+            texts.push(words(display_title));
+        }
+    }
+
+    let artist = words(artist);
+    let own = shows.iter().find(|show| words(&show.title) == artist);
+    let own_genres: HashSet<&String> = own.iter().flat_map(|show| &show.genres).collect();
+
+    let mut scored: Vec<(f64, &DirectoryShow)> = shows
+        .iter()
+        .filter(|show| words(&show.title) != artist)
+        .filter_map(|show| {
+            let texts = &texts[show.slug.as_str()];
+            let best = similar
+                .iter()
+                .filter(|(name, _)| texts.iter().any(|text| mentions(text, name)))
+                .map(|(_, score)| *score)
+                .reduce(f64::max)?;
+
+            // Jaccard index, small enough that genres only break ties
+            let genres: HashSet<&String> = show.genres.iter().collect();
+            let union = genres.union(&own_genres).count();
+            let overlap = match union {
+                0 => 0.0,
+                _ => genres.intersection(&own_genres).count() as f64 / union as f64,
+            };
+
+            Some((best + 0.2 * overlap, show))
+        })
+        .collect();
+
+    scored.sort_by(|a, b| b.0.total_cmp(&a.0));
+
+    scored.into_iter().map(|(_, show)| show.clone()).collect()
+}
+
+/// `text` lowercased, with punctuation dropped and its words joined by single spaces.
+fn words(text: &str) -> String {
+    text.to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Whether `text` holds `name` as whole words, both as `words` gives them.
+fn mentions(text: &str, name: &str) -> bool {
+    format!(" {text} ").contains(&format!(" {name} "))
 }
 
 /// The app's API account, read at compile time, so a build without one has no Last.fm.
@@ -360,6 +497,145 @@ mod tests {
 
         assert_eq!(result, Ok(None));
         assert_eq!(polls, 2);
+    }
+
+    #[test]
+    fn similar_artists_keep_their_match_values() {
+        let reply = r#"{"similarartists":{"artist":[
+            {"name":"Pinch","mbid":"","match":"1","url":"https://www.last.fm/music/Pinch"},
+            {"name":"Kahn","match":"0.4512"}
+        ],"@attr":{"artist":"Hodge"}}}"#;
+
+        assert_eq!(
+            parse_similar(reply),
+            Ok(vec![
+                Similar {
+                    name: "Pinch".into(),
+                    score: 1.0,
+                },
+                Similar {
+                    name: "Kahn".into(),
+                    score: 0.4512,
+                },
+            ])
+        );
+    }
+
+    #[test]
+    fn an_unknown_artist_has_no_similar_artists() {
+        let reply =
+            r#"{"error":6,"message":"The artist you supplied could not be found","links":[]}"#;
+
+        assert_eq!(parse_similar(reply), Ok(Vec::new()));
+    }
+
+    fn show(slug: &str, title: &str, genres: &[&str]) -> DirectoryShow {
+        DirectoryShow {
+            slug: slug.into(),
+            title: title.into(),
+            station: "Rinse FM".into(),
+            genres: genres.iter().map(|&g| g.into()).collect(),
+        }
+    }
+
+    fn similar(name: &str, score: f64) -> Similar {
+        Similar {
+            name: name.into(),
+            score,
+        }
+    }
+
+    fn slugs(shows: Vec<DirectoryShow>) -> Vec<String> {
+        shows.into_iter().map(|s| s.slug).collect()
+    }
+
+    #[test]
+    fn a_similar_artist_in_a_show_title_recommends_the_show() {
+        let shows = [
+            show("hodge", "Hodge", &[]),
+            show("pinch", "Pinch", &[]),
+            show("kahn-neek", "Kahn & Neek", &[]),
+            show("pinchpenny", "Pinchpenny", &[]),
+        ];
+
+        assert_eq!(
+            slugs(recommend(
+                "Hodge",
+                &[similar("Pinch", 1.0), similar("Kahn", 0.5)],
+                &shows,
+                &[]
+            )),
+            ["pinch", "kahn-neek"]
+        );
+    }
+
+    #[test]
+    fn a_similar_artist_in_an_episode_title_recommends_its_show() {
+        let shows = [
+            show("ambers", "Amber's", &[]),
+            show("uncle-dugs", "Uncle Dugs", &[]),
+            show("sherelle", "Sherelle", &[]),
+            show("quiet", "Quiet", &[]),
+        ];
+        let episodes = [
+            ("ambers", "B2B Pinch"),
+            ("uncle-dugs", "with Kahn"),
+            ("sherelle", "/w Kahn"),
+            ("quiet", "Pinch & Friends"),
+            ("quiet", "Kahnage"),
+        ]
+        .map(|(slug, display_title)| Episode {
+            show_slug: slug.into(),
+            ..episode("Ignored", Some(display_title))
+        });
+
+        assert_eq!(
+            slugs(recommend(
+                "Hodge",
+                &[similar("Pinch", 1.0), similar("Kahn", 0.5)],
+                &shows,
+                &episodes
+            )),
+            ["ambers", "quiet", "uncle-dugs", "sherelle"]
+        );
+    }
+
+    #[test]
+    fn the_artists_own_show_is_never_recommended() {
+        let shows = [show("hodge", "Hodge", &[]), show("pinch", "Pinch", &[])];
+        let episodes = [Episode {
+            show_slug: "hodge".into(),
+            ..episode("Hodge", Some("B2B Pinch"))
+        }];
+
+        assert_eq!(
+            slugs(recommend(
+                "hodge!",
+                &[similar("Pinch", 1.0)],
+                &shows,
+                &episodes
+            )),
+            ["pinch"]
+        );
+    }
+
+    #[test]
+    fn of_equal_matches_the_show_sharing_more_genres_ranks_first() {
+        let shows = [
+            show("hodge", "Hodge", &["Techno", "Dubstep", "Bass"]),
+            show("pinch", "Pinch", &["Techno", "Ambient"]),
+            show("kahn", "Kahn", &["Dubstep", "Bass"]),
+        ];
+
+        assert_eq!(
+            slugs(recommend(
+                "Hodge",
+                &[similar("Pinch", 0.8), similar("Kahn", 0.8)],
+                &shows,
+                &[]
+            )),
+            ["kahn", "pinch"]
+        );
     }
 
     #[test]
