@@ -116,6 +116,7 @@
 
 {#if lastfm.account?.user && recommended.length > 0}
 	<h2>Recommended shows</h2>
+	<p class="intro">If you like {show.title}, check out these shows by similar artists.</p>
 	<ShowDirectory shows={recommended} />
 {/if}
 
@@ -134,8 +135,13 @@
 	}
 
 	h2 {
-		margin: 2rem 0 1rem;
+		margin: 2rem 0 0.5rem;
 		font-size: 1.25rem;
+		text-transform: uppercase;
+	}
+
+	.intro {
+		margin: 0 0 1rem;
 		text-transform: uppercase;
 	}
 
