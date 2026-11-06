@@ -3,12 +3,12 @@
 	import Artwork from '#lib/components/Artwork.svelte';
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
-	import ShowDirectory from '#lib/components/ShowDirectory.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
 	import { type DirectoryShow, paragraphs, passesCheckboxes, type Show, type ShowDetails } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { errors } from '#lib/errors.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
+	import { openShow } from '#lib/navigation';
 	import { goto } from '$app/navigation';
 
 	let {
@@ -30,7 +30,13 @@
 	);
 
 	/** The 5 best shows for fans of this one, best first. Empty until the lookup finishes or when nothing matches. */
-	let recommended = $state<DirectoryShow[]>([]);
+	let recommended = $state<(DirectoryShow & { image: string | null })[]>([]);
+
+	/** The directory has no artwork, so it comes from a cached episode or, for a show opened before, its record. */
+	const artwork = async (showSlug: string) =>
+		episodes.list.find((episode) => episode.showSlug === showSlug && episode.showImage)?.showImage ??
+		(await invoke<ShowDetails | null>('get_show_record', { slug: showSlug }).catch(() => null))?.image ??
+		null;
 
 	// Strings, so the lookup only runs again when the title changes, not whenever the parent builds a new `show`
 	const slug = $derived(show.slug);
@@ -45,9 +51,12 @@
 		}
 
 		invoke<DirectoryShow[]>('get_recommended_shows', { artist: title })
+			.then((shows) =>
+				Promise.all(shows.slice(0, 5).map(async (found) => ({ ...found, image: await artwork(found.slug) }))),
+			)
 			.then((shows) => {
 				if (current) {
-					recommended = shows.slice(0, 5);
+					recommended = shows;
 				}
 			})
 			.catch(errors.report);
@@ -117,7 +126,16 @@
 {#if lastfm.account?.user && recommended.length > 0}
 	<h2>Recommended shows</h2>
 	<p class="intro">If you like {show.title}, check out these shows by similar artists.</p>
-	<ShowDirectory shows={recommended} />
+	<ul class="gallery">
+		{#each recommended as recommendation (recommendation.slug)}
+			<li>
+				<button type="button" class="plain" onclick={() => openShow(recommendation.slug)}>
+					<Artwork src={recommendation.image} empty="No artwork" />
+					<span>{recommendation.title}</span>
+				</button>
+			</li>
+		{/each}
+	</ul>
 {/if}
 
 <style>
@@ -143,6 +161,38 @@
 	.intro {
 		margin: 0 0 1rem;
 		text-transform: uppercase;
+	}
+
+	/* One row, scrolling sideways when the window is too narrow for every show */
+	.gallery {
+		display: flex;
+		gap: 1rem;
+		margin: 0;
+		padding: 0 0 0.5rem;
+		overflow-x: auto;
+		list-style: none;
+	}
+
+	.gallery li {
+		flex: none;
+		width: 10rem;
+	}
+
+	.gallery button {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		width: 100%;
+		text-align: left;
+		text-transform: uppercase;
+	}
+
+	.gallery :global(.artwork) {
+		width: 100%;
+	}
+
+	.gallery span {
+		text-decoration: underline;
 	}
 
 	section {
