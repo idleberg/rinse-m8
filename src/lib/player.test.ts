@@ -189,10 +189,12 @@ it('loves and unloves the episode, sending only the love to Last.fm', async () =
 	await player.toggleLove();
 	expect(player.loved).toBe(true);
 	expect(stored.get('loved')).toEqual(['c']);
+	expect(player.lovedIds).toEqual(['c']);
 
 	await player.toggleLove();
 	expect(player.loved).toBe(false);
 	expect(stored.get('loved')).toEqual([]);
+	expect(player.lovedIds).toEqual([]);
 	expect(calls.filter(([command]) => command === 'love')).toHaveLength(1);
 });
 

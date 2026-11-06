@@ -26,6 +26,7 @@
 		['/schedule', 'Schedule'],
 		['/shows', 'Shows'],
 		['/downloads', 'Downloads'],
+		['/favs', 'Favs'],
 		['/settings', 'Settings'],
 	] as const;
 
@@ -68,9 +69,21 @@
 
 <nav>
 	{#each tabs as [path, label] (path)}
-		<button type="button" aria-current={page.url.pathname === path ? 'page' : undefined} onclick={() => page.url.pathname !== path && goto(path)}
-			>{label}</button
+		<!-- Favs is a heart, labelled for screen readers and on hover -->
+		<button type="button"
+			aria-current={page.url.pathname === path ? 'page' : undefined}
+			aria-label={path === '/favs' ? label : undefined}
+			title={path === '/favs' ? label : undefined}
+			onclick={() => page.url.pathname !== path && goto(path)}
 		>
+			{#if path === '/favs'}
+				<svg viewBox="0 0 16 16" aria-hidden="true">
+					<path d="M8 13.5C8 13.5 1.5 9.5 1.5 5.5 1.5 3.5 3 2 4.75 2 6.25 2 7.5 3 8 4.25 8.5 3 9.75 2 11.25 2 13 2 14.5 3.5 14.5 5.5 14.5 9.5 8 13.5 8 13.5z" />
+				</svg>
+			{:else}
+				{label}
+			{/if}
+		</button>
 	{/each}
 </nav>
 
@@ -126,6 +139,15 @@
 		padding: 0 1rem;
 		white-space: nowrap;
 		box-shadow: 0 0 0 1px var(--ink);
+	}
+
+	nav svg {
+		width: 1em;
+		height: 1em;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.5;
+		vertical-align: middle;
 	}
 
 	/* Settings sits at the right edge */

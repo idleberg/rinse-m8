@@ -23,11 +23,15 @@ class Filters {
 	// Arrow functions, so they can be passed as callbacks such as `list.filter(filters.matchesEpisode)`
 
 	matchesEpisode = (episode: Episode) =>
+		this.matchesStationsAndSearch(episode) && passesCheckboxes(episode, this);
+
+	/** Leaves out the checkboxes, for views where they don't apply. */
+	matchesStationsAndSearch = (episode: Episode) =>
 		matchesFilters(
 			episode.station,
 			[episode.title, episode.showTitle, episode.displayTitle ?? '', ...episode.genres],
 			this,
-		) && passesCheckboxes(episode, this);
+		);
 
 	/** Shows have no mp3 or rebroadcast, so only the stations and search apply. */
 	matchesShow = (show: DirectoryShow) =>

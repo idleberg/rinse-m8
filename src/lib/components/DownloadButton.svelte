@@ -4,9 +4,12 @@
 
 	let {
 		episode,
+		fileMissing = false,
 		markable = false,
 	}: {
 		episode: Episode;
+		/** Whether the episode's file is known to be gone from the download folder, so it shows as not downloaded. */
+		fileMissing?: boolean;
 		/** Adds a button that records the episode as downloaded without downloading it. */
 		markable?: boolean;
 	} = $props();
@@ -14,7 +17,7 @@
 	const downloading = $derived(downloads.queue.current?.id === episode.id);
 	const queued = $derived(downloads.queue.waiting.some((e) => e.id === episode.id));
 	const failed = $derived(downloads.queue.failures.some((e) => e.id === episode.id));
-	const downloaded = $derived(downloads.queue.downloaded.includes(episode.id));
+	const downloaded = $derived(!fileMissing && downloads.queue.downloaded.includes(episode.id));
 	const label = $derived(failed ? 'Retry' : downloaded ? 'Downloaded, download again' : 'Download');
 </script>
 

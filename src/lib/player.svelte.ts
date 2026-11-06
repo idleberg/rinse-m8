@@ -63,9 +63,9 @@ class Player {
 	playing = $derived(this.paused ? null : (this.episode?.id ?? null));
 	/** Whether NEXT has an episode to play: one in the play queue, or the current one under either repeat. */
 	hasNext = $derived(this.playQueue.length > 0 || (this.repeat !== 'off' && this.episode !== null));
-	/** The ids of loved episodes, kept by the app and never read from Last.fm. */
-	#lovedIds = $state<string[]>([]);
-	loved = $derived(this.episode !== null && this.#lovedIds.includes(this.episode.id));
+	/** The ids of loved episodes, kept by the app and never read from Last.fm. Change them through `toggleLove`. */
+	lovedIds = $state<string[]>([]);
+	loved = $derived(this.episode !== null && this.lovedIds.includes(this.episode.id));
 	audio: HTMLAudioElement | undefined;
 
 	#lastPlayed = $state<string | null>(null);
@@ -232,12 +232,12 @@ class Player {
 			}
 
 			const { id } = this.episode;
-			const loving = !this.#lovedIds.includes(id);
+			const loving = !this.lovedIds.includes(id);
 
-			this.#lovedIds = loving
-				? [...this.#lovedIds, id]
-				: this.#lovedIds.filter((lovedId) => lovedId !== id);
-			await this.#save('loved', $state.snapshot(this.#lovedIds));
+			this.lovedIds = loving
+				? [...this.lovedIds, id]
+				: this.lovedIds.filter((lovedId) => lovedId !== id);
+			await this.#save('loved', $state.snapshot(this.lovedIds));
 
 			if (loving) {
 				invoke('love', { episode: this.episode }).catch(errors.report);
@@ -342,7 +342,7 @@ class Player {
 			this.#position = (await store.get<number>('position')) ?? 0;
 			this.#lastPlayed = (await store.get<string>('lastPlayed')) ?? null;
 			this.playQueue = (await store.get<Episode[]>('queue')) ?? [];
-			this.#lovedIds = (await store.get<string[]>('loved')) ?? [];
+			this.lovedIds = (await store.get<string[]>('loved')) ?? [];
 			this.playHistory = (await store.get<Episode[]>('history')) ?? [];
 
 			return store;
