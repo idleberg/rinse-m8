@@ -8,6 +8,7 @@ let failing = '';
 const show: Show = { slug: 'a', title: 'A' } as Show;
 
 mock.module('@tauri-apps/api/core', () => ({
+	convertFileSrc: String,
 	invoke: async (command: string, args?: unknown) => {
 		calls.push([command, args]);
 

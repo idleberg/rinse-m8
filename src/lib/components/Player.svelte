@@ -9,7 +9,7 @@
 		<!-- biome-ignore lint/a11y/useMediaCaption: Rinse has no captions for its mixes -->
 		<audio
 			bind:this={player.audio}
-			src={player.episode.mp3}
+			src={player.src}
 			bind:paused={player.paused}
 			bind:currentTime={player.currentTime}
 			bind:duration={player.duration}

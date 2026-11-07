@@ -9,6 +9,7 @@ function episode(id: string, date: string, mp3Found: boolean | null = null): Epi
 
 // The first fetch never settles, so it can't overwrite what a test sets
 mock.module('@tauri-apps/api/core', () => ({
+	convertFileSrc: String,
 	invoke: () => new Promise(() => {}),
 }));
 

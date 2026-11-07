@@ -1208,6 +1208,17 @@ pub fn downloaded_file(folder: &Path, episode: &Episode, group_by_show: bool) ->
         .find(|path| path.is_file())
 }
 
+impl Settings {
+    /// The episode's `downloaded_file` in the download folder, if one is set.
+    pub fn downloaded_file(&self, episode: &Episode) -> Option<PathBuf> {
+        downloaded_file(
+            self.download_folder.as_deref()?,
+            episode,
+            self.group_by_show,
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1962,6 +1973,19 @@ mod tests {
             Some(folder.join(file_name(&episode)))
         );
         std::fs::remove_dir_all(&folder).unwrap();
+    }
+
+    #[test]
+    fn a_missing_download_is_no_file() {
+        let folder = std::env::temp_dir().join(format!("rinse-missing-{}", std::process::id()));
+        let episode = episode("2315290");
+        let mut settings = Settings::default();
+
+        assert_eq!(settings.downloaded_file(&episode), None);
+
+        settings.download_folder = Some(folder);
+
+        assert_eq!(settings.downloaded_file(&episode), None);
     }
 
     #[test]

@@ -12,6 +12,8 @@ const b = episode('b');
 const c = episode('c');
 
 const calls: [string, unknown][] = [];
+/** The download-folder file of each episode that has one, by episode id. */
+const files = new Map<string, string>();
 const stored = new Map<string, unknown>([
 	['lastPlayed', 'b'],
 	['queue', [c]],
@@ -19,9 +21,14 @@ const stored = new Map<string, unknown>([
 ]);
 
 mock.module('@tauri-apps/api/core', () => ({
-	invoke: async (command: string, args?: unknown) => {
+	invoke: async (command: string, args?: { episode?: Episode }) => {
 		calls.push([command, args]);
+
+		if (command === 'local_file') {
+			return files.get(args?.episode?.id ?? '') ?? null;
+		}
 	},
+	convertFileSrc: (path: string) => `asset://${path}`,
 }));
 
 mock.module('@tauri-apps/api/event', () => ({
@@ -228,6 +235,62 @@ it('empties the player when the last episode ends, only if the setting is on', a
 	expect(player.episode).toBeNull();
 	expect(stored.get('lastPlayed')).toBeNull();
 	settings.stored.clearPlayer = false;
+});
+
+describe('a downloaded episode', () => {
+	beforeEach(() => {
+		files.set('a', '/downloads/a.mp3');
+	});
+
+	afterEach(() => {
+		files.clear();
+	});
+
+	it('plays from its file, and an episode that is not downloaded streams', async () => {
+		await player.play(a);
+
+		expect(player.src).toBe('asset:///downloads/a.mp3');
+
+		await player.play(b);
+
+		expect(player.src).toBe('b.mp3');
+	});
+
+	it('streams once its file is gone', async () => {
+		await player.play(a);
+		files.clear();
+		await player.play(a);
+
+		expect(player.src).toBe('a.mp3');
+	});
+
+	it('switches to the stream at the same position when its file fails, without a recheck', async () => {
+		await player.play(a);
+
+		const audio = { currentTime: 42, readyState: 4, ended: false } as HTMLAudioElement;
+
+		player.audio = audio;
+		player.handleError();
+		flushSync();
+
+		expect(player.src).toBe('a.mp3');
+		expect(calls.some(([command]) => command === 'recheck_mp3')).toBe(false);
+
+		audio.currentTime = 0;
+		player.handleLoadedMetadata();
+		player.audio = undefined;
+
+		expect(audio.currentTime).toBe(42);
+		await settle();
+		expect(stored.get('position')).toBe(42);
+	});
+
+	it('rechecks the mp3 when the stream fails', async () => {
+		await player.play(b);
+		player.handleError();
+
+		expect(calls).toContainEqual(['recheck_mp3', { id: 'b' }]);
+	});
 });
 
 describe('PLAY while another episode plays', () => {

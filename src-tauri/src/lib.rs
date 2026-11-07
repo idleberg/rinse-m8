@@ -284,9 +284,7 @@ fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<PreviousDownload>
     Ok(rinse::previous_downloads(&downloaded, cache)
         .into_iter()
         .map(|episode| PreviousDownload {
-            file: settings.download_folder.as_deref().and_then(|folder| {
-                rinse::downloaded_file(folder, &episode, settings.group_by_show)
-            }),
+            file: settings.downloaded_file(&episode),
             episode,
         })
         .collect())
@@ -299,18 +297,26 @@ fn get_downloaded_files(
     episodes: Vec<rinse::Episode>,
 ) -> Result<BTreeMap<String, PathBuf>, String> {
     let settings = load_settings(&app, serde_json::Map::new())?;
-    let Some(folder) = settings.download_folder else {
-        return Ok(Default::default());
-    };
 
     Ok(episodes
         .into_iter()
-        .filter_map(|episode| {
-            let file = rinse::downloaded_file(&folder, &episode, settings.group_by_show)?;
-
-            Some((episode.id, file))
-        })
+        .filter_map(|episode| Some((episode.id.clone(), settings.downloaded_file(&episode)?)))
         .collect())
+}
+
+/// The episode's download, for the player, which may then read that one file through the asset protocol.
+#[tauri::command]
+fn local_file(app: tauri::AppHandle, episode: rinse::Episode) -> Result<Option<PathBuf>, String> {
+    let settings = load_settings(&app, serde_json::Map::new())?;
+    let Some(file) = settings.downloaded_file(&episode) else {
+        return Ok(None);
+    };
+
+    app.asset_protocol_scope()
+        .allow_file(&file)
+        .map_err(|e| e.to_string())?;
+
+    Ok(Some(file))
 }
 
 /// Drops a waiting or failed download along with its partial file; a missing one is no error.
@@ -1264,6 +1270,7 @@ pub fn run() {
             get_download_queue,
             get_previous_downloads,
             get_downloaded_files,
+            local_file,
             remove_download,
             retry_download,
             retry_all_downloads,

@@ -5,6 +5,7 @@ import { expect, test as it, mock } from 'bun:test';
 let approvedAs: string | null = 'dj';
 
 mock.module('@tauri-apps/api/core', () => ({
+	convertFileSrc: String,
 	invoke: async (command: string) => {
 		if (command === 'get_lastfm') {
 			return { user: null };

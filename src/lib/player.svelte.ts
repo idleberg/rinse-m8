@@ -1,7 +1,7 @@
-import { invoke } from '@tauri-apps/api/core';
+import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { load, type Store } from '@tauri-apps/plugin-store';
-import { tick } from 'svelte';
+import { tick, untrack } from 'svelte';
 import { choose, confirm } from './confirm.svelte';
 import { type Episode, moveItem } from './episodes';
 import { episodes } from './episodes.svelte';
@@ -41,6 +41,17 @@ function freshListen(): Listen {
 	return { heard: 0, heardTo: 0, started: null, scrobbled: false };
 }
 
+/** Looks for the episode's download, which the backend then lets the `<audio>` read. A failed lookup streams. */
+async function findFile(episode: Episode) {
+	const path = await invoke<string | null>('local_file', { episode }).catch((e) => {
+		errors.report(e);
+
+		return null;
+	});
+
+	return { id: episode.id, path: path ?? null };
+}
+
 /** Playback, the play queue and loves, shared by the player bar, the Player tab, the episode tables and the tray.
  * `Player.svelte` owns the `<audio>` element, binds it to `audio`, and forwards its events to the `handle…`
  * methods. */
@@ -66,9 +77,23 @@ class Player {
 	/** The ids of loved episodes, kept by the app and never read from Last.fm. Change them through `toggleLove`. */
 	lovedIds = $state<string[]>([]);
 	loved = $derived(this.episode !== null && this.lovedIds.includes(this.episode.id));
+	/** What the `<audio>` plays: the episode's download, or its stream when there's none. Unset until `findFile`
+	 * has looked for the download. */
+	src = $derived.by(() => {
+		const { episode } = this;
+		const file = this.#file;
+
+		if (!(episode && file?.id === episode.id)) {
+			return;
+		}
+
+		return file.path ? convertFileSrc(file.path) : (episode.mp3 ?? undefined);
+	});
 	audio: HTMLAudioElement | undefined;
 
 	#lastPlayed = $state<string | null>(null);
+	/** The download `findFile` found for an episode, null when it streams. */
+	#file = $state<{ id: string; path: string | null } | null>(null);
 	/** Of the last-played episode, in seconds. Only that episode resumes, the others start over. */
 	#position = 0;
 	#savedAt = 0;
@@ -328,10 +353,32 @@ class Player {
 		}
 	};
 
+	/** A failing download, e.g. deleted or renamed, falls back to the stream where it was. A failing stream gets its
+	 * mp3 checked again. */
 	handleError = () => {
-		if (this.episode) {
-			invoke('recheck_mp3', { id: this.episode.id }).catch(errors.report);
+		const { episode } = this;
+
+		if (!episode) {
+			return;
 		}
+
+		if (this.#file?.id === episode.id && this.#file.path) {
+			const playing = !this.paused;
+
+			// Skipped when the file failed before loading, keeping the saved position
+			this.#savePosition(false);
+			this.#file = { id: episode.id, path: null };
+
+			if (playing) {
+				tick()
+					.then(() => this.audio?.play())
+					.catch(errors.report);
+			}
+
+			return;
+		}
+
+		invoke('recheck_mp3', { id: episode.id }).catch(errors.report);
 	};
 
 	init() {
@@ -364,6 +411,20 @@ class Player {
 				}
 			});
 
+			// An episode loaded without `#play`, e.g. at launch, still needs its source
+			$effect(() => {
+				const { episode } = this;
+
+				if (episode && untrack(() => this.#file?.id) !== episode.id) {
+					findFile(episode).then((file) => {
+						// Unless `#play` loaded another episode meanwhile
+						if (this.episode?.id === file.id) {
+							this.#file = file;
+						}
+					});
+				}
+			});
+
 			$effect(() => {
 				invoke('set_tray_playing', { playing: this.playing !== null }).catch(errors.report);
 			});
@@ -376,6 +437,9 @@ class Player {
 
 		// Queued and past episodes are stored copies, which can predate the cache's artwork and mp3
 		const next = episodes.list.find((e) => e.id === chosen.id) ?? chosen;
+		// Looked up on every play, so a download deleted since then streams. First, so the old episode's events
+		// can't save over the reset position while it's looked up
+		const file = await findFile(next);
 
 		if (next.id === this.episode?.id) {
 			this.#savePosition(false);
@@ -390,6 +454,7 @@ class Player {
 		}
 
 		// The new source loads at once, so the old one's events can't save over the reset position
+		this.#file = file;
 		this.episode = next;
 		await tick();
 		await this.#save('lastPlayed', next.id);

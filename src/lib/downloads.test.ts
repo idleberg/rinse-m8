@@ -14,6 +14,7 @@ const loaded: DownloadQueue = {
 };
 
 mock.module('@tauri-apps/api/core', () => ({
+	convertFileSrc: String,
 	invoke: async (command: string, args?: unknown) => {
 		calls.push([command, args]);
 
