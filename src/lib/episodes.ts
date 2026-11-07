@@ -159,7 +159,7 @@ export interface DownloadQueue {
 	downloaded: string[];
 }
 
-export type SortColumn = 'date' | 'time' | 'station' | 'show';
+export type SortColumn = 'date' | 'time' | 'station' | 'show' | 'plays';
 
 export interface Sort<C extends string = SortColumn> {
 	column: C;
@@ -169,17 +169,32 @@ export interface Sort<C extends string = SortColumn> {
 /** Newest first. */
 export const defaultSort: Sort = { column: 'date', ascending: false };
 
-const sortKeys: Record<SortColumn, (episode: Episode) => string> = {
+const sortKeys: Record<Exclude<SortColumn, 'plays'>, (episode: Episode) => string> = {
 	date: (episode) => `${episode.date} ${episode.time}`,
 	time: (episode) => episode.time,
 	station: (episode) => episode.station,
 	show: (episode) => episode.showTitle,
 };
 
-/** A sorted copy of `episodes`. Ties keep their order in `episodes`. */
-export function sortEpisodes(episodes: Episode[], sort: Sort): Episode[] {
-	const key = sortKeys[sort.column];
+/** Most played first. */
+export const mostPlayed: Sort = { column: 'plays', ascending: false };
+
+/** A sorted copy of `episodes`. `plays` counts each episode's plays by id, and one without an entry counts as 0. Ties keep
+ * their order in `episodes`. */
+export function sortEpisodes(
+	episodes: Episode[],
+	sort: Sort,
+	plays: Record<string, number> = {},
+): Episode[] {
 	const direction = sort.ascending ? 1 : -1;
+
+	if (sort.column === 'plays') {
+		const count = (episode: Episode) => plays[episode.id] ?? 0;
+
+		return episodes.toSorted((a, b) => direction * (count(a) - count(b)));
+	}
+
+	const key = sortKeys[sort.column];
 
 	return episodes.toSorted((a, b) => direction * key(a).localeCompare(key(b)));
 }

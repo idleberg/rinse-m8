@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
+	import { untrack } from 'svelte';
 	import DownloadButton from '#lib/components/DownloadButton.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
 	import { downloads } from '#lib/downloads.svelte';
@@ -8,6 +9,7 @@
 		defaultSort,
 		type Episode,
 		formatDate,
+		mostPlayed,
 		type SortColumn,
 		showOf,
 		sortEpisodes,
@@ -23,6 +25,7 @@
 		groupDates = false,
 		limit,
 		markable = false,
+		plays,
 		subscribable = false,
 		subscribeOnHover = false,
 	}: {
@@ -36,23 +39,27 @@
 		limit?: number;
 		/** Adds a "Mark as downloaded" button next to each download button. */
 		markable?: boolean;
+		/** How often each episode has been played, by episode id. When given, the table has a Plays column and starts out
+		 * sorted by it. */
+		plays?: Record<string, number>;
 		/** Adds a subscribe button to each row. */
 		subscribable?: boolean;
 		/** Moves the subscribe button before the other actions, shown while the row is hovered. */
 		subscribeOnHover?: boolean;
 	} = $props();
 
-	const columns: [SortColumn, string][] = [
+	const columns: [SortColumn, string][] = $derived([
 		['date', 'Date'],
 		['time', 'Time'],
 		['station', 'Station'],
 		['show', 'Show'],
-	];
+		...(plays ? [['plays', 'Plays'] as [SortColumn, string]] : []),
+	]);
 
-	let sort = $state(defaultSort);
+	let sort = $state(untrack(() => (plays ? mostPlayed : defaultSort)));
 	const direction = $derived(sort.ascending ? 'ascending' : 'descending');
 
-	const rows = $derived(sortEpisodes(episodes, sort).slice(0, limit));
+	const rows = $derived(sortEpisodes(episodes, sort, plays).slice(0, limit));
 </script>
 
 <table>
@@ -92,6 +99,9 @@
 						<span class="subtitle">{episode.displayTitle}</span>
 					{/if}
 				</td>
+				{#if plays}
+					<td class="plays">{plays[episode.id] ?? 0}</td>
+				{/if}
 				<td>
 					{#if episode.rebroadcast}
 						<span class="badge">Rebroadcast</span>
@@ -183,6 +193,12 @@
 
 	.show {
 		width: 100%;
+	}
+
+	/* Right-aligned, so the digits of the counts line up */
+	.plays {
+		width: 7ch;
+		text-align: right;
 	}
 
 	/* max-width: 0 stops a long title from widening the table, so it truncates instead of pushing out the actions */

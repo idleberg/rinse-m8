@@ -11,6 +11,7 @@ import {
 	matchesFavFilters,
 	matchesFilters,
 	monthsAgo,
+	mostPlayed,
 	moveItem,
 	orderSections,
 	passesCheckboxes,
@@ -58,6 +59,17 @@ it('sorting by a column ascends, and sorting by it again reverses', () => {
 
 	expect(ids(sortEpisodes(episodes, ascending))).toEqual(['c', 'a', 'b']);
 	expect(ids(sortEpisodes(episodes, toggleSort(ascending, 'show')))).toEqual(['b', 'a', 'c']);
+});
+
+it('sorts plays numerically, and an episode never played counts as 0', () => {
+	const plays = { a: 10, b: 9 };
+
+	expect(ids(sortEpisodes(episodes, mostPlayed, plays))).toEqual(['a', 'b', 'c']);
+	expect(ids(sortEpisodes(episodes, toggleSort(mostPlayed, 'plays'), plays))).toEqual([
+		'c',
+		'b',
+		'a',
+	]);
 });
 
 it('an episode is available unless it has no mp3 or its last check got a 404', () => {

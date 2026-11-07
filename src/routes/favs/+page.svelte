@@ -82,7 +82,7 @@
 </EpisodeFilters>
 
 {#if favEpisodes.length}
-	<EpisodeTable episodes={favEpisodes} {files} />
+	<EpisodeTable episodes={favEpisodes} {files} plays={player.plays} />
 {:else if episodes.loading}
 	<p role="status">Loading episodes…</p>
 {:else}
