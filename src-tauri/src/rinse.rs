@@ -1159,23 +1159,34 @@ fn resumes(status: StatusCode, content_range: Option<&str>, offset: u64) -> bool
         && content_range.is_some_and(|r| r.starts_with(&format!("bytes {offset}-")))
 }
 
-/// `<Show> - <YYYY-MM-DD>.mp3`, with characters that are unsafe in file names on any OS removed.
-pub fn file_name(episode: &Episode) -> String {
+/// The show title with characters that are unsafe in file names on any OS removed; names both the show folder and
+/// the show part of `file_name`.
+pub fn show_folder(episode: &Episode) -> String {
     let show: String = episode
         .show_title
         .chars()
         .filter(|c| !c.is_control() && !r#"/\:*?"<>|"#.contains(*c))
         .collect();
 
-    format!("{} - {}.mp3", show.trim(), episode.date)
+    show.trim().to_string()
 }
 
-/// Where the episode's download sits in `folder`, if it's there under its `file_name`. Paths aren't tracked, so a
-/// file that was moved, renamed or saved to an earlier folder isn't found.
-pub fn downloaded_file(folder: &Path, episode: &Episode) -> Option<PathBuf> {
-    let path = folder.join(file_name(episode));
+/// `<Show> - <YYYY-MM-DD>.mp3`, the show part cleaned by `show_folder`.
+pub fn file_name(episode: &Episode) -> String {
+    format!("{} - {}.mp3", show_folder(episode), episode.date)
+}
 
-    path.is_file().then_some(path)
+/// Where the episode's download sits, if it's under its `file_name` in `folder` or in its `show_folder` there. Paths
+/// aren't tracked, so a file that was moved, renamed or saved to an earlier folder isn't found.
+pub fn downloaded_file(folder: &Path, episode: &Episode) -> Option<PathBuf> {
+    let name = file_name(episode);
+
+    [
+        folder.join(&name),
+        folder.join(show_folder(episode)).join(&name),
+    ]
+    .into_iter()
+    .find(|path| path.is_file())
 }
 
 #[cfg(test)]
@@ -1930,6 +1941,28 @@ mod tests {
         assert_eq!(
             downloaded_file(&folder, &episode),
             Some(folder.join(file_name(&episode)))
+        );
+        std::fs::remove_dir_all(&folder).unwrap();
+    }
+
+    #[test]
+    fn a_downloaded_file_is_found_in_its_show_folder() {
+        let folder = std::env::temp_dir().join(format!("rinse-show-folder-{}", std::process::id()));
+        let show = folder.join("AB CDE");
+        let episode = Episode {
+            show_title: "A/B: C\\D*?\"<E>|".into(),
+            ..episode("2315290")
+        };
+
+        std::fs::create_dir_all(&show).unwrap();
+
+        assert_eq!(downloaded_file(&folder, &episode), None);
+
+        std::fs::write(show.join("AB CDE - 2026-10-25.mp3"), []).unwrap();
+
+        assert_eq!(
+            downloaded_file(&folder, &episode),
+            Some(show.join("AB CDE - 2026-10-25.mp3"))
         );
         std::fs::remove_dir_all(&folder).unwrap();
     }
