@@ -18,6 +18,7 @@ const stored = new Map<string, unknown>([
 	['lastPlayed', 'b'],
 	['queue', [c]],
 	['history', [a]],
+	['plays', { c: 2 }],
 ]);
 
 mock.module('@tauri-apps/api/core', () => ({
@@ -73,13 +74,14 @@ beforeEach(async () => {
 	player.repeat = 'off';
 });
 
-it('brings back the last-played episode, the stored queue and the history at launch', async () => {
+it('brings back the last-played episode, the stored queue, the history and the plays at launch', async () => {
 	await settle();
 	flushSync();
 
 	expect(player.episode?.id).toBe('b');
 	expect(player.playQueue.map((e) => e.id)).toEqual(['c']);
 	expect(player.playHistory.map((e) => e.id)).toEqual(['a']);
+	expect(player.plays).toEqual({ c: 2 });
 });
 
 it('plays the first queued episode on NEXT, and under repeat all queues the current one last', async () => {
@@ -369,5 +371,72 @@ describe('PLAY while another episode plays', () => {
 
 		expect(player.episode?.id).toBe('b');
 		expect(player.playQueue).toEqual([]);
+	});
+});
+
+describe('counting plays', () => {
+	/** Ten minutes long, so a play counts after one minute heard. */
+	let audio: HTMLAudioElement;
+
+	/** Plays on from the playhead for `seconds`, in the half-second steps of `timeupdate`. */
+	function listenFor(seconds: number) {
+		for (let heard = 0; heard < seconds; heard += 0.5) {
+			audio.currentTime += 0.5;
+			player.handleTimeUpdate();
+		}
+	}
+
+	beforeEach(async () => {
+		player.reset();
+		player.plays = {};
+		await player.play(a);
+
+		audio = {
+			currentTime: 0,
+			duration: 600,
+			paused: false,
+			seeking: false,
+			readyState: 4,
+			ended: false,
+		} as HTMLAudioElement;
+		player.audio = audio;
+	});
+
+	afterEach(() => {
+		player.audio = undefined;
+	});
+
+	it('adds one play once enough has been heard, and saves it', async () => {
+		listenFor(59);
+
+		expect(player.plays.a).toBeUndefined();
+
+		listenFor(2);
+
+		expect(player.plays.a).toBe(1);
+		await settle();
+		expect(stored.get('plays')).toEqual({ a: 1 });
+	});
+
+	it('counts nothing for seeking past the threshold', () => {
+		audio.currentTime = 300;
+		player.handleTimeUpdate();
+		listenFor(10);
+
+		expect(player.plays.a).toBeUndefined();
+	});
+
+	it('counts a later listen of the same episode again', async () => {
+		listenFor(61);
+
+		player.audio = undefined;
+		await player.play(b);
+		await player.play(a);
+		audio.currentTime = 0;
+		player.audio = audio;
+
+		listenFor(61);
+
+		expect(player.plays.a).toBe(2);
 	});
 });

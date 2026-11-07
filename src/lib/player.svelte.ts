@@ -7,6 +7,7 @@ import { type Episode, moveItem } from './episodes';
 import { episodes } from './episodes.svelte';
 import { errors } from './errors.svelte';
 import {
+	countPlayAfter,
 	heardBetween,
 	millisecondsPerSecond,
 	type Repeat,
@@ -34,11 +35,13 @@ interface Listen {
 	/** In Unix seconds, once it starts playing. */
 	started: number | null;
 	scrobbled: boolean;
+	/** Whether it has counted as a play. */
+	counted: boolean;
 }
 
 /** So a listen counts, and can scrobble, from scratch. */
 function freshListen(): Listen {
-	return { heard: 0, heardTo: 0, started: null, scrobbled: false };
+	return { heard: 0, heardTo: 0, started: null, scrobbled: false, counted: false };
 }
 
 /** Looks for the episode's download, which the backend then lets the `<audio>` read. A failed lookup streams. */
@@ -77,6 +80,8 @@ class Player {
 	/** The ids of loved episodes, kept by the app and never read from Last.fm. Change them through `toggleLove`. */
 	lovedIds = $state<string[]>([]);
 	loved = $derived(this.episode !== null && this.lovedIds.includes(this.episode.id));
+	/** How often each episode has been played, by episode id. An episode never played has no entry. */
+	plays = $state<Record<string, number>>({});
 	/** What the `<audio>` plays: the episode's download, or its stream when there's none. Unset until `findFile`
 	 * has looked for the download. */
 	src = $derived.by(() => {
@@ -391,6 +396,7 @@ class Player {
 			this.playQueue = (await store.get<Episode[]>('queue')) ?? [];
 			this.lovedIds = (await store.get<string[]>('loved')) ?? [];
 			this.playHistory = (await store.get<Episode[]>('history')) ?? [];
+			this.plays = (await store.get<Record<string, number>>('plays')) ?? {};
 
 			return store;
 		});
@@ -497,7 +503,7 @@ class Player {
 		this.#save('position', this.#position);
 	}
 
-	/** Scrobbles the episode once enough of it has been heard. */
+	/** Scrobbles the episode, and counts it as a play, once enough of it has been heard. */
 	#countHeard() {
 		const { audio, episode } = this;
 		const current = this.#listen;
@@ -520,6 +526,12 @@ class Player {
 		) {
 			current.scrobbled = true;
 			invoke('scrobble', { episode, started: current.started }).catch(errors.report);
+		}
+
+		if (!current.counted && current.heard >= countPlayAfter(audio.duration)) {
+			current.counted = true;
+			this.plays[episode.id] = (this.plays[episode.id] ?? 0) + 1;
+			this.#save('plays', $state.snapshot(this.plays));
 		}
 	}
 

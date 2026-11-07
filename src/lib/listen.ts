@@ -16,6 +16,16 @@ export function scrobbleAfter(duration: number) {
 	return Number.isFinite(duration) ? Math.min(duration / 2, scrobbleLimit) : scrobbleLimit;
 }
 
+/** An episode counts as played once a tenth of it, or 15 minutes of it, has been heard. */
+const playShare = 0.1;
+const playLimit = 900;
+
+/** Seconds an episode `duration` long has to be heard before it counts as a play. Before its metadata loads, the
+ * duration is `NaN`. */
+export function countPlayAfter(duration: number) {
+	return Number.isFinite(duration) ? Math.min(duration * playShare, playLimit) : playLimit;
+}
+
 export const millisecondsPerSecond = 1000;
 
 /** Where `h:mm:ss` sits in an ISO timestamp, past the hours' leading digit. */
