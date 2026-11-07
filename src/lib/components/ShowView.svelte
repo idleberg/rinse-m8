@@ -84,9 +84,9 @@
 {#if visibleEpisodes.length}
 	<EpisodeTable episodes={visibleEpisodes} subscribable />
 {:else if episodes.loading || refreshing}
-	<p role="status">Loading episodes…</p>
+	<p class="empty" role="status">Loading episodes…</p>
 {:else}
-	<p>No episodes match the filters</p>
+	<p class="empty">No episodes match the filters</p>
 {/if}
 
 <!-- A reload has only the slug standing in for the title, which would look up the wrong artist -->
@@ -123,6 +123,11 @@
 
 	[role='status'] {
 		text-transform: uppercase;
+	}
+
+	.empty {
+		text-transform: uppercase;
+		color: var(--muted);
 	}
 
 	.description {

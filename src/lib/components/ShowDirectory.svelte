@@ -26,6 +26,8 @@
 
 {#if rows === null}
 	<p role="status">Loading the show directory…</p>
+{:else if rows.length === 0}
+	<p>No shows match the filters</p>
 {:else}
 	<table>
 		<thead>
