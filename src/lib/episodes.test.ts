@@ -4,6 +4,7 @@ import { expect, test as it } from 'bun:test';
 import {
 	available,
 	dead,
+	deadFav,
 	defaultSort,
 	type Episode,
 	episodeLabel,
@@ -92,6 +93,14 @@ it('a missing episode is dead once it is over a month old', () => {
 	expect(dead(missing, noon('2026-10-31'))).toBe(false);
 	expect(dead(missing, noon('2026-11-01'))).toBe(true);
 	expect(dead({ ...missing, mp3Found: null }, noon('2026-12-01'))).toBe(false);
+});
+
+it('a favourite is dead when its mp3 got a 404 and it has no download, whatever its age', () => {
+	const missing = { ...episode('a', '2099-01-01', 'Beta'), mp3Found: false };
+
+	expect(deadFav(missing)).toBe(true);
+	expect(deadFav(missing, '/downloads/a.mp3')).toBe(false);
+	expect(deadFav({ ...missing, mp3Found: null })).toBe(false);
 });
 
 it('moving an item to an index reorders the list, and an out-of-range index changes nothing', () => {

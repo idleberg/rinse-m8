@@ -413,7 +413,7 @@ class Player {
 			// At launch the last-played episode comes back paused, once the cache has loaded
 			$effect(() => {
 				if (!this.episode && this.#lastPlayed) {
-					this.episode = episodes.list.find((e) => e.id === this.#lastPlayed) ?? null;
+					this.episode = episodes.all.find((e) => e.id === this.#lastPlayed) ?? null;
 				}
 			});
 
@@ -442,7 +442,7 @@ class Player {
 		await this.#ready;
 
 		// Queued and past episodes are stored copies, which can predate the cache's artwork and mp3
-		const next = episodes.list.find((e) => e.id === chosen.id) ?? chosen;
+		const next = episodes.all.find((e) => e.id === chosen.id) ?? chosen;
 		// Looked up on every play, so a download deleted since then streams. First, so the old episode's events
 		// can't save over the reset position while it's looked up
 		const file = await findFile(next);

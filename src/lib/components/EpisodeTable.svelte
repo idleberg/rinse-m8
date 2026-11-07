@@ -31,7 +31,7 @@
 	}: {
 		episodes: Episode[];
 		/** The downloaded file per episode id. When given, an episode with a file gets a "Show in folder" button in
-		 * place of the download button. */
+		 * place of the download button, and a Play button even when its mp3 got a 404. */
 		files?: Record<string, string>;
 		/** Shows each date only in the first of its rows, while sorted by date. */
 		groupDates?: boolean;
@@ -114,7 +114,8 @@
 								<SubscribeButton show={showOf(episode)} />
 							</span>
 						{/if}
-						{#if available(episode)}
+						<!-- A download plays from disk even when its mp3 got a 404 -->
+						{#if available(episode) || files?.[episode.id]}
 							{#if player.playing === episode.id}
 								<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={player.pause}>
 									<svg viewBox="0 0 16 16" aria-hidden="true">

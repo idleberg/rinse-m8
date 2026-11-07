@@ -79,6 +79,12 @@ export function dead(episode: Episode, now = new Date()): boolean {
 	return episode.mp3Found === false && episode.date <= monthsAgo(1, now);
 }
 
+/** Whether a favourite is dead on FAVS: its mp3 got a 404 and `file`, its download, is missing. Unlike `dead`, age doesn't
+ * matter. */
+export function deadFav(episode: Episode, file?: string): boolean {
+	return !file && episode.mp3Found === false;
+}
+
 /** The London date `months` before `now`, as `YYYY-MM-DD`. */
 export function monthsAgo(months: number, now = new Date()): string {
 	// en-CA formats as `YYYY-MM-DD`, in London like the episode dates

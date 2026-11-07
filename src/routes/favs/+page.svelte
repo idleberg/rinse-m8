@@ -4,14 +4,15 @@
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import { downloads } from '#lib/downloads.svelte';
-	import { favOptions, matchesFavFilters } from '#lib/episodes';
+	import { deadFav, favOptions, matchesFavFilters } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { errors } from '#lib/errors.svelte';
 	import { filters } from '#lib/filters.svelte';
 	import { player } from '#lib/player.svelte';
 
-	// Loved ids missing from the cache have no episode to list, so they're skipped
-	const loved = $derived(episodes.list.filter((episode) => player.lovedIds.includes(episode.id)));
+	// From the whole cache, as FAVS has its own rule for dead. Loved ids missing from the cache have no episode to list, so
+	// they're skipped.
+	const loved = $derived(episodes.all.filter((episode) => player.lovedIds.includes(episode.id)));
 
 	// From all loved episodes, so the shared filters don't empty the dropdowns. Not remembered across restarts.
 	const options = $derived(favOptions(loved));
@@ -29,20 +30,27 @@
 		}
 	});
 
+	/** Not remembered across restarts. */
+	let showDead = $state(false);
+
+	/** The downloaded file of each loved episode that has one, by episode id. Of every loved episode, not just the listed
+	 * ones, since a file decides whether a favourite is dead. */
+	let files = $state<Record<string, string>>({});
+
 	const favEpisodes = $derived(
 		loved.filter(
-			(episode) => filters.matchesStationsAndSearch(episode) && matchesFavFilters(episode, { genre, show }),
+			(episode) =>
+				(showDead || !deadFav(episode, files[episode.id])) &&
+				filters.matchesStationsAndSearch(episode) &&
+				matchesFavFilters(episode, { genre, show }),
 		),
 	);
 
-	/** The downloaded file of each listed episode that has one, by episode id. */
-	let files = $state<Record<string, string>>({});
+	// Joined, so updates that leave the ids as they were don't refetch. Empty while nothing is loved.
+	const lovedKey = $derived(loved.map((episode) => episode.id).join());
+	const filesKey = $derived(lovedKey && `${lovedKey}|${downloads.queue.downloaded.join()}`);
 
-	// Joined, so updates that leave the ids as they were don't refetch. Empty while nothing is listed.
-	const favIds = $derived(favEpisodes.map((episode) => episode.id).join());
-	const filesKey = $derived(favIds && `${favIds}|${downloads.queue.downloaded.join()}`);
-
-	// Fetched when the view opens and again whenever the listed episodes or the downloads change
+	// Fetched when the view opens and again whenever the loved episodes or the downloads change
 	$effect(() => {
 		if (!filesKey) {
 			files = {};
@@ -50,9 +58,9 @@
 			return;
 		}
 
-		const listed = untrack(() => $state.snapshot(favEpisodes));
+		const lovedEpisodes = untrack(() => $state.snapshot(loved));
 
-		invoke<typeof files>('get_downloaded_files', { episodes: listed })
+		invoke<typeof files>('get_downloaded_files', { episodes: lovedEpisodes })
 			.then((loaded) => {
 				files = loaded;
 			})
@@ -79,6 +87,7 @@
 			{/each}
 		</select>
 	</label>
+	<label><input type="checkbox" bind:checked={showDead} /> show dead</label>
 </EpisodeFilters>
 
 {#if favEpisodes.length}

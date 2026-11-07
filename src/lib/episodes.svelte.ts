@@ -5,17 +5,18 @@ import { errors } from './errors.svelte';
 
 /** The episode cache, kept in step with the poller's `episodes-updated` updates. */
 class Episodes {
-	/** Newest first, without dead episodes, so no table shows them whatever the filters. */
-	list = $state<Episode[]>([]);
+	/** The whole cache, newest first, dead episodes included. For FAVS, which has its own rule for dead, and the player,
+	 * which can play a dead favourite's download. */
+	all = $state<Episode[]>([]);
+	/** `all` without dead episodes, so no other table shows them whatever the filters. */
+	list = $derived(this.all.filter((episode) => !dead(episode)));
 	/** True until the first fetch settles, so an empty list isn't mistaken for filtered out. */
 	loading = $state(true);
 
 	/** Replaces the whole list, as every source sends the whole cache. An arrow function, so it can be passed as
 	 * `.then(episodes.replace)`. */
 	replace = (list: Episode[]) => {
-		this.list = list
-			.filter((episode) => !dead(episode))
-			.sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
+		this.all = list.toSorted((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
 	};
 
 	init() {

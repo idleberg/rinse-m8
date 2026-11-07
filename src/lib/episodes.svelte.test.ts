@@ -40,3 +40,9 @@ it('drops dead episodes from an update', () => {
 
 	expect(episodes.list.map((e) => e.id)).toEqual(['missing']);
 });
+
+it('keeps dead episodes in the full cache, newest first', () => {
+	sendEpisodes([episode('dead', '2020-01-01', false), episode('missing', '2099-01-01', false)]);
+
+	expect(episodes.all.map((e) => e.id)).toEqual(['missing', 'dead']);
+});
