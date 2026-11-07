@@ -81,7 +81,13 @@
 
 <EpisodeFilters bind:mp3Only={checkboxes.mp3Only} bind:hideRebroadcasts={checkboxes.hideRebroadcasts} />
 
-<EpisodeTable episodes={visibleEpisodes} subscribable />
+{#if visibleEpisodes.length}
+	<EpisodeTable episodes={visibleEpisodes} subscribable />
+{:else if episodes.loading || refreshing}
+	<p role="status">Loading episodes…</p>
+{:else}
+	<p>No episodes match the filters</p>
+{/if}
 
 <!-- A reload has only the slug standing in for the title, which would look up the wrong artist -->
 <Recommendations artist={show.title === show.slug ? null : show.title}>
