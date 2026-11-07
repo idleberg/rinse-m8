@@ -87,7 +87,7 @@
 			{/each}
 		</select>
 	</label>
-	<label><input type="checkbox" bind:checked={showDead} /> show dead</label>
+	<label><input type="checkbox" bind:checked={showDead} /> show missing episodes</label>
 </EpisodeFilters>
 
 {#if favEpisodes.length}
