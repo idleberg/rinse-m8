@@ -159,6 +159,13 @@
 					download new episodes of subscribed shows
 				</label>
 			</dd>
+			<dt>Group by show</dt>
+			<dd>
+				<label>
+					<input type="checkbox" checked={settings.stored.groupByShow} onchange={(e) => settings.save('groupByShow', e.currentTarget.checked)} />
+					save each download in a folder named after its show
+				</label>
+			</dd>
 		</dl>
 	</section>
 	<section>

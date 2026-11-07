@@ -9,6 +9,8 @@ export interface Stored {
 	seen: string[];
 	downloadFolder: string | null;
 	autoDownload: boolean;
+	/** Whether new downloads go into a folder named after their show inside the download folder. */
+	groupByShow: boolean;
 	keepRunning: boolean;
 	/** Whether the player empties once the last episode ends, with nothing queued or repeating. */
 	clearPlayer: boolean;
@@ -36,6 +38,7 @@ class Settings {
 		seen: [],
 		downloadFolder: null,
 		autoDownload: false,
+		groupByShow: false,
 		keepRunning: true,
 		clearPlayer: false,
 		updateInterval: 6,
@@ -94,6 +97,7 @@ class Settings {
 	async save<
 		K extends
 			| 'autoDownload'
+			| 'groupByShow'
 			| 'keepRunning'
 			| 'clearPlayer'
 			| 'updateInterval'

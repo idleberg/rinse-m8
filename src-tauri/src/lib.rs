@@ -201,12 +201,12 @@ async fn recheck_mp3(app: tauri::AppHandle, id: String) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
-/// Adds the episode to the download queue with the current download folder, unless it's already in it.
+/// Adds the episode to the download queue with the folder the current settings save it to, unless it's already in it.
 #[tauri::command]
 fn download(app: tauri::AppHandle, episode: rinse::Episode) -> Result<(), String> {
-    let folder = load_settings(&app, serde_json::Map::new())?
-        .download_folder
-        .ok_or("no download folder set")?;
+    let settings = load_settings(&app, serde_json::Map::new())?;
+    let folder = settings.download_folder.ok_or("no download folder set")?;
+    let folder = rinse::save_folder(&folder, &episode, settings.group_by_show);
 
     if update_downloads(&app, |queue| {
         queue.push(rinse::Download { episode, folder })
@@ -265,7 +265,7 @@ struct PreviousDownload {
 /// Every episode recorded as downloaded or marked, newest first, as far as the episode cache has it.
 #[tauri::command]
 fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<PreviousDownload>, String> {
-    let folder = load_settings(&app, serde_json::Map::new())?.download_folder;
+    let settings = load_settings(&app, serde_json::Map::new())?;
     let downloaded = app
         .state::<Downloads>()
         .queue
@@ -284,9 +284,9 @@ fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<PreviousDownload>
     Ok(rinse::previous_downloads(&downloaded, cache)
         .into_iter()
         .map(|episode| PreviousDownload {
-            file: folder
-                .as_deref()
-                .and_then(|folder| rinse::downloaded_file(folder, &episode)),
+            file: settings.download_folder.as_deref().and_then(|folder| {
+                rinse::downloaded_file(folder, &episode, settings.group_by_show)
+            }),
             episode,
         })
         .collect())
@@ -298,14 +298,15 @@ fn get_downloaded_files(
     app: tauri::AppHandle,
     episodes: Vec<rinse::Episode>,
 ) -> Result<BTreeMap<String, PathBuf>, String> {
-    let Some(folder) = load_settings(&app, serde_json::Map::new())?.download_folder else {
+    let settings = load_settings(&app, serde_json::Map::new())?;
+    let Some(folder) = settings.download_folder else {
         return Ok(Default::default());
     };
 
     Ok(episodes
         .into_iter()
         .filter_map(|episode| {
-            let file = rinse::downloaded_file(&folder, &episode)?;
+            let file = rinse::downloaded_file(&folder, &episode, settings.group_by_show)?;
 
             Some((episode.id, file))
         })

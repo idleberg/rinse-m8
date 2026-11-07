@@ -105,6 +105,8 @@ pub struct Settings {
     pub download_folder: Option<PathBuf>,
     /// Whether the poller also downloads each new episode into `download_folder`.
     pub auto_download: bool,
+    /// Whether new downloads go into a folder named after their show inside `download_folder`.
+    pub group_by_show: bool,
     /// Whether closing the window hides it behind a menu bar or tray icon instead of quitting.
     pub keep_running: bool,
     /// Whether the player empties once the last episode ends, with nothing queued or repeating.
@@ -154,6 +156,7 @@ impl Default for Settings {
             seen: BTreeSet::new(),
             download_folder: None,
             auto_download: false,
+            group_by_show: false,
             keep_running: true,
             clear_player: false,
             update_interval: 6,
@@ -1061,13 +1064,19 @@ fn check_result(status: StatusCode) -> Option<bool> {
 
 /// Streams the episode's mp3 into a `.part` file in `folder` chunk by chunk and renames it to `.mp3` once it's whole,
 /// calling `on_progress` whenever the percent changes, which it can only do when the server reports a size.
-/// An existing `.part` file is resumed from its size; a failed download keeps it for the next attempt.
+/// An existing `.part` file is resumed from its size; a failed download keeps it for the next attempt. `folder` is
+/// created if missing.
 pub async fn download(
     episode: &Episode,
     folder: &Path,
     mut on_progress: impl FnMut(u8),
 ) -> Result<(), String> {
     let url = episode.mp3.as_deref().ok_or("episode has no mp3")?;
+
+    tokio::fs::create_dir_all(folder)
+        .await
+        .map_err(|e| e.to_string())?;
+
     let path = folder.join(file_name(episode));
     let part = part_path(episode, folder);
     let mut offset = tokio::fs::metadata(&part)
@@ -1176,17 +1185,27 @@ pub fn file_name(episode: &Episode) -> String {
     format!("{} - {}.mp3", show_folder(episode), episode.date)
 }
 
-/// Where the episode's download sits, if it's under its `file_name` in `folder` or in its `show_folder` there. Paths
-/// aren't tracked, so a file that was moved, renamed or saved to an earlier folder isn't found.
-pub fn downloaded_file(folder: &Path, episode: &Episode) -> Option<PathBuf> {
+/// Where a download of the episode is saved: its `show_folder` inside `folder` when grouping by show, else `folder`.
+/// Trailing dots and spaces are dropped, since Windows rejects them and `..` would leave `folder`; a show folder
+/// left empty means `folder` itself.
+pub fn save_folder(folder: &Path, episode: &Episode, group_by_show: bool) -> PathBuf {
+    if group_by_show {
+        folder.join(show_folder(episode).trim_end_matches(['.', ' ']))
+    } else {
+        folder.to_path_buf()
+    }
+}
+
+/// Where the episode's download sits, if it's under its `file_name` in `folder` or in its `show_folder` there; the
+/// place `group_by_show` saves to wins. Paths aren't tracked, so a file that was moved, renamed or saved to an
+/// earlier folder isn't found.
+pub fn downloaded_file(folder: &Path, episode: &Episode, group_by_show: bool) -> Option<PathBuf> {
     let name = file_name(episode);
 
-    [
-        folder.join(&name),
-        folder.join(show_folder(episode)).join(&name),
-    ]
-    .into_iter()
-    .find(|path| path.is_file())
+    [group_by_show, !group_by_show]
+        .into_iter()
+        .map(|grouped| save_folder(folder, episode, grouped).join(&name))
+        .find(|path| path.is_file())
 }
 
 #[cfg(test)]
@@ -1934,14 +1953,44 @@ mod tests {
 
         std::fs::create_dir_all(&folder).unwrap();
 
-        assert_eq!(downloaded_file(&folder, &episode), None);
+        assert_eq!(downloaded_file(&folder, &episode, false), None);
 
         std::fs::write(folder.join(file_name(&episode)), []).unwrap();
 
         assert_eq!(
-            downloaded_file(&folder, &episode),
+            downloaded_file(&folder, &episode, false),
             Some(folder.join(file_name(&episode)))
         );
+        std::fs::remove_dir_all(&folder).unwrap();
+    }
+
+    #[test]
+    fn a_show_folder_stays_inside_the_download_folder() {
+        let folder = Path::new("downloads");
+        let show = |title: &str| Episode {
+            show_title: title.into(),
+            ..episode("2315290")
+        };
+
+        assert_eq!(save_folder(folder, &show("A/B"), true), folder.join("AB"));
+        assert_eq!(save_folder(folder, &show("A/B"), false), folder);
+        assert_eq!(save_folder(folder, &show(".."), true), folder);
+        assert_eq!(save_folder(folder, &show("Hi. "), true), folder.join("Hi"));
+    }
+
+    #[test]
+    fn the_file_where_the_current_setting_saves_wins() {
+        let folder = std::env::temp_dir().join(format!("rinse-both-{}", std::process::id()));
+        let episode = episode("2315290");
+        let flat = folder.join(file_name(&episode));
+        let grouped = folder.join(show_folder(&episode)).join(file_name(&episode));
+
+        std::fs::create_dir_all(grouped.parent().unwrap()).unwrap();
+        std::fs::write(&flat, []).unwrap();
+        std::fs::write(&grouped, []).unwrap();
+
+        assert_eq!(downloaded_file(&folder, &episode, false), Some(flat));
+        assert_eq!(downloaded_file(&folder, &episode, true), Some(grouped));
         std::fs::remove_dir_all(&folder).unwrap();
     }
 
@@ -1956,12 +2005,12 @@ mod tests {
 
         std::fs::create_dir_all(&show).unwrap();
 
-        assert_eq!(downloaded_file(&folder, &episode), None);
+        assert_eq!(downloaded_file(&folder, &episode, false), None);
 
         std::fs::write(show.join("AB CDE - 2026-10-25.mp3"), []).unwrap();
 
         assert_eq!(
-            downloaded_file(&folder, &episode),
+            downloaded_file(&folder, &episode, false),
             Some(show.join("AB CDE - 2026-10-25.mp3"))
         );
         std::fs::remove_dir_all(&folder).unwrap();
