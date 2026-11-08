@@ -179,6 +179,17 @@
 		padding-bottom: calc(0.25rem + 1px);
 	}
 
+	/* The outer columns sit on the content edges, so their text and buttons line up with the headings, header buttons and bars */
+	th:first-child,
+	td:first-child {
+		padding-left: 0;
+	}
+
+	th:last-child,
+	td:last-child {
+		padding-right: 0;
+	}
+
 	/* Each fits its longest value or heading with sort arrow, so columns line up across tables; Show takes the rest */
 	.date {
 		width: 10ch;

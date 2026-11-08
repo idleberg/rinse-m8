@@ -100,6 +100,22 @@
 		text-overflow: ellipsis;
 	}
 
+	/* The outer columns sit on the content edges, so their text and buttons line up with the headings, header buttons and bars */
+	th:first-child,
+	td:first-child {
+		padding-left: 0;
+	}
+
+	/* The link truncates itself, so the cell can let a focused link's outline show past the edge */
+	td:first-child {
+		overflow: visible;
+	}
+
+	th:last-child,
+	td:last-child {
+		padding-right: 0;
+	}
+
 	/* Station and Last aired fit their heading with sort arrow, longer values truncate; Genres takes the rest */
 	.title {
 		width: 40%;

@@ -289,6 +289,17 @@
 		padding-bottom: calc(0.25rem + 1px);
 	}
 
+	/* The outer columns sit on the content edges, so their text and buttons line up with the headings, header buttons and bars */
+	th:first-child,
+	td:first-child {
+		padding-left: 0;
+	}
+
+	th:last-child,
+	td:last-child {
+		padding-right: 0;
+	}
+
 	/* Dates are all `YYYY/MM/DD`, so shrinking to them starts Show at the same x in both tables */
 	td:first-child {
 		width: 1%;
