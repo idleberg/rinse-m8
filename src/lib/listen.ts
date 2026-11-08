@@ -48,3 +48,11 @@ export function parseVolume(stored: string | null) {
 
 	return volume >= 0 && volume <= 1 ? volume : 1;
 }
+
+/** The volume button's icon shows the level as this many bars. */
+const iconBars = 3;
+
+/** How many of the volume icon's bars fill at `volume`: one per share begun, so any sound fills the first. */
+export function volumeBars(volume: number) {
+	return Math.ceil(volume * iconBars);
+}

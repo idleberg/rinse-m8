@@ -1,7 +1,14 @@
 /// <reference types="bun" />
 
 import { expect, test as it } from 'bun:test';
-import { countPlayAfter, formatTime, heardBetween, parseVolume, scrobbleAfter } from './listen';
+import {
+	countPlayAfter,
+	formatTime,
+	heardBetween,
+	parseVolume,
+	scrobbleAfter,
+	volumeBars,
+} from './listen';
 
 it('counts the playhead moving on as heard', () => {
 	expect(heardBetween(10, 10.25)).toBe(0.25);
@@ -52,4 +59,14 @@ it('restores full volume when none is stored, or the stored one is invalid', () 
 	expect(parseVolume('loud')).toBe(1);
 	expect(parseVolume('1.5')).toBe(1);
 	expect(parseVolume('-0.1')).toBe(1);
+});
+
+it('fills one icon bar per third of the volume, and none when muted', () => {
+	expect(volumeBars(0)).toBe(0);
+	expect(volumeBars(0.01)).toBe(1);
+	expect(volumeBars(0.33)).toBe(1);
+	expect(volumeBars(0.34)).toBe(2);
+	expect(volumeBars(0.66)).toBe(2);
+	expect(volumeBars(0.67)).toBe(3);
+	expect(volumeBars(1)).toBe(3);
 });

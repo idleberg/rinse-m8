@@ -2,7 +2,7 @@
 	import { on } from 'svelte/events';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { episodeLabel, formatDate } from '#lib/episodes';
-	import { formatTime, type Repeat } from '#lib/listen';
+	import { formatTime, type Repeat, volumeBars } from '#lib/listen';
 	import { player } from '#lib/player.svelte';
 
 	let {
@@ -196,9 +196,11 @@
 		{#if layout === 'bar'}
 			<!-- The slider opens above the button, as wide as it -->
 			<div class="volume" bind:this={volumeBox}>
-				<button type="button" class="icon" aria-label="Volume" bind:this={volumeButton} title="Volume" aria-expanded={volumeOpen} aria-controls="volume-slider" onclick={toggleVolume}>
+				<button type="button" class="icon" aria-label="Volume" bind:this={volumeButton} title="Volume {player.volume.toLocaleString('en', { style: 'percent' })}" aria-expanded={volumeOpen} aria-controls="volume-slider" onclick={toggleVolume}>
 					<svg viewBox="0 0 16 16" aria-hidden="true">
-						<path d="M2.5 10.5h2v3h-2zM7 6.5h2v7H7zM11.5 2.5h2v11h-2z" />
+						{#each ['M2.5 10.5h2v3h-2z', 'M7 6.5h2v7H7z', 'M11.5 2.5h2v11h-2z'] as bar, index}
+							<path d={bar} class:filled={index < volumeBars(player.volume)} />
+						{/each}
 					</svg>
 				</button>
 				{#if volumeOpen}
@@ -334,6 +336,11 @@
 	.volume {
 		position: relative;
 		display: flex;
+	}
+
+	/* The icon's bars fill up to the volume */
+	.filled {
+		fill: currentColor;
 	}
 
 	.seek {
