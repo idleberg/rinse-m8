@@ -56,3 +56,14 @@ const iconBars = 3;
 export function volumeBars(volume: number) {
 	return Math.ceil(volume * iconBars);
 }
+
+/** The pixel delta of one mouse-wheel notch. */
+export const wheelNotch = 100;
+
+/** How far one mouse-wheel notch changes the volume. */
+const wheelStep = 0.05;
+
+/** `volume` after a wheel event of `deltaY`: scrolling up turns it up. Scaled by the delta, so a trackpad's many small events don't race. */
+export function wheelVolume(volume: number, deltaY: number) {
+	return Math.min(1, Math.max(0, volume - (deltaY / wheelNotch) * wheelStep));
+}

@@ -8,6 +8,7 @@ import {
 	parseVolume,
 	scrobbleAfter,
 	volumeBars,
+	wheelVolume,
 } from './listen';
 
 it('counts the playhead moving on as heard', () => {
@@ -69,4 +70,15 @@ it('fills one icon bar per third of the volume, and none when muted', () => {
 	expect(volumeBars(0.66)).toBe(2);
 	expect(volumeBars(0.67)).toBe(3);
 	expect(volumeBars(1)).toBe(3);
+});
+
+it('turns the volume up 5% per wheel notch scrolled up, and down per notch scrolled down', () => {
+	expect(wheelVolume(0.5, -100)).toBeCloseTo(0.55);
+	expect(wheelVolume(0.5, 100)).toBeCloseTo(0.45);
+	expect(wheelVolume(0.5, -10)).toBeCloseTo(0.505);
+});
+
+it('keeps a wheeled volume between muted and full', () => {
+	expect(wheelVolume(0.98, -100)).toBe(1);
+	expect(wheelVolume(0.02, 100)).toBe(0);
 });

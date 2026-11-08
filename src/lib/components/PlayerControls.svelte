@@ -2,7 +2,7 @@
 	import { on } from 'svelte/events';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { episodeLabel, formatDate } from '#lib/episodes';
-	import { formatTime, type Repeat, volumeBars } from '#lib/listen';
+	import { formatTime, type Repeat, volumeBars, wheelNotch, wheelVolume } from '#lib/listen';
 	import { player } from '#lib/player.svelte';
 
 	let {
@@ -17,8 +17,6 @@
 
 	/** How far one mouse-wheel notch seeks, in seconds. */
 	const wheelSeek = 5;
-	/** The pixel delta of one mouse-wheel notch. */
-	const wheelNotch = 100;
 
 	const repeatTitles: Record<Repeat, string> = { off: 'Repeat off', all: 'Repeat all', one: 'Repeat one' };
 
@@ -80,6 +78,19 @@
 
 				event.preventDefault();
 				player.currentTime = Math.min(player.duration, Math.max(0, player.currentTime - (event.deltaY / wheelNotch) * wheelSeek));
+			},
+			{ passive: false },
+		);
+	}
+
+	/** Over the button or the open slider, scrolling up turns the volume up. Not passive, so the page doesn't scroll too. */
+	function volumeByWheel(element: HTMLElement) {
+		return on(
+			element,
+			'wheel',
+			(event) => {
+				event.preventDefault();
+				player.setVolume(wheelVolume(player.volume, event.deltaY));
 			},
 			{ passive: false },
 		);
@@ -195,7 +206,7 @@
 	<div class="buttons">
 		{#if layout === 'bar'}
 			<!-- The slider opens above the button, as wide as it -->
-			<div class="volume" bind:this={volumeBox}>
+			<div class="volume" bind:this={volumeBox} {@attach volumeByWheel}>
 				<button type="button" class="icon" aria-label="Volume" bind:this={volumeButton} title="Volume {player.volume.toLocaleString('en', { style: 'percent' })}" aria-expanded={volumeOpen} aria-controls="volume-slider" onclick={toggleVolume}>
 					<svg viewBox="0 0 16 16" aria-hidden="true">
 						{#each ['M2.5 10.5h2v3h-2z', 'M7 6.5h2v7H7z', 'M11.5 2.5h2v11h-2z'] as bar, index}
@@ -211,6 +222,7 @@
 						min="0"
 						max="1"
 						step="0.01"
+						class:muted={!player.volume}
 						style:--level={player.volume}
 						value={player.volume}
 						oninput={(e) => player.setVolume(e.currentTarget.valueAsNumber)}
@@ -382,7 +394,7 @@
 		height: calc(0.5em - 2px);
 	}
 
-	/* Vertical with the top as full volume, drawn over the content behind it. The button's top border closes it. */
+	/* Vertical with the top as full volume, drawn over the content behind it. The button's top border closes it. The outer ring keeps the border apart from a page in the same colour, like the inverted Settings. */
 	.volume input {
 		position: absolute;
 		bottom: 100%;
@@ -391,6 +403,9 @@
 		width: 100%;
 		height: 6em;
 		border-bottom: none;
+		box-shadow:
+			-1px -1px var(--paper),
+			1px -1px var(--paper);
 		writing-mode: vertical-lr;
 		direction: rtl;
 		background-color: var(--paper);
@@ -401,5 +416,10 @@
 	.volume input::-webkit-slider-thumb {
 		width: 1.5em;
 		height: 2px;
+	}
+
+	/* Hidden when muted, where it would thicken the button's top border */
+	.volume input.muted::-webkit-slider-thumb {
+		background: none;
 	}
 </style>
