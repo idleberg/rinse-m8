@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 
 import { expect, test as it } from 'bun:test';
-import { countPlayAfter, formatTime, heardBetween, scrobbleAfter } from './listen';
+import { countPlayAfter, formatTime, heardBetween, parseVolume, scrobbleAfter } from './listen';
 
 it('counts the playhead moving on as heard', () => {
 	expect(heardBetween(10, 10.25)).toBe(0.25);
@@ -41,4 +41,15 @@ it('counts a play of an episode of unknown length after 15 minutes', () => {
 
 it('formats a playhead as hours, minutes and seconds', () => {
 	expect(formatTime(3725.9)).toBe('1:02:05');
+});
+
+it('restores a stored volume', () => {
+	expect(parseVolume('0.4')).toBe(0.4);
+});
+
+it('restores full volume when none is stored, or the stored one is invalid', () => {
+	expect(parseVolume(null)).toBe(1);
+	expect(parseVolume('loud')).toBe(1);
+	expect(parseVolume('1.5')).toBe(1);
+	expect(parseVolume('-0.1')).toBe(1);
 });

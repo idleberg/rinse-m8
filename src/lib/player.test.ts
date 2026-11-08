@@ -45,7 +45,7 @@ mock.module('@tauri-apps/plugin-store', () => ({
 	}),
 }));
 
-const local = new Map<string, string>();
+const local = new Map<string, string>([['volume', '0.4']]);
 
 globalThis.localStorage = {
 	getItem: (key: string) => local.get(key) ?? null,
@@ -82,6 +82,15 @@ it('brings back the last-played episode, the stored queue, the history and the p
 	expect(player.playQueue.map((e) => e.id)).toEqual(['c']);
 	expect(player.playHistory.map((e) => e.id)).toEqual(['a']);
 	expect(player.plays).toEqual({ c: 2 });
+});
+
+it('brings back the stored volume at launch, and stores a new one', () => {
+	expect(player.volume).toBe(0.4);
+
+	player.setVolume(0.7);
+
+	expect(player.volume).toBe(0.7);
+	expect(local.get('volume')).toBe('0.7');
 });
 
 it('plays the first queued episode on NEXT, and under repeat all queues the current one last', async () => {

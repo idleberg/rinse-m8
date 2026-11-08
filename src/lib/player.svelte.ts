@@ -10,6 +10,7 @@ import {
 	countPlayAfter,
 	heardBetween,
 	millisecondsPerSecond,
+	parseVolume,
 	type Repeat,
 	repeatModes,
 	scrobbleAfter,
@@ -69,6 +70,8 @@ class Player {
 	/** Whether the time reads as remaining rather than elapsed. */
 	showRemaining = $state(false);
 	repeat = $state<Repeat>('off');
+	/** Between 0 and 1. Change it through `setVolume`, which saves it. */
+	volume = $state(1);
 	/** The play queue, played from the front once the current episode ends. An episode can be queued more than once. */
 	playQueue = $state<Episode[]>([]);
 	/** The episodes listened to, latest first, each once. Saved, and separate from the session stack PREV uses. */
@@ -305,6 +308,11 @@ class Player {
 		localStorage.setItem('repeat', this.repeat);
 	};
 
+	setVolume = (volume: number) => {
+		this.volume = volume;
+		localStorage.setItem('volume', String(volume));
+	};
+
 	handleLoadedMetadata = () => {
 		if (this.audio) {
 			this.audio.currentTime = this.#position;
@@ -389,6 +397,7 @@ class Player {
 	init() {
 		this.showRemaining = localStorage.getItem('showRemaining') === 'true';
 		this.repeat = repeatModes.find((mode) => mode === localStorage.getItem('repeat')) ?? 'off';
+		this.volume = parseVolume(localStorage.getItem('volume'));
 
 		this.#ready = load('player.json').then(async (store) => {
 			this.#position = (await store.get<number>('position')) ?? 0;

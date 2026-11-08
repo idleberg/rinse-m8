@@ -36,6 +36,9 @@
 	let box: HTMLElement | undefined = $state();
 	let text: HTMLElement | undefined = $state();
 	let trackElement: HTMLElement | undefined = $state();
+	let volumeBox: HTMLElement | undefined = $state();
+	let volumeButton: HTMLButtonElement | undefined = $state();
+	let volumeOpen = $state(false);
 	let overflows = $state(false);
 	let scrollDuration = $state(0);
 	/** Whether the listener clicked a scrolling title to stop it, so it reads from the start. */
@@ -85,7 +88,28 @@
 	function toggleScrolling() {
 		stopped = !stopped;
 	}
+
+	function toggleVolume() {
+		volumeOpen = !volumeOpen;
+	}
+
+	/** A press outside the volume button and its slider closes the slider. */
+	function closeVolumeOutside(event: PointerEvent) {
+		if (volumeOpen && !(event.target instanceof Node && volumeBox?.contains(event.target))) {
+			volumeOpen = false;
+		}
+	}
+
+	/** Focus goes back to the button, since the slider it was on is gone. */
+	function closeVolumeOnEscape(event: KeyboardEvent) {
+		if (volumeOpen && event.key === 'Escape') {
+			volumeOpen = false;
+			volumeButton?.focus();
+		}
+	}
 </script>
+
+<svelte:window onpointerdown={closeVolumeOutside} onkeydown={closeVolumeOnEscape} />
 
 <!-- Scrolls when it doesn't fit, with a copy after it so the end runs into the start -->
 {#snippet track()}
@@ -169,6 +193,29 @@
 			: formatTime(player.currentTime)}{#if layout === 'tab'}{` / ${formatTime(player.duration || 0)}`}{/if}</button
 	>
 	<div class="buttons">
+		{#if layout === 'bar'}
+			<!-- The slider opens above the button, as wide as it -->
+			<div class="volume" bind:this={volumeBox}>
+				<button type="button" class="icon" aria-label="Volume" bind:this={volumeButton} title="Volume" aria-expanded={volumeOpen} aria-controls="volume-slider" onclick={toggleVolume}>
+					<svg viewBox="0 0 16 16" aria-hidden="true">
+						<path d="M2.5 10.5h2v3h-2zM7 6.5h2v7H7zM11.5 2.5h2v11h-2z" />
+					</svg>
+				</button>
+				{#if volumeOpen}
+					<input
+						id="volume-slider"
+						type="range"
+						aria-label="Volume"
+						min="0"
+						max="1"
+						step="0.01"
+						style:--level={player.volume}
+						value={player.volume}
+						oninput={(e) => player.setVolume(e.currentTarget.valueAsNumber)}
+					/>
+				{/if}
+			</div>
+		{/if}
 		{#if layout === 'tab'}
 			<!-- Pressed in both repeat states, in the accent colour for repeat one -->
 			<button type="button" class="icon" class:one={player.repeat === 'one'} aria-label="Repeat" title={repeatTitles[player.repeat]} aria-pressed={player.repeat !== 'off'} onclick={player.cycleRepeat}>
@@ -284,6 +331,11 @@
 		visibility: hidden;
 	}
 
+	.volume {
+		position: relative;
+		display: flex;
+	}
+
 	.seek {
 		flex: 1;
 		align-self: stretch;
@@ -291,16 +343,21 @@
 		align-items: center;
 	}
 
-	/* A thin outlined bar, filled up to the playhead. The row centres it, so it sits where the taller bar did. */
+	/* Outlined bars, filled up to the playhead or the volume, with a thin thumb */
 	input {
-		flex: 1;
 		appearance: none;
 		box-sizing: border-box;
-		height: 0.5em;
 		margin: 0;
 		border: 1px solid currentColor;
-		background: linear-gradient(var(--ink), var(--ink)) 0 0 / calc(var(--progress) * 100%) 100% no-repeat;
+		background: linear-gradient(var(--ink), var(--ink)) left bottom / 0 0 no-repeat;
 		cursor: pointer;
+	}
+
+	/* The row centres it, so it sits where the taller bar did */
+	.seek input {
+		flex: 1;
+		height: 0.5em;
+		background-size: calc(var(--progress) * 100%) 100%;
 	}
 
 	input:disabled {
@@ -310,8 +367,32 @@
 
 	input::-webkit-slider-thumb {
 		appearance: none;
+		background: var(--ink);
+	}
+
+	.seek input::-webkit-slider-thumb {
 		width: 2px;
 		height: calc(0.5em - 2px);
-		background: var(--ink);
+	}
+
+	/* Vertical with the top as full volume, drawn over the content behind it. The button's top border closes it. */
+	.volume input {
+		position: absolute;
+		bottom: 100%;
+		left: 0;
+		z-index: 1;
+		width: 100%;
+		height: 6em;
+		border-bottom: none;
+		writing-mode: vertical-lr;
+		direction: rtl;
+		background-color: var(--paper);
+		background-size: 100% calc(var(--level) * 100%);
+	}
+
+	/* As wide as the button inside its border */
+	.volume input::-webkit-slider-thumb {
+		width: 1.5em;
+		height: 2px;
 	}
 </style>

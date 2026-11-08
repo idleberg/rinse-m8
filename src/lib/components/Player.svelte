@@ -13,6 +13,7 @@
 			bind:paused={player.paused}
 			bind:currentTime={player.currentTime}
 			bind:duration={player.duration}
+			bind:volume={player.volume}
 			preload="metadata"
 			onloadedmetadata={player.handleLoadedMetadata}
 			ontimeupdate={player.handleTimeUpdate}

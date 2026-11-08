@@ -41,3 +41,10 @@ export function formatTime(seconds: number) {
 export const repeatModes = ['off', 'all', 'one'] as const;
 
 export type Repeat = (typeof repeatModes)[number];
+
+/** The volume stored as `stored`, between 0 and 1. A missing or invalid one is full volume. */
+export function parseVolume(stored: string | null) {
+	const volume = Number.parseFloat(stored ?? '');
+
+	return volume >= 0 && volume <= 1 ? volume : 1;
+}
