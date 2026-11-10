@@ -141,13 +141,14 @@
 		box-shadow: 0 0 0 1px var(--ink);
 	}
 
+	/* A block, so the button centers it on the cell like the uppercase labels. Inline, vertical-align: middle centers it on the x-height and sits it 1.5px low. */
 	nav svg {
+		display: block;
 		width: 1em;
 		height: 1em;
 		fill: none;
 		stroke: currentColor;
 		stroke-width: 1.5;
-		vertical-align: middle;
 	}
 
 	/* Settings sits at the right edge */
