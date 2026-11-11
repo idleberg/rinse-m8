@@ -109,6 +109,11 @@ button:where(:hover:not(:disabled, .plain)) {
 	color: var(--paper);
 }
 
+/* Transparent rather than none, so table buttons keep their size and still line up with bordered ones elsewhere */
+td button {
+	border-color: transparent;
+}
+
 /* Still a native select, with a `v` drawn from two diagonal strokes in the text colour, so it follows the theme */
 select {
 	appearance: none;
