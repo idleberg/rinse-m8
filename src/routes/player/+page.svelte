@@ -3,6 +3,7 @@
 	import PlayerControls from '#lib/components/PlayerControls.svelte';
 	import Recommendations from '#lib/components/Recommendations.svelte';
 	import { formatDate } from '#lib/episodes';
+	import { openShow } from '#lib/navigation';
 	import { player } from '#lib/player.svelte';
 
 	/** Images that failed to load, so the cover falls back past them. */
@@ -104,7 +105,7 @@
 				>
 					<td>{formatDate(episode.date)}</td>
 					<td>
-						{episode.showTitle}
+						<button type="button" class="plain link" onclick={() => openShow(episode.showSlug)}>{episode.showTitle}</button>
 						{#if episode.displayTitle}
 							<span class="subtitle">{episode.displayTitle}</span>
 						{/if}
@@ -152,7 +153,7 @@
 				<tr>
 					<td>{formatDate(episode.date)}</td>
 					<td>
-						{episode.showTitle}
+						<button type="button" class="plain link" onclick={() => openShow(episode.showSlug)}>{episode.showTitle}</button>
 						{#if episode.displayTitle}
 							<span class="subtitle">{episode.displayTitle}</span>
 						{/if}
@@ -281,6 +282,16 @@
 
 	.buttons {
 		justify-content: flex-end;
+	}
+
+	.link {
+		text-align: left;
+		text-decoration: underline;
+		/* A button is an atomic inline, so it truncates its own text */
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		vertical-align: bottom;
 	}
 
 	.subtitle {
