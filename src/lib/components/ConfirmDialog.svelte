@@ -68,7 +68,7 @@
 	/* A row of `-` characters between the parts, as in the episode tables */
 	header,
 	p {
-		background: linear-gradient(to right, var(--muted) 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+		background: linear-gradient(to right, currentColor 60%, transparent 0) left bottom / 1ch 1px repeat-x;
 	}
 
 	header {

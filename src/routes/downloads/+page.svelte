@@ -284,7 +284,7 @@
 
 	/* A row of `-` characters, as in the episode tables */
 	td {
-		background: linear-gradient(to right, var(--muted) 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+		background: linear-gradient(to right, currentColor 60%, transparent 0) left bottom / 1ch 1px repeat-x;
 		/* One more pixel below, since the line sits inside the padding, so a focused button is as far from it as from the row above */
 		padding-bottom: calc(0.25rem + 1px);
 	}
