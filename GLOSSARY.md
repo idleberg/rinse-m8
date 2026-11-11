@@ -57,3 +57,13 @@ _Avoid_: Downloads view, queue page
 **Player tab**:
 The tab showing the loaded episode's cover, the same controls as the bottom bar, and the play queue below them.
 _Avoid_: Now playing, player page
+
+### Tables
+
+**Flyout**:
+The menu holding a table row's less common actions, so a row shows at most three buttons.
+_Avoid_: Row menu, actions menu, overflow menu, context menu
+
+**Flyout trigger**:
+The last button in a table row, which opens its flyout.
+_Avoid_: More button, kebab, ellipsis button
