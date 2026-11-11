@@ -4,6 +4,7 @@
 	import { episodeLabel, formatDate } from '#lib/episodes';
 	import { formatTime, type Repeat, volumeBars, wheelNotch, wheelVolume } from '#lib/listen';
 	import { player } from '#lib/player.svelte';
+	import { goto } from '$app/navigation';
 
 	let {
 		layout = 'bar',
@@ -134,10 +135,14 @@
 	</div>
 {/snippet}
 
-<!-- A title that doesn't fit is a button, which stops or restarts the scrolling. Keyed, so a new label measures again. -->
+<!-- In the bar, the title opens the Player tab. In the tab, a title that doesn't fit is a button, which stops or restarts the scrolling. Keyed, so a new label measures again. -->
 {#snippet title()}
 	{#key label}
-		{#if scrollable}
+		{#if layout === 'bar'}
+			<button type="button" class="plain title" title="Open player" bind:this={box} onclick={() => goto('/player')}>
+				{@render track()}
+			</button>
+		{:else if scrollable}
 			<button type="button" class="plain title" title={stopped ? 'Scroll title' : 'Stop scrolling'} bind:this={box} onclick={toggleScrolling}>
 				{@render track()}
 			</button>
