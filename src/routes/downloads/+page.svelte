@@ -4,6 +4,7 @@
 	import { downloads } from '#lib/downloads.svelte';
 	import { type Episode, formatDate } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
+	import { openShow } from '#lib/navigation';
 
 	const queue = $derived(downloads.queue);
 
@@ -83,7 +84,7 @@
 				<tr>
 					<td>{formatDate(queue.current.date)}</td>
 					<td>
-						{queue.current.showTitle}
+						<button type="button" class="plain link" onclick={() => queue.current && openShow(queue.current.showSlug)}>{queue.current.showTitle}</button>
 						{#if queue.current.displayTitle}
 							<span class="subtitle">{queue.current.displayTitle}</span>
 						{/if}
@@ -134,7 +135,7 @@
 				>
 					<td>{formatDate(episode.date)}</td>
 					<td>
-						{episode.showTitle}
+						<button type="button" class="plain link" onclick={() => openShow(episode.showSlug)}>{episode.showTitle}</button>
 						{#if episode.displayTitle}
 							<span class="subtitle">{episode.displayTitle}</span>
 						{/if}
@@ -147,7 +148,7 @@
 				<tr class="failed">
 					<td>{formatDate(episode.date)}</td>
 					<td>
-						{episode.showTitle}
+						<button type="button" class="plain link" onclick={() => openShow(episode.showSlug)}>{episode.showTitle}</button>
 						{#if episode.displayTitle}
 							<span class="subtitle">{episode.displayTitle}</span>
 						{/if}
@@ -197,7 +198,7 @@
 				<tr>
 					<td>{formatDate(episode.date)}</td>
 					<td>
-						{episode.showTitle}
+						<button type="button" class="plain link" onclick={() => openShow(episode.showSlug)}>{episode.showTitle}</button>
 						{#if episode.displayTitle}
 							<span class="subtitle">{episode.displayTitle}</span>
 						{/if}
@@ -330,6 +331,16 @@
 	p {
 		text-transform: uppercase;
 		color: var(--muted);
+	}
+
+	.link {
+		text-align: left;
+		text-decoration: underline;
+		/* A button is an atomic inline, so it truncates its own text */
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		vertical-align: bottom;
 	}
 
 	.subtitle {

@@ -82,7 +82,7 @@
 <EpisodeFilters bind:mp3Only={checkboxes.mp3Only} bind:hideRebroadcasts={checkboxes.hideRebroadcasts} />
 
 {#if visibleEpisodes.length}
-	<EpisodeTable episodes={visibleEpisodes} subscribable />
+	<EpisodeTable episodes={visibleEpisodes} linkShows={false} subscribable />
 {:else if episodes.loading || refreshing}
 	<p class="empty" role="status">Loading episodes…</p>
 {:else}

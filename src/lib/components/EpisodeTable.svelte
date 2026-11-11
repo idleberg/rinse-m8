@@ -24,6 +24,7 @@
 		files,
 		groupDates = false,
 		limit,
+		linkShows = true,
 		markable = false,
 		plays,
 		subscribable = false,
@@ -37,6 +38,8 @@
 		groupDates?: boolean;
 		/** Shows only the first `limit` episodes, after sorting. */
 		limit?: number;
+		/** Links each show name to its show view. Off where the table already is that view. */
+		linkShows?: boolean;
 		/** Adds a "Mark as downloaded" button next to each download button. */
 		markable?: boolean;
 		/** How often each episode has been played, by episode id. When given, the table has a Plays column and starts out
@@ -94,7 +97,11 @@
 				<td>{episode.time}</td>
 				<td>{episode.station}</td>
 				<td class="show">
-					<button type="button" class="plain link" onclick={() => openShow(episode.showSlug)}>{episode.showTitle}</button>
+					{#if linkShows}
+						<button type="button" class="plain link" onclick={() => openShow(episode.showSlug)}>{episode.showTitle}</button>
+					{:else}
+						{episode.showTitle}
+					{/if}
 					{#if episode.displayTitle}
 						<span class="subtitle">{episode.displayTitle}</span>
 					{/if}
