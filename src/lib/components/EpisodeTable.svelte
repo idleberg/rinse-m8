@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { invoke } from '@tauri-apps/api/core';
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
 	import { untrack } from 'svelte';
 	import DownloadButton from '#lib/components/DownloadButton.svelte';
@@ -63,6 +64,29 @@
 	const direction = $derived(sort.ascending ? 'ascending' : 'descending');
 
 	const rows = $derived(sortEpisodes(episodes, sort, plays).slice(0, limit));
+
+	/** The download-folder file of each row that has one, so its download button stays disabled. Fetched only without
+	 * `files`, which already says. */
+	let found = $state<Record<string, string>>({});
+
+	// Joined, so updates that leave the ids as they were don't refetch
+	const foundKey = $derived(files ? '' : `${rows.map((episode) => episode.id).join()}|${downloads.queue.downloaded.join()}`);
+
+	$effect(() => {
+		if (!foundKey) {
+			found = {};
+
+			return;
+		}
+
+		const listed = untrack(() => $state.snapshot(rows));
+
+		invoke<typeof found>('get_downloaded_files', { episodes: listed })
+			.then((loaded) => {
+				found = loaded;
+			})
+			.catch(errors.report);
+	});
 </script>
 
 <table>
@@ -146,7 +170,7 @@
 								</svg>
 							</button>
 						{:else if available(episode)}
-							<DownloadButton {episode} {markable} fileMissing={files !== undefined} />
+							<DownloadButton {episode} {markable} fileMissing={files !== undefined} onDisk={episode.id in found} />
 						{/if}
 						{#if subscribable && !subscribeOnHover}
 							<SubscribeButton show={showOf(episode)} />

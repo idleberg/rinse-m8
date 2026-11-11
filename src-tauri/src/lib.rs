@@ -202,9 +202,17 @@ async fn recheck_mp3(app: tauri::AppHandle, id: String) -> Result<(), String> {
 }
 
 /// Adds the episode to the download queue with the folder the current settings save it to, unless it's already in it.
+/// An episode whose file is already in the download folder is recorded as downloaded instead.
 #[tauri::command]
 fn download(app: tauri::AppHandle, episode: rinse::Episode) -> Result<(), String> {
     let settings = load_settings(&app, serde_json::Map::new())?;
+
+    if settings.downloaded_file(&episode).is_some() {
+        update_downloads(&app, |queue| queue.downloaded.insert(episode.id));
+
+        return Ok(());
+    }
+
     let folder = settings.download_folder.ok_or("no download folder set")?;
     let folder = rinse::save_folder(&folder, &episode, settings.group_by_show);
 
