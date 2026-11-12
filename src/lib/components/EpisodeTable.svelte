@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
-	import { tick, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import DownloadButton from '#lib/components/DownloadButton.svelte';
 	import Flyout from '#lib/components/Flyout.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
@@ -18,6 +18,7 @@
 		toggleSort,
 	} from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
+	import { refocusTrigger } from '#lib/flyout';
 	import { openShow } from '#lib/navigation';
 	import { player } from '#lib/player.svelte';
 
@@ -88,17 +89,10 @@
 
 	let body: HTMLTableSectionElement;
 
-	/** Where unloving drops the row, as in Favs, focus would fall to the page, so it moves to the flyout trigger of the
-	 * row now in its place, or of the last row. */
+	/** Unloving drops the row in Favs. */
 	async function toggleLove(episode: Episode, index: number) {
 		await player.toggleLove(episode);
-		await tick();
-
-		if (document.activeElement === document.body) {
-			const left = body.rows;
-
-			left[Math.min(index, left.length - 1)]?.querySelector<HTMLElement>('[aria-haspopup]')?.focus();
-		}
+		await refocusTrigger(body, index);
 	}
 </script>
 

@@ -1,8 +1,11 @@
 <script lang="ts">
 	import Artwork from '#lib/components/Artwork.svelte';
+	import Flyout from '#lib/components/Flyout.svelte';
 	import PlayerControls from '#lib/components/PlayerControls.svelte';
 	import Recommendations from '#lib/components/Recommendations.svelte';
-	import { formatDate } from '#lib/episodes';
+	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
+	import { type Episode, formatDate, showOf } from '#lib/episodes';
+	import { refocusTrigger } from '#lib/flyout';
 	import { openShow } from '#lib/navigation';
 	import { player } from '#lib/player.svelte';
 
@@ -21,11 +24,25 @@
 	const historyPage = 20;
 	let historyShown = $state(historyPage);
 
+	let queueBody = $state<HTMLTableSectionElement>();
+	let historyBody = $state<HTMLTableSectionElement>();
+
+	function removeFromQueue(index: number) {
+		player.dequeue(index);
+		refocusTrigger(queueBody, index);
+	}
+
+	async function removeFromHistory(episode: Episode, index: number) {
+		await player.removeFromHistory(episode);
+		await refocusTrigger(historyBody, index);
+	}
+
 	// The rows are unkeyed, so a moved episode shows in another row's element and focus follows it there
 	function moveWithArrows(event: KeyboardEvent, index: number) {
 		const step = { ArrowUp: -1, ArrowDown: 1 }[event.key];
 
-		if (!(event.altKey && step)) {
+		// The flyout sits inside the row, and its arrow keys move between entries
+		if (!(event.altKey && step) || (event.target as Element).closest('[role="menu"]')) {
 			return;
 		}
 
@@ -39,6 +56,13 @@
 		}
 	}
 </script>
+
+{#snippet love(episode: Episode)}
+	{@const loved = player.lovedIds.includes(episode.id)}
+	<button type="button" role="menuitemcheckbox" aria-checked={loved} onclick={() => player.toggleLove(episode)}>
+		{loved ? 'Unlove' : 'Love'}
+	</button>
+{/snippet}
 
 <section class:idle={!playable}>
 	<Artwork src={cover} empty={playable ? 'No artwork for this show' : '•︵•'} onerror={() => cover && failed.push(cover)} />
@@ -67,7 +91,7 @@
 				<th></th>
 			</tr>
 		</thead>
-		<tbody>
+		<tbody bind:this={queueBody}>
 			<!-- Unkeyed, since an episode can be queued more than once -->
 			{#each player.playQueue as episode, index}
 				<tr
@@ -81,6 +105,13 @@
 					tabindex="0"
 					aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
 					ondragstart={(event) => {
+						// A press in the open flyout, which light dismiss leaves open, would drag its row
+						if (event.currentTarget.querySelector(':popover-open')) {
+							event.preventDefault();
+
+							return;
+						}
+
 						dragged = index;
 						event.dataTransfer?.setData('text/plain', String(index));
 					}}
@@ -117,11 +148,11 @@
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>
-							<button type="button" class="icon" aria-label="Remove" title="Remove" onclick={() => player.dequeue(index)}>
-								<svg viewBox="0 0 16 16" aria-hidden="true">
-									<path d="M4 4l8 8M12 4l-8 8" />
-								</svg>
-							</button>
+							<Flyout>
+								<button type="button" role="menuitem" onclick={() => removeFromQueue(index)}>Remove from queue</button>
+								<SubscribeButton show={showOf(episode)} entry />
+								{@render love(episode)}
+							</Flyout>
 						</div>
 					</td>
 				</tr>
@@ -148,8 +179,8 @@
 				<th></th>
 			</tr>
 		</thead>
-		<tbody>
-			{#each player.playHistory.slice(0, historyShown) as episode (episode.id)}
+		<tbody bind:this={historyBody}>
+			{#each player.playHistory.slice(0, historyShown) as episode, index (episode.id)}
 				<tr>
 					<td>{formatDate(episode.date)}</td>
 					<td>
@@ -165,6 +196,11 @@
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>
+							<Flyout>
+								<button type="button" role="menuitem" onclick={() => removeFromHistory(episode, index)}>Remove from history</button>
+								<SubscribeButton show={showOf(episode)} entry />
+								{@render love(episode)}
+							</Flyout>
 						</div>
 					</td>
 				</tr>

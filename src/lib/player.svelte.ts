@@ -207,6 +207,21 @@ class Player {
 		}
 	};
 
+	/** Drops `removed` from the play history, once confirmed. PREV keeps its own session stack. */
+	removeFromHistory = async (removed: Episode) => {
+		if (
+			await confirm({
+				title: 'Remove from History',
+				message: `Remove ${removed.showTitle} from the play history?`,
+				primaryAction: 'Remove',
+				secondaryAction: 'Cancel',
+			})
+		) {
+			this.playHistory = this.playHistory.filter((e) => e.id !== removed.id);
+			this.#save('history', $state.snapshot(this.playHistory));
+		}
+	};
+
 	playFromQueue = (index: number) => this.play(this.dequeue(index));
 
 	/** Plays the first queued episode, from the start even if it's the current one. Repeat all queues the current

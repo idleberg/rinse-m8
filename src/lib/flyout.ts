@@ -1,3 +1,5 @@
+import { tick } from 'svelte';
+
 /** Where a flyout goes, as fixed-position insets: right-aligned to its trigger, and below it unless the trigger is in the
  * window's bottom half, where it opens above. Needs no measuring, so it can be set before the flyout shows. */
 export function placeFlyout(
@@ -11,4 +13,16 @@ export function placeFlyout(
 	}
 
 	return { top: `${trigger.bottom}px`, right };
+}
+
+/** After a flyout entry drops its row, focus would fall to the page, so it moves to the flyout trigger of the row now
+ * at `index`, or of the last row. Waits for the DOM to update. */
+export async function refocusTrigger(body: HTMLTableSectionElement | undefined, index: number) {
+	await tick();
+
+	if (body && document.activeElement === document.body) {
+		const { rows } = body;
+
+		rows[Math.min(index, rows.length - 1)]?.querySelector<HTMLElement>('[aria-haspopup]')?.focus();
+	}
 }

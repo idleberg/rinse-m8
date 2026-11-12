@@ -201,6 +201,24 @@ it('clears the history only once confirmed, leaving PREV its session stack', asy
 	expect(player.episode?.id).toBe('a');
 });
 
+it('removes one history entry only once confirmed, and stores the rest', async () => {
+	player.playHistory = [a, b, c];
+
+	const declined = player.removeFromHistory(b);
+
+	confirmation.answer();
+	await declined;
+	expect(player.playHistory.map((e) => e.id)).toEqual(['a', 'b', 'c']);
+
+	const confirmed = player.removeFromHistory(b);
+
+	confirmation.answer('primary');
+	await confirmed;
+	await settle();
+	expect(player.playHistory.map((e) => e.id)).toEqual(['a', 'c']);
+	expect((stored.get('history') as Episode[]).map((e) => e.id)).toEqual(['a', 'c']);
+});
+
 it('loves and unloves the episode, sending only the love to Last.fm', async () => {
 	await player.play(c);
 

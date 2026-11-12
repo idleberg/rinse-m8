@@ -25,7 +25,7 @@ Every flyout ends with these, below a divider:
 | Dashboard: show sections       | Play, Download/Show in folder, ⋯ | Mark as downloaded, Love                       |
 | Schedule, Show view            | Play, Download, ⋯                | Subscribe, Love                                |
 | Favs                           | Play, Show in folder/Download, ⋯ | Love                                           |
-| Player tab: play queue         | Play, Remove, ⋯                  | Subscribe, Love                                |
+| Player tab: play queue         | Play, ⋯                          | Remove from queue, Subscribe, Love             |
 | Player tab: history            | Play, ⋯                          | Remove from history, Subscribe, Love           |
 | Queue view: previous downloads | Show in folder, Remove, ⋯        | Play (follows the play-or-queue setting), Love |
 
