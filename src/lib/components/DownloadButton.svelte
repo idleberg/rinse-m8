@@ -4,20 +4,19 @@
 
 	let {
 		episode,
-		fileMissing = false,
-		onDisk = false,
+		downloaded,
+		onDisk,
 	}: {
 		episode: Episode;
-		/** Whether the episode's file is known to be gone from the download folder, so it shows as not downloaded. */
-		fileMissing?: boolean;
+		/** Whether the episode counts as downloaded: its file is on disk, or it's recorded and its file isn't known gone. */
+		downloaded: boolean;
 		/** Whether the episode's file is in the download folder, so it isn't downloaded again. */
-		onDisk?: boolean;
+		onDisk: boolean;
 	} = $props();
 
 	const downloading = $derived(downloads.queue.current?.id === episode.id);
 	const queued = $derived(downloads.queue.waiting.some((e) => e.id === episode.id));
 	const failed = $derived(downloads.queue.failures.some((e) => e.id === episode.id));
-	const downloaded = $derived(onDisk || (!fileMissing && downloads.queue.downloaded.includes(episode.id)));
 	const label = $derived(
 		failed ? 'Retry' : onDisk ? 'Downloaded' : downloaded ? 'Downloaded, download again' : 'Download',
 	);

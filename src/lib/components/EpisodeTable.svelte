@@ -20,7 +20,6 @@
 	import { errors } from '#lib/errors.svelte';
 	import { openShow } from '#lib/navigation';
 	import { player } from '#lib/player.svelte';
-	import { settings } from '#lib/settings.svelte';
 
 	let {
 		episodes,
@@ -112,6 +111,9 @@
 	</thead>
 	<tbody>
 		{#each rows as episode, i (episode.id)}
+			{@const onDisk = episode.id in found}
+			<!-- Given `files`, an episode without one has lost its file, so it no longer counts -->
+			{@const downloaded = onDisk || (!files && downloads.queue.downloaded.includes(episode.id))}
 			<tr class={{ failed: downloads.queue.failures.some((e) => e.id === episode.id) }}>
 				<td>
 					{#if !groupDates || sort.column !== 'date'}
@@ -167,7 +169,7 @@
 								</svg>
 							</button>
 						{:else if available(episode)}
-							<DownloadButton {episode} fileMissing={files !== undefined} onDisk={episode.id in found} />
+							<DownloadButton {episode} {downloaded} {onDisk} />
 						{/if}
 						{#if subscribable}
 							<SubscribeButton show={showOf(episode)} />
@@ -179,23 +181,14 @@
 									<button
 										type="button"
 										role="menuitem"
-										disabled={!available(episode) || episode.id in found || downloads.queue.downloaded.includes(episode.id)}
+										disabled={!available(episode) || downloaded}
 										onclick={() => downloads.mark(episode.id)}
 									>
 										Mark as downloaded
 									</button>
 								{/if}
 								{#if subscribeInFlyout}
-									{@const subscribed = settings.subscribed.includes(episode.showSlug)}
-									<button
-										type="button"
-										role="menuitemcheckbox"
-										aria-checked={subscribed}
-										disabled={settings.subscribing.includes(episode.showSlug)}
-										onclick={() => settings.toggle(showOf(episode))}
-									>
-										{subscribed ? 'Unsubscribe' : 'Subscribe'}
-									</button>
+									<SubscribeButton show={showOf(episode)} entry />
 								{/if}
 							</Flyout>
 						{/if}
