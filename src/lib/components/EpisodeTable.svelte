@@ -30,7 +30,6 @@
 		markable = false,
 		plays,
 		subscribable = false,
-		subscribeInFlyout = false,
 	}: {
 		episodes: Episode[];
 		/** The downloaded file per episode id. When given, an episode with a file gets a "Show in folder" button in
@@ -47,10 +46,8 @@
 		/** How often each episode has been played, by episode id. When given, the table has a Plays column and starts out
 		 * sorted by it. */
 		plays?: Record<string, number>;
-		/** Adds a subscribe button to each row. */
+		/** Adds "Subscribe" to each row's flyout. */
 		subscribable?: boolean;
-		/** Adds a Subscribe entry to each row's flyout, in place of `subscribable`'s button. */
-		subscribeInFlyout?: boolean;
 	} = $props();
 
 	const columns: [SortColumn, string][] = $derived([
@@ -171,10 +168,7 @@
 						{:else if available(episode)}
 							<DownloadButton {episode} {downloaded} {onDisk} />
 						{/if}
-						{#if subscribable}
-							<SubscribeButton show={showOf(episode)} />
-						{/if}
-						{#if markable || subscribeInFlyout}
+						{#if markable || subscribable}
 							<Flyout>
 								{#if markable}
 									<!-- Disabled without an mp3, as it had no download button to sit beside -->
@@ -187,7 +181,7 @@
 										Mark as downloaded
 									</button>
 								{/if}
-								{#if subscribeInFlyout}
+								{#if subscribable}
 									<SubscribeButton show={showOf(episode)} entry />
 								{/if}
 							</Flyout>

@@ -4,8 +4,8 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Schedule and show view rows show Play, Download and the flyout trigger, no subscribe button
-- [ ] The flyout's first entry is SUBSCRIBE or UNSUBSCRIBE by the show's state; UNSUBSCRIBE still asks first
-- [ ] The show view header's subscribe button is unchanged
+- [x] Schedule and show view rows show Play, Download and the flyout trigger, no subscribe button
+- [x] The flyout's first entry is SUBSCRIBE or UNSUBSCRIBE by the show's state; UNSUBSCRIBE still asks first
+- [x] The show view header's subscribe button is unchanged
