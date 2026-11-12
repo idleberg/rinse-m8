@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
+	import Flyout from '#lib/components/Flyout.svelte';
 	import { downloads } from '#lib/downloads.svelte';
-	import { type Episode, formatDate } from '#lib/episodes';
+	import { available, type Episode, formatDate } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
 	import { openShow } from '#lib/navigation';
+	import { player } from '#lib/player.svelte';
 
 	const queue = $derived(downloads.queue);
 
@@ -194,7 +196,9 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each previous as episode (episode.id)}
+			<!-- Without `file`, which would otherwise travel into the play queue and history -->
+			{#each previous as { file, ...episode } (episode.id)}
+				{@const loved = player.lovedIds.includes(episode.id)}
 				<tr>
 					<td>{formatDate(episode.date)}</td>
 					<td>
@@ -205,8 +209,7 @@
 					</td>
 					<td>
 						<div class="buttons">
-							{#if episode.file}
-								{@const file = episode.file}
+							{#if file}
 								<button type="button"
 									class="icon"
 									aria-label="Show in folder"
@@ -229,6 +232,20 @@
 									<path d="M4 4l8 8M12 4l-8 8" />
 								</svg>
 							</button>
+							<Flyout>
+								<!-- The player plays the downloaded file when there is one -->
+								<button
+									type="button"
+									role="menuitem"
+									disabled={!(file || available(episode))}
+									onclick={() => player.playOrQueue(episode)}
+								>
+									Play
+								</button>
+								<button type="button" role="menuitemcheckbox" aria-checked={loved} onclick={() => player.toggleLove(episode)}>
+									{loved ? 'Unlove' : 'Love'}
+								</button>
+							</Flyout>
 						</div>
 					</td>
 				</tr>

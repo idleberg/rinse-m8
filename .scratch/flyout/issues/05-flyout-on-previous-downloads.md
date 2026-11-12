@@ -4,10 +4,10 @@
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Previous download rows show Show in folder, Remove and the flyout trigger
-- [ ] PLAY follows the play-or-queue setting, and plays the downloaded file when there is one
-- [ ] PLAY is disabled when the episode has neither a file nor an available mp3
-- [ ] LOVE/UNLOVE toggles the episode's love
-- [ ] The active downloads table has no flyout
+- [x] Previous download rows show Show in folder, Remove and the flyout trigger
+- [x] PLAY follows the play-or-queue setting, and plays the downloaded file when there is one
+- [x] PLAY is disabled when the episode has neither a file nor an available mp3
+- [x] LOVE/UNLOVE toggles the episode's love
+- [x] The active downloads table has no flyout
