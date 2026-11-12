@@ -113,7 +113,6 @@ button:where(:hover:not(:disabled, .plain)) {
 td button {
 	border-color: transparent;
 }
-
 /* Still a native select, with a `v` drawn from two diagonal strokes in the text colour, so it follows the theme */
 select {
 	appearance: none;
@@ -161,6 +160,11 @@ progress::-webkit-progress-value {
 .buttons {
 	display: flex;
 	gap: 0.5ch;
+}
+
+/* Borderless, so the buttons' own padding already spaces them apart */
+td .buttons {
+	gap: 0;
 }
 
 /* The size leaves out the border, so icon buttons are as tall as a line of text in a text button */

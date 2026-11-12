@@ -15,14 +15,18 @@ export function placeFlyout(
 	return { top: `${trigger.bottom}px`, right };
 }
 
-/** After a flyout entry drops its row, focus would fall to the page, so it moves to the flyout trigger of the row now
- * at `index`, or of the last row. Waits for the DOM to update. */
-export async function refocusTrigger(body: HTMLTableSectionElement | undefined, index: number) {
+/** After a button drops its row, focus would fall to the page, so it moves to the flyout trigger (or the `selector`
+ * match) of the row now at `index`, or of the last row. Waits for the DOM to update. */
+export async function refocusTrigger(
+	body: HTMLTableSectionElement | undefined,
+	index: number,
+	selector = '[aria-haspopup]',
+) {
 	await tick();
 
 	if (body && document.activeElement === document.body) {
 		const { rows } = body;
 
-		rows[Math.min(index, rows.length - 1)]?.querySelector<HTMLElement>('[aria-haspopup]')?.focus();
+		rows[Math.min(index, rows.length - 1)]?.querySelector<HTMLElement>(selector)?.focus();
 	}
 }

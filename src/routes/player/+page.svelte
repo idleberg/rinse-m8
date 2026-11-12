@@ -29,12 +29,12 @@
 
 	function removeFromQueue(index: number) {
 		player.dequeue(index);
-		refocusTrigger(queueBody, index);
+		refocusTrigger(queueBody, index, '.remove');
 	}
 
 	async function removeFromHistory(episode: Episode, index: number) {
 		await player.removeFromHistory(episode);
-		await refocusTrigger(historyBody, index);
+		await refocusTrigger(historyBody, index, '.remove');
 	}
 
 	// The rows are unkeyed, so a moved episode shows in another row's element and focus follows it there
@@ -61,6 +61,14 @@
 	{@const loved = player.lovedIds.includes(episode.id)}
 	<button type="button" role="menuitemcheckbox" aria-checked={loved} onclick={() => player.toggleLove(episode)}>
 		{loved ? 'Unlove' : 'Love'}
+	</button>
+{/snippet}
+
+{#snippet remove(label: string, onclick: () => void)}
+	<button type="button" class="icon remove" aria-label={label} title={label} {onclick}>
+		<svg viewBox="0 0 16 16" aria-hidden="true">
+			<path d="M4 4l8 8M12 4l-8 8" />
+		</svg>
 	</button>
 {/snippet}
 
@@ -148,8 +156,8 @@
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>
+							{@render remove('Remove from queue', () => removeFromQueue(index))}
 							<Flyout {episode}>
-								<button type="button" role="menuitem" onclick={() => removeFromQueue(index)}>Remove from queue</button>
 								<SubscribeButton show={showOf(episode)} entry />
 								{@render love(episode)}
 							</Flyout>
@@ -196,8 +204,8 @@
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>
+							{@render remove('Remove from history', () => removeFromHistory(episode, index))}
 							<Flyout {episode}>
-								<button type="button" role="menuitem" onclick={() => removeFromHistory(episode, index)}>Remove from history</button>
 								<SubscribeButton show={showOf(episode)} entry />
 								{@render love(episode)}
 							</Flyout>
