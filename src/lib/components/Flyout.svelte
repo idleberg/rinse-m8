@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { openUrl } from '@tauri-apps/plugin-opener';
 	import type { Snippet } from 'svelte';
-	import type { Episode } from '#lib/episodes';
+	import { type Episode, webPage } from '#lib/episodes';
+	import { errors } from '#lib/errors.svelte';
 	import { placeFlyout } from '#lib/flyout';
 
 	/** The row's entries, as buttons with `role="menuitem"` or `role="menuitemcheckbox"`; the default entries for
@@ -98,6 +100,8 @@
 >
 	{@render children()}
 	<hr />
+	<!-- Opens in the browser, since the webview would navigate away from the app -->
+	<button type="button" role="menuitem" onclick={() => openUrl(webPage(episode)).catch(errors.report)}>View on web</button>
 	<!-- Enabled after a 404, since the link is still the link -->
 	<button
 		type="button"

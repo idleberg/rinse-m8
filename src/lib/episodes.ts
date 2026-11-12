@@ -1,5 +1,7 @@
 export interface Episode {
 	id: string;
+	/** The episode's slug on rinse.fm; null for an episode cached before episodes carried it. */
+	slug: string | null;
 	title: string;
 	showId: string;
 	showSlug: string;
@@ -122,6 +124,13 @@ export function matchesFavFilters(
 		(genre === null || episode.genres.includes(genre)) &&
 		(show === null || episode.showSlug === show)
 	);
+}
+
+/** The episode's page on rinse.fm, or its show's page for an episode without a slug. */
+export function webPage(episode: Episode): string {
+	return episode.slug
+		? `https://www.rinse.fm/episodes/${episode.slug}`
+		: `https://www.rinse.fm/shows/${episode.showSlug}`;
 }
 
 export function showOf(episode: Episode): Show {

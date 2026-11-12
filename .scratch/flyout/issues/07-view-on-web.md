@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] Episodes fetched from the schedule and show pages carry their episode slug
-- [ ] An episode cache saved before this change still loads, with no slug on its episodes
+- [x] Episodes fetched from the schedule and show pages carry their episode slug
+- [x] An episode cache saved before this change still loads, with no slug on its episodes
 - [ ] VIEW ON WEB opens the episode page in the default browser
-- [ ] For an episode without a slug it opens the show page
-- [ ] It sits first in the default section, above COPY DOWNLOAD LINK
-- [ ] The episode and show page URL shapes are checked against rinse.fm
+- [x] For an episode without a slug it opens the show page
+- [x] It sits first in the default section, above COPY DOWNLOAD LINK
+- [x] The episode and show page URL shapes are checked against rinse.fm

@@ -426,6 +426,7 @@ mod tests {
     fn episode(show_title: &str, display_title: Option<&str>) -> Episode {
         Episode {
             id: "2319563".into(),
+            slug: None,
             title: "Ignored".into(),
             show_id: "1".into(),
             show_slug: "show".into(),

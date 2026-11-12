@@ -20,11 +20,13 @@ import {
 	sortEpisodes,
 	sortShows,
 	toggleSort,
+	webPage,
 } from './episodes';
 
 function episode(id: string, date: string, show: string): Episode {
 	return {
 		id,
+		slug: null,
 		title: id,
 		showId: id,
 		showSlug: id,
@@ -50,6 +52,13 @@ const episodes = [
 	episode('c', '2026-10-02', 'Alpha'),
 ];
 const ids = (list: Episode[]) => list.map(({ id }) => id);
+
+it("the web page is the episode's page, or its show's page for an episode without a slug", () => {
+	const withSlug = { ...episode('a', '2026-10-01', 'Alpha'), slug: 'a-01-10-2026-1200' };
+
+	expect(webPage(withSlug)).toBe('https://www.rinse.fm/episodes/a-01-10-2026-1200');
+	expect(webPage(episode('a', '2026-10-01', 'Alpha'))).toBe('https://www.rinse.fm/shows/a');
+});
 
 it('the default order is newest first', () => {
 	expect(ids(sortEpisodes(episodes, defaultSort))).toEqual(['b', 'c', 'a']);

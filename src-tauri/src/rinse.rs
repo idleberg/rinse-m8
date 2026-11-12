@@ -13,6 +13,8 @@ use tokio::io::AsyncWriteExt;
 #[serde(rename_all = "camelCase")]
 pub struct Episode {
     pub id: String,
+    /// The episode's slug on rinse.fm. Missing from cache entries saved before it existed.
+    pub slug: Option<String>,
     pub title: String,
     pub show_id: String,
     pub show_slug: String,
@@ -412,6 +414,7 @@ struct RawResponse {
 #[serde(rename_all = "camelCase")]
 struct RawEpisode {
     id: String,
+    slug: String,
     title: String,
     display_title: Option<String>,
     episode_date: Option<String>,
@@ -676,6 +679,7 @@ fn map_episode(raw: RawEpisode) -> Option<Episode> {
 
     Some(Episode {
         id: raw.id,
+        slug: Some(raw.slug),
         title: raw.title,
         show_id: show.id,
         show_slug: show.slug,
@@ -1493,6 +1497,26 @@ mod tests {
 
         assert_eq!(e.image, None);
         assert_eq!(e.show_image, None);
+    }
+
+    #[test]
+    fn maps_the_episode_slug() {
+        assert_eq!(
+            episode("2315290").slug.as_deref(),
+            Some("dubquake-records-25-10-2026-1600")
+        );
+        assert!(show_fixture().iter().all(|e| e.slug.is_some()));
+    }
+
+    #[test]
+    fn cache_entries_without_a_slug_load_without_one() {
+        let mut value = serde_json::to_value(episode("2315290")).unwrap();
+
+        value.as_object_mut().unwrap().remove("slug");
+
+        let e: Episode = serde_json::from_value(value).unwrap();
+
+        assert_eq!(e.slug, None);
     }
 
     #[test]
