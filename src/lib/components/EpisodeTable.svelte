@@ -111,6 +111,7 @@
 			{@const onDisk = episode.id in found}
 			<!-- Given `files`, an episode without one has lost its file, so it no longer counts -->
 			{@const downloaded = onDisk || (!files && downloads.queue.downloaded.includes(episode.id))}
+			{@const loved = player.lovedIds.includes(episode.id)}
 			<tr class={{ failed: downloads.queue.failures.some((e) => e.id === episode.id) }}>
 				<td>
 					{#if !groupDates || sort.column !== 'date'}
@@ -168,24 +169,25 @@
 						{:else if available(episode)}
 							<DownloadButton {episode} {downloaded} {onDisk} />
 						{/if}
-						{#if markable || subscribable}
-							<Flyout>
-								{#if markable}
-									<!-- Disabled without an mp3, as it had no download button to sit beside -->
-									<button
-										type="button"
-										role="menuitem"
-										disabled={!available(episode) || downloaded}
-										onclick={() => downloads.mark(episode.id)}
-									>
-										Mark as downloaded
-									</button>
-								{/if}
-								{#if subscribable}
-									<SubscribeButton show={showOf(episode)} entry />
-								{/if}
-							</Flyout>
-						{/if}
+						<Flyout>
+							{#if markable}
+								<!-- Disabled without an mp3, as it had no download button to sit beside -->
+								<button
+									type="button"
+									role="menuitem"
+									disabled={!available(episode) || downloaded}
+									onclick={() => downloads.mark(episode.id)}
+								>
+									Mark as downloaded
+								</button>
+							{/if}
+							{#if subscribable}
+								<SubscribeButton show={showOf(episode)} entry />
+							{/if}
+							<button type="button" role="menuitemcheckbox" aria-checked={loved} onclick={() => player.toggleLove(episode)}>
+								{loved ? 'Unlove' : 'Love'}
+							</button>
+						</Flyout>
 					</div>
 				</td>
 			</tr>

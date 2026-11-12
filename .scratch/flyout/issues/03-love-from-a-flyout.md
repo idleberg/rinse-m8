@@ -4,11 +4,11 @@
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] LOVE/UNLOVE in a flyout toggles that episode's love, whether or not it's loaded, exposed as a checkable item
-- [ ] Loving from a flyout sends the love to Last.fm; unloving sends nothing, as Last.fm has no unlove
-- [ ] The player's love button and the flyout entry agree for the loaded episode
-- [ ] Favs rows end with Play, Show in folder (or Download) and the flyout trigger
-- [ ] Unloving in Favs removes the row, with no confirmation
-- [ ] Loves survive a restart, as before
+- [x] LOVE/UNLOVE in a flyout toggles that episode's love, whether or not it's loaded, exposed as a checkable item
+- [x] Loving from a flyout sends the love to Last.fm; unloving sends nothing, as Last.fm has no unlove
+- [x] The player's love button and the flyout entry agree for the loaded episode
+- [x] Favs rows end with Play, Show in folder (or Download) and the flyout trigger
+- [x] Unloving in Favs removes the row, with no confirmation
+- [x] Loves survive a restart, as before

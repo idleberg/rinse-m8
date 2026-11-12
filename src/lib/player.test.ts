@@ -216,6 +216,24 @@ it('loves and unloves the episode, sending only the love to Last.fm', async () =
 	expect(calls.filter(([command]) => command === 'love')).toHaveLength(1);
 });
 
+it('loves and unloves an episode that isn’t loaded, which the player then reflects', async () => {
+	await player.play(c);
+
+	await player.toggleLove(a);
+	expect(player.lovedIds).toEqual(['a']);
+	expect(stored.get('loved')).toEqual(['a']);
+	expect(calls).toContainEqual(['love', { episode: a }]);
+	expect(player.loved).toBe(false);
+
+	await player.play(a);
+	expect(player.loved).toBe(true);
+
+	await player.toggleLove(a);
+	expect(player.loved).toBe(false);
+	expect(stored.get('loved')).toEqual([]);
+	expect(calls.filter(([command]) => command === 'love')).toHaveLength(1);
+});
+
 it('keeps each listened episode once in the history, latest first, and stores it', async () => {
 	player.playHistory = [];
 	await player.play(a);

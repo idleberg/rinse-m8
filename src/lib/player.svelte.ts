@@ -254,17 +254,17 @@ class Player {
 		await this.#play(last, true).catch(errors.report);
 	};
 
-	/** Waits for the stored loves, so loading them can't undo the change. Only a love goes to Last.fm, which has no
-	 * unlove. */
-	toggleLove = async () => {
+	/** Loves or unloves `episode`, the loaded one by default. Waits for the stored loves, so loading them can't undo the
+	 * change. Only a love goes to Last.fm, which has no unlove. */
+	toggleLove = async (episode = this.episode) => {
 		try {
 			await this.#ready;
 
-			if (!this.episode) {
+			if (!episode) {
 				return;
 			}
 
-			const { id } = this.episode;
+			const { id } = episode;
 			const loving = !this.lovedIds.includes(id);
 
 			this.lovedIds = loving
@@ -273,7 +273,7 @@ class Player {
 			await this.#save('loved', $state.snapshot(this.lovedIds));
 
 			if (loving) {
-				invoke('love', { episode: this.episode }).catch(errors.report);
+				invoke('love', { episode }).catch(errors.report);
 			}
 		} catch (e) {
 			errors.report(e);

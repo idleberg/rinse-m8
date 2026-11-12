@@ -244,7 +244,7 @@
 			</button>
 		{/if}
 		<!-- Outlined, or filled in the accent colour when loved -->
-		<button type="button" class="icon" class:loved={player.loved} aria-label="Love" title={player.loved ? 'Unlove' : 'Love'} aria-pressed={player.loved} onclick={player.toggleLove}>
+		<button type="button" class="icon" class:loved={player.loved} aria-label="Love" title={player.loved ? 'Unlove' : 'Love'} aria-pressed={player.loved} onclick={() => player.toggleLove()}>
 			<svg viewBox="0 0 16 16" aria-hidden="true">
 				<path d="M8 13.5C8 13.5 1.5 9.5 1.5 5.5 1.5 3.5 3 2 4.75 2 6.25 2 7.5 3 8 4.25 8.5 3 9.75 2 11.25 2 13 2 14.5 3.5 14.5 5.5 14.5 9.5 8 13.5 8 13.5z" />
 			</svg>
