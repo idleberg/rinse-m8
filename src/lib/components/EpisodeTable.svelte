@@ -3,6 +3,7 @@
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
 	import { untrack } from 'svelte';
 	import DownloadButton from '#lib/components/DownloadButton.svelte';
+	import Flyout from '#lib/components/Flyout.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
 	import { downloads } from '#lib/downloads.svelte';
 	import {
@@ -19,6 +20,7 @@
 	import { errors } from '#lib/errors.svelte';
 	import { openShow } from '#lib/navigation';
 	import { player } from '#lib/player.svelte';
+	import { settings } from '#lib/settings.svelte';
 
 	let {
 		episodes,
@@ -29,7 +31,7 @@
 		markable = false,
 		plays,
 		subscribable = false,
-		subscribeOnHover = false,
+		subscribeInFlyout = false,
 	}: {
 		episodes: Episode[];
 		/** The downloaded file per episode id. When given, an episode with a file gets a "Show in folder" button in
@@ -41,15 +43,15 @@
 		limit?: number;
 		/** Links each show name to its show view. Off where the table already is that view. */
 		linkShows?: boolean;
-		/** Adds a "Mark as downloaded" button next to each download button. */
+		/** Adds "Mark as downloaded" to each row's flyout. */
 		markable?: boolean;
 		/** How often each episode has been played, by episode id. When given, the table has a Plays column and starts out
 		 * sorted by it. */
 		plays?: Record<string, number>;
 		/** Adds a subscribe button to each row. */
 		subscribable?: boolean;
-		/** Moves the subscribe button before the other actions, shown while the row is hovered. */
-		subscribeOnHover?: boolean;
+		/** Adds a Subscribe entry to each row's flyout, in place of `subscribable`'s button. */
+		subscribeInFlyout?: boolean;
 	} = $props();
 
 	const columns: [SortColumn, string][] = $derived([
@@ -140,11 +142,6 @@
 				</td>
 				<td>
 					<div class="buttons">
-						{#if subscribable && subscribeOnHover}
-							<span class="reveal">
-								<SubscribeButton show={showOf(episode)} />
-							</span>
-						{/if}
 						<!-- A download plays from disk even when its mp3 got a 404 -->
 						{#if available(episode) || files?.[episode.id]}
 							{#if player.playing === episode.id}
@@ -170,10 +167,37 @@
 								</svg>
 							</button>
 						{:else if available(episode)}
-							<DownloadButton {episode} {markable} fileMissing={files !== undefined} onDisk={episode.id in found} />
+							<DownloadButton {episode} fileMissing={files !== undefined} onDisk={episode.id in found} />
 						{/if}
-						{#if subscribable && !subscribeOnHover}
+						{#if subscribable}
 							<SubscribeButton show={showOf(episode)} />
+						{/if}
+						{#if markable || subscribeInFlyout}
+							<Flyout>
+								{#if markable}
+									<!-- Disabled without an mp3, as it had no download button to sit beside -->
+									<button
+										type="button"
+										role="menuitem"
+										disabled={!available(episode) || episode.id in found || downloads.queue.downloaded.includes(episode.id)}
+										onclick={() => downloads.mark(episode.id)}
+									>
+										Mark as downloaded
+									</button>
+								{/if}
+								{#if subscribeInFlyout}
+									{@const subscribed = settings.subscribed.includes(episode.showSlug)}
+									<button
+										type="button"
+										role="menuitemcheckbox"
+										aria-checked={subscribed}
+										disabled={settings.subscribing.includes(episode.showSlug)}
+										onclick={() => settings.toggle(showOf(episode))}
+									>
+										{subscribed ? 'Unsubscribe' : 'Subscribe'}
+									</button>
+								{/if}
+							</Flyout>
 						{/if}
 					</div>
 				</td>
@@ -268,18 +292,6 @@
 	.buttons {
 		justify-content: flex-end;
 		align-items: center;
-	}
-
-	/* Opacity rather than visibility, so the button stays reachable by keyboard */
-	/* Flex, so the wrapper is no taller than the button and it lines up with the other actions */
-	.reveal {
-		display: flex;
-		opacity: 0;
-	}
-
-	tr:hover .reveal,
-	.reveal:focus-within {
-		opacity: 1;
 	}
 
 	.subtitle {

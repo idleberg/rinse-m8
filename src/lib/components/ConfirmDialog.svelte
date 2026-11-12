@@ -27,7 +27,12 @@
 <svelte:window
 	onclickcapture={(event) => {
 		if (!dialog.open && event.target instanceof Element) {
-			opener = event.target.closest('button');
+			// A flyout entry is hidden by the time the dialog closes, so its trigger takes the focus instead
+			const flyout = event.target.closest('[role="menu"]');
+
+			opener = flyout
+				? document.querySelector(`[aria-controls="${flyout.id}"]`)
+				: event.target.closest('button');
 		}
 	}}
 />

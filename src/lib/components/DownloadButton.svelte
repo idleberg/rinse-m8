@@ -5,7 +5,6 @@
 	let {
 		episode,
 		fileMissing = false,
-		markable = false,
 		onDisk = false,
 	}: {
 		episode: Episode;
@@ -13,8 +12,6 @@
 		fileMissing?: boolean;
 		/** Whether the episode's file is in the download folder, so it isn't downloaded again. */
 		onDisk?: boolean;
-		/** Adds a button that records the episode as downloaded without downloading it. */
-		markable?: boolean;
 	} = $props();
 
 	const downloading = $derived(downloads.queue.current?.id === episode.id);
@@ -46,16 +43,3 @@
 		{/if}
 	</svg>
 </button>
-{#if markable}
-	<button type="button"
-		class="icon"
-		aria-label="Mark as downloaded"
-		title="Mark as downloaded"
-		disabled={downloaded}
-		onclick={() => downloads.mark(episode.id)}
-	>
-		<svg viewBox="0 0 16 16" aria-hidden="true">
-			<path d="M4 4l8 8M12 4l-8 8" />
-		</svg>
-	</button>
-{/if}

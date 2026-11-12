@@ -53,7 +53,7 @@
 	<section class="latest">
 		<h2>Latest</h2>
 		{#if latestEpisodes.length}
-			<EpisodeTable episodes={latestEpisodes} markable subscribable subscribeOnHover />
+			<EpisodeTable episodes={latestEpisodes} markable subscribeInFlyout />
 		{:else if episodes.loading}
 			<p role="status">Loading episodes…</p>
 		{:else}
