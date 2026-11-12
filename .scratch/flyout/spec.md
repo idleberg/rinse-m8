@@ -21,7 +21,7 @@ Every flyout ends with these, below a divider:
 
 | Table                          | Row buttons                      | Flyout entries before the defaults             |
 | ------------------------------ | -------------------------------- | ---------------------------------------------- |
-| Dashboard: Latest              | Play, Download/Show in folder, ⋯ | Mark as downloaded, Love, Subscribe            |
+| Dashboard: Latest              | Play, Download/Show in folder, ⋯ | Mark as downloaded, Subscribe, Love            |
 | Dashboard: show sections       | Play, Download/Show in folder, ⋯ | Mark as downloaded, Love                       |
 | Schedule, Show view            | Play, Download, ⋯                | Subscribe, Love                                |
 | Favs                           | Play, Show in folder/Download, ⋯ | Love                                           |

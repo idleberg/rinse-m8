@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import DownloadButton from '#lib/components/DownloadButton.svelte';
 	import Flyout from '#lib/components/Flyout.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
@@ -85,6 +85,21 @@
 			})
 			.catch(errors.report);
 	});
+
+	let body: HTMLTableSectionElement;
+
+	/** Where unloving drops the row, as in Favs, focus would fall to the page, so it moves to the flyout trigger of the
+	 * row now in its place, or of the last row. */
+	async function toggleLove(episode: Episode, index: number) {
+		await player.toggleLove(episode);
+		await tick();
+
+		if (document.activeElement === document.body) {
+			const left = body.rows;
+
+			left[Math.min(index, left.length - 1)]?.querySelector<HTMLElement>('[aria-haspopup]')?.focus();
+		}
+	}
 </script>
 
 <table>
@@ -106,7 +121,7 @@
 			<th></th>
 		</tr>
 	</thead>
-	<tbody>
+	<tbody bind:this={body}>
 		{#each rows as episode, i (episode.id)}
 			{@const onDisk = episode.id in found}
 			<!-- Given `files`, an episode without one has lost its file, so it no longer counts -->
@@ -184,7 +199,7 @@
 							{#if subscribable}
 								<SubscribeButton show={showOf(episode)} entry />
 							{/if}
-							<button type="button" role="menuitemcheckbox" aria-checked={loved} onclick={() => player.toggleLove(episode)}>
+							<button type="button" role="menuitemcheckbox" aria-checked={loved} onclick={() => toggleLove(episode, i)}>
 								{loved ? 'Unlove' : 'Love'}
 							</button>
 						</Flyout>
