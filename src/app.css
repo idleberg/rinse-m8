@@ -97,7 +97,7 @@ button {
 
 button:disabled {
 	color: var(--muted);
-	cursor: default;
+	cursor: not-allowed;
 }
 
 /* Hover previews the pressed look. Kept at zero extra specificity, so components that restyle their pressed state (repeat-one, love) still win. */
