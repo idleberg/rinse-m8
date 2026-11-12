@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import type { Episode } from '#lib/episodes';
 	import { placeFlyout } from '#lib/flyout';
 
-	/** The entries, as buttons with `role="menuitem"` or `role="menuitemcheckbox"`. Choosing one closes the flyout. */
-	let { children }: { children: Snippet } = $props();
+	/** The row's entries, as buttons with `role="menuitem"` or `role="menuitemcheckbox"`; the default entries for
+	 * `episode` follow them. Choosing one closes the flyout. */
+	let { episode, children }: { episode: Episode; children: Snippet } = $props();
 
 	const id = $props.id();
 
@@ -95,6 +97,16 @@
 	}}
 >
 	{@render children()}
+	<hr />
+	<!-- Enabled after a 404, since the link is still the link -->
+	<button
+		type="button"
+		role="menuitem"
+		disabled={!episode.mp3}
+		onclick={() => episode.mp3 && navigator.clipboard.writeText(episode.mp3)}
+	>
+		Copy download link
+	</button>
 </div>
 
 <style>
@@ -112,6 +124,12 @@
 	[popover]:popover-open {
 		display: flex;
 		flex-direction: column;
+	}
+
+	hr {
+		margin: 0;
+		border: none;
+		border-top: 1px solid currentColor;
 	}
 
 	/* Each entry is a full-width line of text, inverted while hovered like any button */

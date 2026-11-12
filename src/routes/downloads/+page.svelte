@@ -232,7 +232,7 @@
 									<path d="M4 4l8 8M12 4l-8 8" />
 								</svg>
 							</button>
-							<Flyout>
+							<Flyout {episode}>
 								<!-- The player plays the downloaded file when there is one -->
 								<button
 									type="button"

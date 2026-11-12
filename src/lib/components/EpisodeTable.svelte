@@ -178,7 +178,7 @@
 						{:else if available(episode)}
 							<DownloadButton {episode} {downloaded} {onDisk} />
 						{/if}
-						<Flyout>
+						<Flyout {episode}>
 							{#if markable}
 								<!-- Disabled without an mp3, as it had no download button to sit beside -->
 								<button

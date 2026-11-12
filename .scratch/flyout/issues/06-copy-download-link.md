@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] Every flyout ends with a divider and COPY DOWNLOAD LINK
-- [ ] Choosing it puts the mp3 URL on the clipboard and closes the flyout
-- [ ] It's disabled for an episode without an mp3 and enabled for one whose mp3 got a 404
+- [x] Every flyout ends with a divider and COPY DOWNLOAD LINK
+- [x] Choosing it puts the mp3 URL on the clipboard and closes the flyout
+- [x] It's disabled for an episode without an mp3 and enabled for one whose mp3 got a 404
 - [ ] Works in the macOS, Windows and Linux webviews

@@ -148,7 +148,7 @@
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>
-							<Flyout>
+							<Flyout {episode}>
 								<button type="button" role="menuitem" onclick={() => removeFromQueue(index)}>Remove from queue</button>
 								<SubscribeButton show={showOf(episode)} entry />
 								{@render love(episode)}
@@ -196,7 +196,7 @@
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>
-							<Flyout>
+							<Flyout {episode}>
 								<button type="button" role="menuitem" onclick={() => removeFromHistory(episode, index)}>Remove from history</button>
 								<SubscribeButton show={showOf(episode)} entry />
 								{@render love(episode)}
