@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
+	import DownloadButton from '#lib/components/DownloadButton.svelte';
 	import Flyout from '#lib/components/Flyout.svelte';
 	import { downloads } from '#lib/downloads.svelte';
 	import { available, type Episode, formatDate } from '#lib/episodes';
@@ -221,6 +222,8 @@
 										<path d="M10.5 10.5L14 14" />
 									</svg>
 								</button>
+							{:else if available(episode)}
+								<DownloadButton {episode} downloaded onDisk={false} />
 							{/if}
 							<button type="button"
 								class="icon"
