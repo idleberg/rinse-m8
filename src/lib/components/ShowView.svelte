@@ -134,6 +134,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
+		gap: 0.5rem;
 	}
 
 	.clip {
@@ -145,5 +146,9 @@
 		margin: 0 0 1lh;
 		max-width: 60ch;
 		white-space: pre-line;
+	}
+
+	section p:last-child {
+		margin-bottom: 0;
 	}
 </style>
