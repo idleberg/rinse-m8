@@ -35,9 +35,8 @@
 	let box: HTMLElement | undefined = $state();
 	let text: HTMLElement | undefined = $state();
 	let trackElement: HTMLElement | undefined = $state();
-	let volumeBox: HTMLElement | undefined = $state();
-	let volumeButton: HTMLButtonElement | undefined = $state();
-	let volumeOpen = $state(false);
+	/** The volume to go back to when unmuting. */
+	let unmutedVolume = 1;
 	let overflows = $state(false);
 	let scrollDuration = $state(0);
 	/** Whether the listener clicked a scrolling title to stop it, so it reads from the start. */
@@ -101,27 +100,15 @@
 		stopped = !stopped;
 	}
 
-	function toggleVolume() {
-		volumeOpen = !volumeOpen;
-	}
-
-	/** A press outside the volume button and its slider closes the slider. */
-	function closeVolumeOutside(event: PointerEvent) {
-		if (volumeOpen && !(event.target instanceof Node && volumeBox?.contains(event.target))) {
-			volumeOpen = false;
-		}
-	}
-
-	/** Focus goes back to the button, since the slider it was on is gone. */
-	function closeVolumeOnEscape(event: KeyboardEvent) {
-		if (volumeOpen && event.key === 'Escape') {
-			volumeOpen = false;
-			volumeButton?.focus();
+	function toggleMute() {
+		if (player.volume) {
+			unmutedVolume = player.volume;
+			player.setVolume(0);
+		} else {
+			player.setVolume(unmutedVolume);
 		}
 	}
 </script>
-
-<svelte:window onpointerdown={closeVolumeOutside} onkeydown={closeVolumeOnEscape} />
 
 <!-- Scrolls when it doesn't fit, with a copy after it so the end runs into the start -->
 {#snippet track()}
@@ -210,29 +197,26 @@
 	>
 	<div class="buttons">
 		{#if layout === 'bar'}
-			<!-- The slider opens above the button, as wide as it -->
-			<div class="volume" bind:this={volumeBox} {@attach volumeByWheel}>
-				<button type="button" class="icon" aria-label="Volume" bind:this={volumeButton} title="Volume {player.volume.toLocaleString('en', { style: 'percent' })}" aria-expanded={volumeOpen} aria-controls="volume-slider" onclick={toggleVolume}>
+			<!-- The button mutes. The slider shows above it on hover or keyboard focus, as wide as it. -->
+			<div class="volume" {@attach volumeByWheel}>
+				<button type="button" class="icon" aria-label="Mute" title={player.volume ? 'Mute' : 'Unmute'} aria-pressed={!player.volume} onclick={toggleMute}>
 					<svg viewBox="0 0 16 16" aria-hidden="true">
 						{#each ['M2.5 10.5h2v3h-2z', 'M7 6.5h2v7H7z', 'M11.5 2.5h2v11h-2z'] as bar, index}
 							<path d={bar} class:filled={index < volumeBars(player.volume)} />
 						{/each}
 					</svg>
 				</button>
-				{#if volumeOpen}
-					<input
-						id="volume-slider"
-						type="range"
-						aria-label="Volume"
-						min="0"
-						max="1"
-						step="0.01"
-						class:muted={!player.volume}
-						style:--level={player.volume}
-						value={player.volume}
-						oninput={(e) => player.setVolume(e.currentTarget.valueAsNumber)}
-					/>
-				{/if}
+				<input
+					type="range"
+					aria-label="Volume"
+					min="0"
+					max="1"
+					step="0.01"
+					class:muted={!player.volume}
+					style:--level={player.volume}
+					value={player.volume}
+					oninput={(e) => player.setVolume(e.currentTarget.valueAsNumber)}
+				/>
 			</div>
 		{/if}
 		{#if layout === 'tab'}
@@ -415,6 +399,7 @@
 
 	/* Vertical with the top as full volume, drawn over the content behind it. The button's top border closes it. The outer ring keeps the border apart from a page in the same colour, like the inverted Settings. */
 	.volume input {
+		display: none;
 		position: absolute;
 		bottom: 100%;
 		left: 0;
@@ -429,6 +414,11 @@
 		direction: rtl;
 		background-color: var(--paper);
 		background-size: 100% calc(var(--level) * 100%);
+	}
+
+	.volume:hover input,
+	.volume:has(:focus-visible) input {
+		display: block;
 	}
 
 	/* As wide as the button inside its border */
