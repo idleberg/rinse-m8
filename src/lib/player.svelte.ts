@@ -72,6 +72,8 @@ class Player {
 	repeat = $state<Repeat>('off');
 	/** Between 0 and 1. Change it through `setVolume`, which saves it. */
 	volume = $state(1);
+	/** The volume to go back to when unmuting. Saved, so it outlasts a restart while muted. */
+	#unmutedVolume = 1;
 	/** The play queue, played from the front once the current episode ends. An episode can be queued more than once. */
 	playQueue = $state<Episode[]>([]);
 	/** The episodes listened to, latest first, each once. Saved, and separate from the session stack PREV uses. */
@@ -328,6 +330,16 @@ class Player {
 		localStorage.setItem('volume', String(volume));
 	};
 
+	toggleMute = () => {
+		if (this.volume) {
+			this.#unmutedVolume = this.volume;
+			localStorage.setItem('unmutedVolume', String(this.volume));
+			this.setVolume(0);
+		} else {
+			this.setVolume(this.#unmutedVolume);
+		}
+	};
+
 	handleLoadedMetadata = () => {
 		if (this.audio) {
 			this.audio.currentTime = this.#position;
@@ -413,6 +425,7 @@ class Player {
 		this.showRemaining = localStorage.getItem('showRemaining') === 'true';
 		this.repeat = repeatModes.find((mode) => mode === localStorage.getItem('repeat')) ?? 'off';
 		this.volume = parseVolume(localStorage.getItem('volume'));
+		this.#unmutedVolume = parseVolume(localStorage.getItem('unmutedVolume'));
 
 		this.#ready = load('player.json').then(async (store) => {
 			this.#position = (await store.get<number>('position')) ?? 0;

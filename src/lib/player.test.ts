@@ -93,6 +93,18 @@ it('brings back the stored volume at launch, and stores a new one', () => {
 	expect(local.get('volume')).toBe('0.7');
 });
 
+it('mutes, and unmutes back to the stored level', () => {
+	player.setVolume(0.6);
+	player.toggleMute();
+
+	expect(player.volume).toBe(0);
+	expect(local.get('unmutedVolume')).toBe('0.6');
+
+	player.toggleMute();
+
+	expect(player.volume).toBe(0.6);
+});
+
 it('plays the first queued episode on NEXT, and under repeat all queues the current one last', async () => {
 	await player.play(a);
 	player.playQueue = [b, c];

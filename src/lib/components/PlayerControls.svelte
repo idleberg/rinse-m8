@@ -35,8 +35,6 @@
 	let box: HTMLElement | undefined = $state();
 	let text: HTMLElement | undefined = $state();
 	let trackElement: HTMLElement | undefined = $state();
-	/** The volume to go back to when unmuting. */
-	let unmutedVolume = 1;
 	let overflows = $state(false);
 	let scrollDuration = $state(0);
 	/** Whether the listener clicked a scrolling title to stop it, so it reads from the start. */
@@ -98,17 +96,7 @@
 
 	function toggleScrolling() {
 		stopped = !stopped;
-	}
-
-	function toggleMute() {
-		if (player.volume) {
-			unmutedVolume = player.volume;
-			player.setVolume(0);
-		} else {
-			player.setVolume(unmutedVolume);
-		}
-	}
-</script>
+	}</script>
 
 <!-- Scrolls when it doesn't fit, with a copy after it so the end runs into the start -->
 {#snippet track()}
@@ -199,7 +187,7 @@
 		{#if layout === 'bar'}
 			<!-- The button mutes. The slider shows above it on hover or keyboard focus, as wide as it. -->
 			<div class="volume" {@attach volumeByWheel}>
-				<button type="button" class="icon" aria-label="Mute" title={player.volume ? 'Mute' : 'Unmute'} aria-pressed={!player.volume} onclick={toggleMute}>
+				<button type="button" class="icon" aria-label="Mute" title={player.volume ? 'Mute' : 'Unmute'} aria-pressed={!player.volume} onclick={player.toggleMute}>
 					<svg viewBox="0 0 16 16" aria-hidden="true">
 						{#each ['M2.5 10.5h2v3h-2z', 'M7 6.5h2v7H7z', 'M11.5 2.5h2v11h-2z'] as bar, index}
 							<path d={bar} class:filled={index < volumeBars(player.volume)} />
