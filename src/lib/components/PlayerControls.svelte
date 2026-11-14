@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { invoke } from '@tauri-apps/api/core';
 	import { on } from 'svelte/events';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import Flyout from '#lib/components/Flyout.svelte';
+	import { downloads } from '#lib/downloads.svelte';
 	import { episodeLabel, formatDate } from '#lib/episodes';
+	import { errors } from '#lib/errors.svelte';
 	import { formatTime, type Repeat, volumeBars, wheelNotch, wheelVolume } from '#lib/listen';
 	import { player } from '#lib/player.svelte';
 	import { goto } from '$app/navigation';
@@ -94,6 +97,33 @@
 			{ passive: false },
 		);
 	}
+
+	/** Whether the playing episode was downloaded before and its file is still in the download folder. */
+	let onDisk = $state(false);
+
+	$effect(() => {
+		const { episode } = player;
+
+		onDisk = false;
+
+		if (layout !== 'tab' || !episode || !downloads.queue.downloaded.includes(episode.id)) {
+			return;
+		}
+
+		let stale = false;
+
+		invoke<Record<string, string>>('get_downloaded_files', { episodes: [$state.snapshot(episode)] })
+			.then((found) => {
+				if (!stale) {
+					onDisk = episode.id in found;
+				}
+			})
+			.catch(errors.report);
+
+		return () => {
+			stale = true;
+		};
+	});
 
 	function toggleScrolling() {
 		stopped = !stopped;
@@ -223,7 +253,18 @@
 			</svg>
 		</button>
 		{#if layout === 'tab' && player.episode}
-			<Flyout episode={player.episode} share />
+			{@const episode = player.episode}
+			<Flyout {episode}>
+				<!-- Disabled while the episode is in the download queue, or its file is in the download folder -->
+				<button
+					type="button"
+					role="menuitem"
+					disabled={!episode.mp3 || onDisk || downloads.queue.current?.id === episode.id || downloads.queue.waiting.some((e) => e.id === episode.id)}
+					onclick={() => downloads.download(episode)}
+				>
+					Download
+				</button>
+			</Flyout>
 		{/if}
 	</div>
 </div>

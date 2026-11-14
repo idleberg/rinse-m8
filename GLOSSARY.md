@@ -27,7 +27,7 @@ The screen for a single show, listing its known episodes.
 _Avoid_: Show page, show detail
 
 **Share link**:
-An `m8://shows/<showSlug>/<episodeId>` link, copied with "Share with a M8" in an episode's flyout, that plays or queues the episode in Rinse M8, as the Play behaviour setting says.
+An `m8://shows/<showSlug>/<episodeId>` link, copied with "Share with M8" in an episode's flyout, that plays or queues the episode in Rinse M8, as the Play behaviour setting says.
 _Avoid_: Deep link, app link, invite
 
 **Show record**:

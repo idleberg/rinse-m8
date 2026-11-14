@@ -6,10 +6,10 @@
 	import { placeFlyout } from '#lib/flyout';
 
 	/** The row's entries, as buttons with `role="menuitem"` or `role="menuitemcheckbox"`; the default entries for
-	 * `episode` follow them. Choosing one closes the flyout. `share` shows a share icon on the trigger instead. */
-	let { episode, share = false, children }: { episode: Episode; share?: boolean; children?: Snippet } = $props();
+	 * `episode` follow them. Choosing one closes the flyout. */
+	let { episode, children }: { episode: Episode; children?: Snippet } = $props();
 
-	const label = $derived(share ? 'Share' : 'More actions');
+	const label = 'More actions';
 
 	const id = $props.id();
 
@@ -41,12 +41,7 @@
 	popovertarget={id}
 >
 	<svg viewBox="0 0 16 16" aria-hidden="true">
-		{#if share}
-			<!-- An arrow out of a tray -->
-			<path d="M8 10V1.5M4.5 5L8 1.5 11.5 5M2.5 8.5v5h11v-5" />
-		{:else}
-			<path d="M3 8h.01M8 8h.01M13 8h.01" stroke-linecap="round" stroke-width="2.5" />
-		{/if}
+		<path d="M3 8h.01M8 8h.01M13 8h.01" stroke-linecap="round" stroke-width="2.5" />
 	</svg>
 </button>
 
@@ -122,7 +117,7 @@
 	</button>
 	<!-- Copies an m8:// link that plays or queues the episode in another M8's app -->
 	<button type="button" role="menuitem" onclick={() => navigator.clipboard.writeText(shareLink(episode)).catch(errors.report)}>
-		Share with a M8
+		Share with M8
 	</button>
 </div>
 
