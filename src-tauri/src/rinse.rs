@@ -1069,19 +1069,24 @@ fn check_result(status: StatusCode) -> Option<bool> {
 /// Streams the episode's mp3 into a `.part` file in `folder` chunk by chunk and renames it to `.mp3` once it's whole,
 /// calling `on_progress` whenever the percent changes, which it can only do when the server reports a size.
 /// An existing `.part` file is resumed from its size; a failed download keeps it for the next attempt. `folder` is
-/// created if missing.
+/// created if missing. A file already saved under the episode's name counts as downloaded and isn't fetched again.
 pub async fn download(
     episode: &Episode,
     folder: &Path,
     mut on_progress: impl FnMut(u8),
 ) -> Result<(), String> {
+    let path = folder.join(file_name(episode));
+
+    if path.is_file() {
+        return Ok(());
+    }
+
     let url = episode.mp3.as_deref().ok_or("episode has no mp3")?;
 
     tokio::fs::create_dir_all(folder)
         .await
         .map_err(|e| e.to_string())?;
 
-    let path = folder.join(file_name(episode));
     let part = part_path(episode, folder);
     let mut offset = tokio::fs::metadata(&part)
         .await
@@ -1995,6 +2000,26 @@ mod tests {
         assert_eq!(
             downloaded_file(&folder, &episode, false),
             Some(folder.join(file_name(&episode)))
+        );
+        std::fs::remove_dir_all(&folder).unwrap();
+    }
+
+    #[tokio::test]
+    async fn a_file_already_in_the_folder_is_not_downloaded_again() {
+        let folder = std::env::temp_dir().join(format!("rinse-existing-{}", std::process::id()));
+        let episode = Episode {
+            mp3: None,
+            ..episode("2315290")
+        };
+
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(folder.join(file_name(&episode)), b"mp3").unwrap();
+
+        // Without an mp3 to fetch, only skipping the download succeeds
+        assert_eq!(download(&episode, &folder, |_| {}).await, Ok(()));
+        assert_eq!(
+            std::fs::read(folder.join(file_name(&episode))).unwrap(),
+            b"mp3"
         );
         std::fs::remove_dir_all(&folder).unwrap();
     }
