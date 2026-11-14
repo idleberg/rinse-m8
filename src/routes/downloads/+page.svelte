@@ -2,10 +2,12 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
 	import DownloadButton from '#lib/components/DownloadButton.svelte';
+	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import Flyout from '#lib/components/Flyout.svelte';
 	import { downloads } from '#lib/downloads.svelte';
-	import { available, type Episode, formatDate } from '#lib/episodes';
+	import { available, type Episode, formatDate, stationsOf } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
+	import { filters } from '#lib/filters.svelte';
 	import { openShow } from '#lib/navigation';
 	import { player } from '#lib/player.svelte';
 
@@ -32,6 +34,24 @@
 			.catch(errors.report);
 	});
 
+	// Only the stations and search apply, as on FAVS
+	const current = $derived(queue.current && filters.matchesStationsAndSearch(queue.current) ? queue.current : null);
+	const failures = $derived(queue.failures.filter(filters.matchesStationsAndSearch));
+	const shownPrevious = $derived(previous.filter(filters.matchesStationsAndSearch));
+
+	/** The waiting downloads the filters show, each with its index in the whole queue, which moves go by. */
+	const waiting = $derived(
+		queue.waiting
+			.map((episode, index) => ({ episode, index }))
+			.filter(({ episode }) => filters.matchesStationsAndSearch(episode)),
+	);
+
+	// The filters are shared, so a station unchecked elsewhere could hide a queued download behind a checkbox that's disabled
+	// here unless the queue counts too
+	const enabledStations = $derived(
+		stationsOf([...(queue.current ? [queue.current] : []), ...queue.waiting, ...queue.failures, ...previous]),
+	);
+
 	/** The row being dragged, and the index of the row it's over. */
 	let dragged = $state<{ id: string; index: number } | null>(null);
 	let over = $state<number | null>(null);
@@ -47,7 +67,8 @@
 		}
 	});
 
-	function moveWithArrows(event: KeyboardEvent, id: string, index: number) {
+	/** Moves the download past the next row shown above or below, `position` being its row among the shown ones. */
+	function moveWithArrows(event: KeyboardEvent, id: string, position: number) {
 		const step = { ArrowUp: -1, ArrowDown: 1 }[event.key];
 
 		if (!(event.altKey && step)) {
@@ -56,14 +77,16 @@
 
 		event.preventDefault();
 
-		const target = index + step;
+		const target = waiting[position + step]?.index;
 
-		if (target >= 0 && target < queue.waiting.length) {
+		if (target !== undefined) {
 			moved = { id, index: target };
 			downloads.move(id, target);
 		}
 	}
 </script>
+
+<EpisodeFilters shared {enabledStations} />
 
 <header class="first">
 	<h2>Active Downloads</h2>
@@ -72,7 +95,7 @@
 	{/if}
 </header>
 
-{#if queue.current || queue.waiting.length || queue.failures.length}
+{#if current || waiting.length || failures.length}
 	<table>
 		<thead>
 			<tr>
@@ -83,13 +106,13 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#if queue.current}
+			{#if current}
 				<tr>
-					<td>{formatDate(queue.current.date)}</td>
+					<td>{formatDate(current.date)}</td>
 					<td>
-						<button type="button" class="plain link" onclick={() => queue.current && openShow(queue.current.showSlug)}>{queue.current.showTitle}</button>
-						{#if queue.current.displayTitle}
-							<span class="subtitle">{queue.current.displayTitle}</span>
+						<button type="button" class="plain link" onclick={() => current && openShow(current.showSlug)}>{current.showTitle}</button>
+						{#if current.displayTitle}
+							<span class="subtitle">{current.displayTitle}</span>
 						{/if}
 					</td>
 					<td class="status">{queue.percent === null ? 'Downloading…' : `${queue.percent}%`}</td>
@@ -102,7 +125,7 @@
 					</td>
 				</tr>
 			{/if}
-			{#each queue.waiting as episode, index (episode.id)}
+			{#each waiting as { episode, index }, position (episode.id)}
 				<tr
 					bind:this={rows[episode.id]}
 					class={{
@@ -134,7 +157,7 @@
 							downloads.move(dragged.id, index);
 						}
 					}}
-					onkeydown={(event) => moveWithArrows(event, episode.id, index)}
+					onkeydown={(event) => moveWithArrows(event, episode.id, position)}
 				>
 					<td>{formatDate(episode.date)}</td>
 					<td>
@@ -147,7 +170,7 @@
 					<td><button type="button" onclick={() => downloads.remove(episode.id)}>Remove</button></td>
 				</tr>
 			{/each}
-			{#each queue.failures as episode (episode.id)}
+			{#each failures as episode (episode.id)}
 				<tr class="failed">
 					<td>{formatDate(episode.date)}</td>
 					<td>
@@ -176,6 +199,8 @@
 			{/each}
 		</tbody>
 	</table>
+{:else if queue.current || queue.waiting.length || queue.failures.length}
+	<p>No downloads match the filters</p>
 {:else}
 	<p>The download queue is empty</p>
 {/if}
@@ -187,7 +212,7 @@
 	{/if}
 </header>
 
-{#if previous.length}
+{#if shownPrevious.length}
 	<table>
 		<thead>
 			<tr>
@@ -198,7 +223,7 @@
 		</thead>
 		<tbody>
 			<!-- Without `file`, which would otherwise travel into the play queue and history -->
-			{#each previous as { file, ...episode } (episode.id)}
+			{#each shownPrevious as { file, ...episode } (episode.id)}
 				{@const loved = player.lovedIds.includes(episode.id)}
 				<tr>
 					<td>{formatDate(episode.date)}</td>
@@ -255,6 +280,8 @@
 			{/each}
 		</tbody>
 	</table>
+{:else if previous.length}
+	<p>No downloads match the filters</p>
 {:else}
 	<p>No previous downloads</p>
 {/if}

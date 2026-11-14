@@ -6,12 +6,15 @@
 	/** `shared` adds the shared filters. The other checkboxes render only when bound, to `filters` or a view's own state. */
 	let {
 		shared = false,
+		enabledStations,
 		mp3Only = $bindable(),
 		hideRebroadcasts = $bindable(),
 		children,
 	}: {
 		/** Adds the search and station checkboxes, which every view shares. */
 		shared?: boolean;
+		/** The stations whose checkbox can be changed. Every one can when unset. */
+		enabledStations?: string[];
 		mp3Only?: boolean;
 		hideRebroadcasts?: boolean;
 		/** More checkboxes for the options row, such as a setting the view wants next to its filters. */
@@ -28,7 +31,15 @@
 	{#if shared}
 		<div class="row">
 			{#each stations as station (station)}
-				<label><input type="checkbox" bind:group={filters.shownStations} value={station} /> {station}</label>
+				<label>
+					<input
+						type="checkbox"
+						bind:group={filters.shownStations}
+						value={station}
+						disabled={enabledStations && !enabledStations.includes(station)}
+					/>
+					{station}
+				</label>
 			{/each}
 		</div>
 	{/if}

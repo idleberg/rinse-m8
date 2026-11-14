@@ -19,6 +19,7 @@ import {
 	type ShowOrder,
 	sortEpisodes,
 	sortShows,
+	stationsOf,
 	toggleSort,
 	webPage,
 } from './episodes';
@@ -229,4 +230,13 @@ it('an episode without genres only matches all genres, and a show matches by slu
 	expect(matchesFavFilters(untagged, { genre: 'Jungle', show: null })).toBe(false);
 	expect(matchesFavFilters(tagged, { genre: 'Jungle', show: 'a' })).toBe(true);
 	expect(matchesFavFilters(tagged, { genre: 'Jungle', show: 'b' })).toBe(false);
+});
+
+it('the stations of episodes list each station once', () => {
+	const onKool = { ...episode('b', '2026-10-03', 'Gamma'), station: 'Kool FM' };
+
+	expect(
+		stationsOf([episode('a', '2026-10-01', 'Beta'), onKool, episode('c', '2026-10-02', 'Alpha')]),
+	).toEqual(['Rinse FM', 'Kool FM']);
+	expect(stationsOf([])).toEqual([]);
 });

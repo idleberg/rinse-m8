@@ -139,6 +139,11 @@ export function showOf(episode: Episode): Show {
 
 export const stations = ['Rinse FM', 'Rinse FR', 'Kool FM', 'SWU FM'];
 
+/** The stations `episodes` air on, each once, in the order they first appear. */
+export function stationsOf(episodes: Episode[]): string[] {
+	return [...new Set(episodes.map((episode) => episode.station))];
+}
+
 /** Whether the episode passes the "download available" and "hide rebroadcasts" checkboxes. */
 export function passesCheckboxes(
 	episode: Episode,
