@@ -51,7 +51,7 @@ async fn get_episodes(app: tauri::AppHandle) -> Result<Vec<rinse::Episode>, Stri
 
 /// The show's details as its last refresh left them, or none if it was never refreshed.
 #[tauri::command]
-fn get_show_record(
+async fn get_show_record(
     app: tauri::AppHandle,
     slug: String,
 ) -> Result<Option<rinse::ShowDetails>, String> {
@@ -69,7 +69,7 @@ fn get_show_record(
 
 /// Each show's last aired date, the later of the bundled seed's and its show record's, keyed by show slug.
 #[tauri::command]
-fn get_last_aired(app: tauri::AppHandle) -> Result<BTreeMap<String, String>, String> {
+async fn get_last_aired(app: tauri::AppHandle) -> Result<BTreeMap<String, String>, String> {
     let store = app.store("shows.json").map_err(|e| e.to_string())?;
 
     Ok(rinse::merge_last_aired(
@@ -272,7 +272,7 @@ struct PreviousDownload {
 
 /// Every episode recorded as downloaded or marked, newest first, as far as the episode cache has it.
 #[tauri::command]
-fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<PreviousDownload>, String> {
+async fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<PreviousDownload>, String> {
     let settings = load_settings(&app, serde_json::Map::new())?;
     let downloaded = app
         .state::<Downloads>()
@@ -300,7 +300,7 @@ fn get_previous_downloads(app: tauri::AppHandle) -> Result<Vec<PreviousDownload>
 
 /// The download-folder file of each of `episodes` that has one, by episode id.
 #[tauri::command]
-fn get_downloaded_files(
+async fn get_downloaded_files(
     app: tauri::AppHandle,
     episodes: Vec<rinse::Episode>,
 ) -> Result<BTreeMap<String, PathBuf>, String> {
@@ -314,7 +314,10 @@ fn get_downloaded_files(
 
 /// The episode's download, for the player, which may then read that one file through the asset protocol.
 #[tauri::command]
-fn local_file(app: tauri::AppHandle, episode: rinse::Episode) -> Result<Option<PathBuf>, String> {
+async fn local_file(
+    app: tauri::AppHandle,
+    episode: rinse::Episode,
+) -> Result<Option<PathBuf>, String> {
     let settings = load_settings(&app, serde_json::Map::new())?;
     let Some(file) = settings.downloaded_file(&episode) else {
         return Ok(None);
