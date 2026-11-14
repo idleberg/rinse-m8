@@ -9,6 +9,8 @@
 
 <EpisodeFilters shared bind:mp3Only={filters.mp3Only} bind:hideRebroadcasts={filters.hideRebroadcasts} />
 
+<h2>Schedule</h2>
+
 {#if scheduleEpisodes.length}
 	<EpisodeTable episodes={scheduleEpisodes} subscribable groupDates />
 {:else if episodes.loading}
@@ -18,6 +20,12 @@
 {/if}
 
 <style>
+	h2 {
+		margin: 0 0 0.5rem;
+		font-size: 1.25rem;
+		text-transform: uppercase;
+	}
+
 	p {
 		text-transform: uppercase;
 		color: var(--muted);

@@ -90,6 +90,8 @@
 	<label><input type="checkbox" bind:checked={showDead} /> show missing episodes</label>
 </EpisodeFilters>
 
+<h2>Your Favs</h2>
+
 {#if favEpisodes.length}
 	<EpisodeTable episodes={favEpisodes} {files} plays={player.plays} />
 {:else if episodes.loading}
@@ -99,6 +101,12 @@
 {/if}
 
 <style>
+	h2 {
+		margin: 0 0 0.5rem;
+		font-size: 1.25rem;
+		text-transform: uppercase;
+	}
+
 	p {
 		text-transform: uppercase;
 		color: var(--muted);

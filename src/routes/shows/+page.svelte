@@ -36,4 +36,14 @@
 	</label>
 </EpisodeFilters>
 
+<h2>All Shows</h2>
+
 <ShowDirectory shows={filteredDirectory} />
+
+<style>
+	h2 {
+		margin: 0 0 0.5rem;
+		font-size: 1.25rem;
+		text-transform: uppercase;
+	}
+</style>
