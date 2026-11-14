@@ -6,8 +6,10 @@
 	import { placeFlyout } from '#lib/flyout';
 
 	/** The row's entries, as buttons with `role="menuitem"` or `role="menuitemcheckbox"`; the default entries for
-	 * `episode` follow them. Choosing one closes the flyout. */
-	let { episode, children }: { episode: Episode; children: Snippet } = $props();
+	 * `episode` follow them. Choosing one closes the flyout. `share` shows a share icon on the trigger instead. */
+	let { episode, share = false, children }: { episode: Episode; share?: boolean; children?: Snippet } = $props();
+
+	const label = $derived(share ? 'Share' : 'More actions');
 
 	const id = $props.id();
 
@@ -31,15 +33,20 @@
 	bind:this={trigger}
 	type="button"
 	class="icon"
-	aria-label="More actions"
-	title="More actions"
+	aria-label={label}
+	title={label}
 	aria-haspopup="menu"
 	aria-controls={id}
 	aria-expanded={open}
 	popovertarget={id}
 >
 	<svg viewBox="0 0 16 16" aria-hidden="true">
-		<path d="M3 8h.01M8 8h.01M13 8h.01" stroke-linecap="round" stroke-width="2.5" />
+		{#if share}
+			<!-- An arrow out of a tray -->
+			<path d="M8 10V1.5M4.5 5L8 1.5 11.5 5M2.5 8.5v5h11v-5" />
+		{:else}
+			<path d="M3 8h.01M8 8h.01M13 8h.01" stroke-linecap="round" stroke-width="2.5" />
+		{/if}
 	</svg>
 </button>
 
@@ -98,8 +105,10 @@
 		}
 	}}
 >
-	{@render children()}
-	<hr />
+	{#if children}
+		{@render children()}
+		<hr />
+	{/if}
 	<!-- Opens in the browser, since the webview would navigate away from the app -->
 	<button type="button" role="menuitem" onclick={() => openUrl(webPage(episode)).catch(errors.report)}>View on web</button>
 	<!-- Enabled after a 404, since the link is still the link -->

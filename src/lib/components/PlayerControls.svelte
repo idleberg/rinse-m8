@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { on } from 'svelte/events';
 	import { prefersReducedMotion } from 'svelte/motion';
+	import Flyout from '#lib/components/Flyout.svelte';
 	import { episodeLabel, formatDate } from '#lib/episodes';
 	import { formatTime, type Repeat, volumeBars, wheelNotch, wheelVolume } from '#lib/listen';
 	import { player } from '#lib/player.svelte';
@@ -221,6 +222,9 @@
 				<path d="M8 13.5C8 13.5 1.5 9.5 1.5 5.5 1.5 3.5 3 2 4.75 2 6.25 2 7.5 3 8 4.25 8.5 3 9.75 2 11.25 2 13 2 14.5 3.5 14.5 5.5 14.5 9.5 8 13.5 8 13.5z" />
 			</svg>
 		</button>
+		{#if layout === 'tab' && player.episode}
+			<Flyout episode={player.episode} share />
+		{/if}
 	</div>
 </div>
 
