@@ -264,6 +264,25 @@ it('removes one history entry only once confirmed, and stores the rest', async (
 	expect((stored.get('history') as Episode[]).map((e) => e.id)).toEqual(['a', 'c']);
 });
 
+it('removes one queued episode only once confirmed, even after the queue moved on', async () => {
+	player.playQueue = [a, b, c];
+
+	const declined = player.removeFromQueue(player.playQueue[1]);
+
+	confirmation.answer();
+	await declined;
+	expect(player.playQueue.map((e) => e.id)).toEqual(['a', 'b', 'c']);
+
+	const confirmed = player.removeFromQueue(player.playQueue[1]);
+
+	player.dequeue(0);
+	confirmation.answer('primary');
+	await confirmed;
+	await settle();
+	expect(player.playQueue.map((e) => e.id)).toEqual(['c']);
+	expect((stored.get('queue') as Episode[]).map((e) => e.id)).toEqual(['c']);
+});
+
 it('loves and unloves the episode, sending only the love to Last.fm', async () => {
 	await player.play(c);
 

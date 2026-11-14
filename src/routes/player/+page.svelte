@@ -27,9 +27,9 @@
 	let queueBody = $state<HTMLTableSectionElement>();
 	let historyBody = $state<HTMLTableSectionElement>();
 
-	function removeFromQueue(index: number) {
-		player.dequeue(index);
-		refocusTrigger(queueBody, index, '.remove');
+	async function removeFromQueue(episode: Episode, index: number) {
+		await player.removeFromQueue(episode);
+		await refocusTrigger(queueBody, index, '.remove');
 	}
 
 	async function removeFromHistory(episode: Episode, index: number) {
@@ -156,7 +156,7 @@
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>
-							{@render remove('Remove from queue', () => removeFromQueue(index))}
+							{@render remove('Remove from queue', () => removeFromQueue(episode, index))}
 							<Flyout {episode}>
 								<SubscribeButton show={showOf(episode)} entry />
 								{@render love(episode)}

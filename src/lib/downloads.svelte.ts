@@ -69,8 +69,19 @@ class Downloads {
 	/** Drops a waiting or failed download. */
 	remove = (id: string) => run('remove_download', { id });
 
-	/** Drops the episode from the previous downloads. */
-	unmark = (id: string) => run('unmark_downloaded', { id });
+	/** Drops the episode from the previous downloads, once confirmed. */
+	unmark = async ({ id, showTitle }: Episode) => {
+		if (
+			await confirm({
+				title: 'Remove Download',
+				message: `Remove ${showTitle} from the previous downloads?`,
+				primaryAction: 'Remove',
+				secondaryAction: 'Cancel',
+			})
+		) {
+			await run('unmark_downloaded', { id });
+		}
+	};
 
 	/** Empties the previous downloads, once confirmed. */
 	clear = async () => {

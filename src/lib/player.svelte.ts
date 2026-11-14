@@ -198,6 +198,27 @@ class Player {
 		return removed;
 	};
 
+	/** Takes `removed` out of the play queue, once confirmed. Found again after the answer, since the queue may have
+	 * advanced while the dialog was open. */
+	removeFromQueue = async (removed: Episode) => {
+		if (
+			!(await confirm({
+				title: 'Remove from Queue',
+				message: `Remove ${removed.showTitle} from the play queue?`,
+				primaryAction: 'Remove',
+				secondaryAction: 'Cancel',
+			}))
+		) {
+			return;
+		}
+
+		const index = this.playQueue.indexOf(removed);
+
+		if (index !== -1) {
+			this.dequeue(index);
+		}
+	};
+
 	/** Moves the episode at `from` in the play queue to `to`, which is the order auto-advance follows. */
 	move = (from: number, to: number) => {
 		this.playQueue = moveItem(this.playQueue, from, to);
