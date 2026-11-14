@@ -147,9 +147,14 @@ class Player {
 	play = (chosen: Episode) => this.#play(chosen).catch(errors.report);
 
 	/** PLAY on an episode row. While another episode plays, it plays, queues or asks, as the Play behaviour setting
-	 * says. Otherwise it just plays. */
-	playOrQueue = async (chosen: Episode) => {
-		if (this.playing === null || chosen.id === this.playing) {
+	 * says. Otherwise it just plays. A share link has no row to click, so with `alwaysAsk` it asks even when idle. */
+	playOrQueue = async (chosen: Episode, alwaysAsk = false) => {
+		const idle = this.playing === null;
+
+		if (
+			chosen.id === this.playing ||
+			(idle && !(alwaysAsk && settings.stored.playBehaviour === 'ask'))
+		) {
 			return this.play(chosen);
 		}
 
@@ -158,7 +163,7 @@ class Player {
 		if (behaviour === 'ask') {
 			const choice = await choose({
 				title: 'Play',
-				message: "You're already playing an episode.",
+				message: idle ? `Play or queue ${chosen.showTitle}?` : "You're already playing an episode.",
 				primaryAction: 'Play',
 				secondaryAction: 'Queue',
 			});

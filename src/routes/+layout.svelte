@@ -68,7 +68,7 @@
 			throw new Error("The shared episode can't be played.");
 		}
 
-		await player.playOrQueue(episode);
+		await player.playOrQueue(episode, true);
 	}
 
 	const playLinked = () => playLinkedEpisode().catch(errors.report);
