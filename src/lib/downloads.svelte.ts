@@ -69,9 +69,6 @@ class Downloads {
 	/** Drops a waiting or failed download. */
 	remove = (id: string) => run('remove_download', { id });
 
-	/** Records the episode as downloaded without downloading it. */
-	mark = (id: string) => run('mark_downloaded', { id });
-
 	/** Drops the episode from the previous downloads. */
 	unmark = (id: string) => run('unmark_downloaded', { id });
 

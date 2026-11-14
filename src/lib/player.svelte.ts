@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { load, type Store } from '@tauri-apps/plugin-store';
 import { tick, untrack } from 'svelte';
 import { choose, confirm } from './confirm.svelte';
-import { type Episode, moveItem } from './episodes';
+import { type DownloadQueue, type Episode, moveItem } from './episodes';
 import { episodes } from './episodes.svelte';
 import { errors } from './errors.svelte';
 import {
@@ -87,6 +87,9 @@ class Player {
 	loved = $derived(this.episode !== null && this.lovedIds.includes(this.episode.id));
 	/** How often each episode has been played, by episode id. An episode never played has no entry. */
 	plays = $state<Record<string, number>>({});
+	/** The ids of episodes marked seen from their flyout. Change them through `toggleSeen`. A played episode counts as
+	 * seen without being listed, see `isSeen`. */
+	seenIds = $state<string[]>([]);
 	/** What the `<audio>` plays: the episode's download, or its stream when there's none. Unset until `findFile`
 	 * has looked for the download. */
 	src = $derived.by(() => {
@@ -297,6 +300,25 @@ class Player {
 		}
 	};
 
+	/** Whether the dashboard leaves the episode out: it was marked seen, or it has been played at least once. */
+	isSeen = (id: string) => this.seenIds.includes(id) || id in this.plays;
+
+	/** Marks `episode` seen or unseen. Waits for the stored list, so loading it can't undo the change. */
+	toggleSeen = async (episode: Episode) => {
+		try {
+			await this.#ready;
+
+			const { id } = episode;
+
+			this.seenIds = this.seenIds.includes(id)
+				? this.seenIds.filter((seenId) => seenId !== id)
+				: [...this.seenIds, id];
+			await this.#save('seen', $state.snapshot(this.seenIds));
+		} catch (e) {
+			errors.report(e);
+		}
+	};
+
 	/** Loads the first cached episode with an mp3, paused, for the dev panel. Nothing is saved until it plays. */
 	fake = () => {
 		this.pause();
@@ -434,6 +456,21 @@ class Player {
 			this.lovedIds = (await store.get<string[]>('loved')) ?? [];
 			this.playHistory = (await store.get<Episode[]>('history')) ?? [];
 			this.plays = (await store.get<Record<string, number>>('plays')) ?? {};
+
+			const seen = await store.get<string[]>('seen');
+
+			// Before the seen list existed, the dashboard hid downloaded episodes, so those stay hidden. Not stored when the
+			// lookup fails, so the next launch copies them
+			if (seen) {
+				this.seenIds = seen;
+			} else {
+				const queue = await invoke<DownloadQueue>('get_download_queue').catch(errors.report);
+
+				if (queue) {
+					this.seenIds = queue.downloaded;
+					await store.set('seen', this.seenIds);
+				}
+			}
 
 			return store;
 		});

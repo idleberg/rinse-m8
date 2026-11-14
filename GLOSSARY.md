@@ -14,6 +14,10 @@ _Avoid_: Timetable, main table
 The default view. It opens with a table of each subscribed show's newest episode, then has one section per subscribed show listing its newest episodes, in the show order set in Settings.
 _Avoid_: Subscribed table, for you, feed
 
+**Seen**:
+An episode marked seen from its flyout, or played at least once. The dashboard hides seen episodes unless "show seen" is ticked. Downloading never marks an episode seen.
+_Avoid_: Read, dismissed, expired
+
 **Show directory**:
 Every show Rinse lists, not only the ones in the schedule, as the Shows tab lists them. Cached and refreshed in the background once a week.
 _Avoid_: Show list, artists

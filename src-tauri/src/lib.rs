@@ -378,18 +378,8 @@ fn cancel_download(app: tauri::AppHandle) {
     });
 }
 
-/// Records the episode as downloaded without downloading it, for a file fetched before or outside the app.
-/// Saves once more itself, since `update_downloads` only logs a failed save and the page should report it.
-#[tauri::command]
-fn mark_downloaded(app: tauri::AppHandle, id: String) -> Result<(), String> {
-    update_downloads(&app, |queue| {
-        queue.downloaded.insert(id);
-
-        save_downloads(&app, queue)
-    })
-}
-
 /// Drops the episode from the downloaded record, leaving any file in the download folder as it is.
+/// Saves once more itself, since `update_downloads` only logs a failed save and the page should report it.
 #[tauri::command]
 fn unmark_downloaded(app: tauri::AppHandle, id: String) -> Result<(), String> {
     update_downloads(&app, |queue| {
@@ -1284,7 +1274,6 @@ pub fn run() {
             retry_all_downloads,
             move_download,
             cancel_download,
-            mark_downloaded,
             unmark_downloaded,
             clear_downloaded,
             recheck_mp3,

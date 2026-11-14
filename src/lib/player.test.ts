@@ -28,6 +28,10 @@ mock.module('@tauri-apps/api/core', () => ({
 		if (command === 'local_file') {
 			return files.get(args?.episode?.id ?? '') ?? null;
 		}
+
+		if (command === 'get_download_queue') {
+			return { downloaded: ['b'] };
+		}
 	},
 	convertFileSrc: (path: string) => `asset://${path}`,
 }));
@@ -82,6 +86,26 @@ it('brings back the last-played episode, the stored queue, the history and the p
 	expect(player.playQueue.map((e) => e.id)).toEqual(['c']);
 	expect(player.playHistory.map((e) => e.id)).toEqual(['a']);
 	expect(player.plays).toEqual({ c: 2 });
+});
+
+it('starts the seen list as a copy of the downloaded record while none is stored', () => {
+	expect(player.seenIds).toEqual(['b']);
+	expect(stored.get('seen')).toEqual(['b']);
+});
+
+it('counts a played episode as seen', () => {
+	expect(player.isSeen('c')).toBe(true);
+	expect(player.isSeen('a')).toBe(false);
+});
+
+it('marks an episode seen and unseen, and stores it', async () => {
+	await player.toggleSeen(a);
+	expect(player.isSeen('a')).toBe(true);
+	expect(stored.get('seen')).toEqual(['b', 'a']);
+
+	await player.toggleSeen(a);
+	expect(player.isSeen('a')).toBe(false);
+	expect(stored.get('seen')).toEqual(['b']);
 });
 
 it('brings back the stored volume at launch, and stores a new one', () => {

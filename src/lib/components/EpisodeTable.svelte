@@ -42,7 +42,7 @@
 		limit?: number;
 		/** Links each show name to its show view. Off where the table already is that view. */
 		linkShows?: boolean;
-		/** Adds "Mark as downloaded" to each row's flyout. */
+		/** Adds "Mark as seen" / "Mark as unseen" to each row's flyout. */
 		markable?: boolean;
 		/** How often each episode has been played, by episode id. When given, the table has a Plays column and starts out
 		 * sorted by it. */
@@ -92,6 +92,12 @@
 	/** Unloving drops the row in Favs. */
 	async function toggleLove(episode: Episode, index: number) {
 		await player.toggleLove(episode);
+		await refocusTrigger(body, index);
+	}
+
+	/** Marking seen drops the row on the dashboard. */
+	async function toggleSeen(episode: Episode, index: number) {
+		await player.toggleSeen(episode);
 		await refocusTrigger(body, index);
 	}
 </script>
@@ -180,14 +186,16 @@
 						{/if}
 						<Flyout {episode}>
 							{#if markable}
-								<!-- Disabled without an mp3, as it had no download button to sit beside -->
+								{@const seen = player.isSeen(episode.id)}
+								<!-- Disabled once played, since a play keeps it seen either way -->
 								<button
 									type="button"
-									role="menuitem"
-									disabled={!available(episode) || downloaded}
-									onclick={() => downloads.mark(episode.id)}
+									role="menuitemcheckbox"
+									aria-checked={seen}
+									disabled={episode.id in player.plays}
+									onclick={() => toggleSeen(episode, i)}
 								>
-									Mark as downloaded
+									{seen ? 'Mark as unseen' : 'Mark as seen'}
 								</button>
 							{/if}
 							{#if subscribable}

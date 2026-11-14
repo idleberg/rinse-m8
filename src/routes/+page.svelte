@@ -2,13 +2,13 @@
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import ShowSection from '#lib/components/ShowSection.svelte';
-	import { downloads } from '#lib/downloads.svelte';
 	import { orderSections } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { filters } from '#lib/filters.svelte';
+	import { player } from '#lib/player.svelte';
 	import { settings } from '#lib/settings.svelte';
 
-	let showDownloaded = $state(false);
+	let showSeen = $state(false);
 
 	const filteredEpisodes = $derived(episodes.list.filter(filters.matchesEpisode));
 
@@ -18,7 +18,7 @@
 				show,
 				episodes: filteredEpisodes.filter(
 					(episode) =>
-						episode.showSlug === show.slug && (showDownloaded || !downloads.queue.downloaded.includes(episode.id)),
+						episode.showSlug === show.slug && (showSeen || !player.isSeen(episode.id)),
 				),
 			})),
 			settings.stored.showOrder,
@@ -29,7 +29,7 @@
 	const latestEpisodes = $derived.by(() => {
 		const seen = new Set<string>();
 
-		// The latest is picked before the downloaded check, so an older episode doesn't stand in for it
+		// The latest is picked before the seen check, so an older episode doesn't stand in for it
 		return filteredEpisodes.filter((episode) => {
 			if (!settings.subscribed.includes(episode.showSlug) || seen.has(episode.showSlug)) {
 				return false;
@@ -37,15 +37,15 @@
 
 			seen.add(episode.showSlug);
 
-			return showDownloaded || !downloads.queue.downloaded.includes(episode.id);
+			return showSeen || !player.isSeen(episode.id);
 		});
 	});
 </script>
 
 <EpisodeFilters shared bind:mp3Only={filters.mp3Only} bind:hideRebroadcasts={filters.hideRebroadcasts}>
 	<label>
-		<input type="checkbox" bind:checked={showDownloaded} />
-		show downloaded
+		<input type="checkbox" bind:checked={showSeen} />
+		show seen
 	</label>
 </EpisodeFilters>
 
