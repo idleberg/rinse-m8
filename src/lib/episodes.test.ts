@@ -22,6 +22,7 @@ import {
 	stationsOf,
 	toggleSort,
 	webPage,
+	weeksAgo,
 } from './episodes';
 
 function episode(id: string, date: string, show: string): Episode {
@@ -175,6 +176,12 @@ it('months ago lands on the same day, or the last day of a shorter month', () =>
 	expect(monthsAgo(24, new Date('2026-11-03T12:00:00Z'))).toBe('2024-11-03');
 	expect(monthsAgo(6, new Date('2026-08-31T12:00:00Z'))).toBe('2026-02-28');
 	expect(monthsAgo(12, new Date('2026-01-15T12:00:00Z'))).toBe('2025-01-15');
+});
+
+it('weeks ago counts back from the London date, across a month boundary', () => {
+	// 23:30 UTC is already 2 October in London (BST)
+	expect(weeksAgo(1, new Date('2026-10-01T23:30:00Z'))).toBe('2026-09-25');
+	expect(weeksAgo(12, new Date('2026-03-10T12:00:00Z'))).toBe('2025-12-16');
 });
 
 it('a station passes only while its checkbox is ticked, and a station without one always does', () => {

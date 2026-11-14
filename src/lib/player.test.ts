@@ -3,8 +3,8 @@
 import { afterEach, beforeEach, describe, expect, test as it, mock } from 'bun:test';
 import type { Episode } from './episodes';
 
-function episode(id: string): Episode {
-	return { id, date: '2026-01-01', time: '12:00', mp3: `${id}.mp3` } as Episode;
+function episode(id: string, date = '2026-01-01'): Episode {
+	return { id, date, time: '12:00', mp3: `${id}.mp3` } as Episode;
 }
 
 const a = episode('a');
@@ -94,17 +94,26 @@ it('starts the seen list as a copy of the downloaded record while none is stored
 });
 
 it('counts a played episode as seen', () => {
-	expect(player.isSeen('c')).toBe(true);
-	expect(player.isSeen('a')).toBe(false);
+	expect(player.isSeen(c)).toBe(true);
+	expect(player.isSeen(a)).toBe(false);
+});
+
+it('counts an episode as seen once it is older than the Seen after setting, and not while that is never', () => {
+	settings.stored.seenAfter = 4;
+	expect(player.isSeen(a)).toBe(true);
+	expect(player.isSeen(episode('new', '2099-01-01'))).toBe(false);
+
+	settings.stored.seenAfter = 0;
+	expect(player.isSeen(a)).toBe(false);
 });
 
 it('marks an episode seen and unseen, and stores it', async () => {
 	await player.toggleSeen(a);
-	expect(player.isSeen('a')).toBe(true);
+	expect(player.isSeen(a)).toBe(true);
 	expect(stored.get('seen')).toEqual(['b', 'a']);
 
 	await player.toggleSeen(a);
-	expect(player.isSeen('a')).toBe(false);
+	expect(player.isSeen(a)).toBe(false);
 	expect(stored.get('seen')).toEqual(['b']);
 });
 

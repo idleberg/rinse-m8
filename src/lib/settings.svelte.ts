@@ -18,6 +18,8 @@ export interface Stored {
 	updateInterval: number;
 	/** In hours, or 0 to check only at launch. */
 	appUpdateInterval: number;
+	/** In weeks, or 0 for never: how old an episode must be to count as seen. */
+	seenAfter: number;
 	imageStyle: ImageStyle;
 	showOrder: ShowOrder;
 	playBehaviour: PlayBehaviour;
@@ -43,6 +45,7 @@ class Settings {
 		clearPlayer: false,
 		updateInterval: 6,
 		appUpdateInterval: 24,
+		seenAfter: 0,
 		imageStyle: 'original',
 		showOrder: 'subscribed',
 		playBehaviour: 'ask',
@@ -102,6 +105,7 @@ class Settings {
 			| 'clearPlayer'
 			| 'updateInterval'
 			| 'appUpdateInterval'
+			| 'seenAfter'
 			| 'imageStyle'
 			| 'showOrder'
 			| 'playBehaviour',

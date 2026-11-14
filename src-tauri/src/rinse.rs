@@ -117,6 +117,8 @@ pub struct Settings {
     pub update_interval: u32,
     /// Hours between checks for a new app version, or 0 to check only at launch.
     pub app_update_interval: u32,
+    /// Weeks after which an episode counts as seen on the Dashboard, or 0 for never.
+    pub seen_after: u32,
     /// How show and episode artwork looks in the Player tab and the show view.
     pub image_style: ImageStyle,
     /// The order of the Dashboard's show sections.
@@ -163,6 +165,7 @@ impl Default for Settings {
             clear_player: false,
             update_interval: 6,
             app_update_interval: 24,
+            seen_after: 0,
             image_style: ImageStyle::Original,
             show_order: ShowOrder::Subscribed,
             play_behaviour: PlayBehaviour::Ask,

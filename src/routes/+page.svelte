@@ -18,7 +18,7 @@
 				show,
 				episodes: filteredEpisodes.filter(
 					(episode) =>
-						episode.showSlug === show.slug && (showSeen || !player.isSeen(episode.id)),
+						episode.showSlug === show.slug && (showSeen || !player.isSeen(episode)),
 				),
 			})),
 			settings.stored.showOrder,
@@ -37,7 +37,7 @@
 
 			seen.add(episode.showSlug);
 
-			return showSeen || !player.isSeen(episode.id);
+			return showSeen || !player.isSeen(episode);
 		});
 	});
 </script>

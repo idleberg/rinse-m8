@@ -16,6 +16,9 @@
 	/** In hours, where 0 checks only at launch. */
 	// biome-ignore lint/style/noMagicNumbers: the list is the menu's choices
 	const appUpdateIntervals = [1, 6, 24];
+	/** In weeks, where 0 is never. */
+	// biome-ignore lint/style/noMagicNumbers: the list is the menu's choices
+	const seenAfterWeeks = [0, 1, 2, 4, 8, 12];
 	const imageStyles: [ImageStyle, string][] = [
 		['original', 'Original'],
 		['grayscale', 'Black & white'],
@@ -118,6 +121,14 @@
 				<select aria-label="Update interval" value={settings.stored.updateInterval} onchange={(e) => settings.save('updateInterval', Number(e.currentTarget.value))}>
 					{#each updateIntervals as hours}
 						<option value={hours}>every {hours === 1 ? 'hour' : `${hours} hours`}</option>
+					{/each}
+				</select>
+			</dd>
+			<dt>Seen after</dt>
+			<dd>
+				<select aria-label="Seen after" value={settings.stored.seenAfter} onchange={(e) => settings.save('seenAfter', Number(e.currentTarget.value))}>
+					{#each seenAfterWeeks as weeks}
+						<option value={weeks}>{weeks === 0 ? 'never' : weeks === 1 ? '1 week' : `${weeks} weeks`}</option>
 					{/each}
 				</select>
 			</dd>

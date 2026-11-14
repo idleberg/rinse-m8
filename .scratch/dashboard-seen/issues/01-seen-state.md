@@ -6,13 +6,13 @@ An episode is seen when the user marked it seen from its flyout, or when it has 
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Latest and the show sections hide seen episodes instead of downloaded ones. Latest still picks each show's newest episode before applying the seen check.
-- [ ] The dashboard checkbox "show downloaded" becomes "show seen".
-- [ ] On the dashboard, the flyout item "Mark as downloaded" is replaced by a toggle modelled on Love: "Mark as seen" / "Mark as unseen". Marking a row seen hides it and moves focus to the next row's flyout trigger, as unloving does on Favs.
-- [ ] The toggle is disabled when a play is what made the episode seen, since unmarking it would change nothing.
-- [ ] On first launch after the upgrade, while no seen list is stored yet, the seen list starts as a copy of the downloaded record. Episodes the user already dismissed stay hidden.
-- [ ] The "mark downloaded" frontend action and backend command, whose only caller was the replaced flyout item, are deleted. "Unmark downloaded" stays, because the downloads view uses it.
-- [ ] GLOSSARY.md gets a **Seen** entry: marked seen from the flyout, or played at least once. The dashboard hides seen episodes unless "show seen" is ticked. Downloading never marks an episode seen. _Avoid_: read, dismissed, expired.
-- [ ] Tests: toggling seen adds and removes the id and saves it; an episode with plays counts as seen.
+- [x] Latest and the show sections hide seen episodes instead of downloaded ones. Latest still picks each show's newest episode before applying the seen check.
+- [x] The dashboard checkbox "show downloaded" becomes "show seen".
+- [x] On the dashboard, the flyout item "Mark as downloaded" is replaced by a toggle modelled on Love: "Mark as seen" / "Mark as unseen". Marking a row seen hides it and moves focus to the next row's flyout trigger, as unloving does on Favs.
+- [x] The toggle is disabled when a play is what made the episode seen, since unmarking it would change nothing.
+- [x] On first launch after the upgrade, while no seen list is stored yet, the seen list starts as a copy of the downloaded record. Episodes the user already dismissed stay hidden.
+- [x] The "mark downloaded" frontend action and backend command, whose only caller was the replaced flyout item, are deleted. "Unmark downloaded" stays, because the downloads view uses it.
+- [x] GLOSSARY.md gets a **Seen** entry: marked seen from the flyout, or played at least once. The dashboard hides seen episodes unless "show seen" is ticked. Downloading never marks an episode seen. _Avoid_: read, dismissed, expired.
+- [x] Tests: toggling seen adds and removes the id and saves it; an episode with plays counts as seen.

@@ -186,13 +186,13 @@
 						{/if}
 						<Flyout {episode}>
 							{#if markable}
-								{@const seen = player.isSeen(episode.id)}
-								<!-- Disabled once played, since a play keeps it seen either way -->
+								{@const seen = player.isSeen(episode)}
+								<!-- Disabled once played or old enough, since that keeps it seen either way -->
 								<button
 									type="button"
 									role="menuitemcheckbox"
 									aria-checked={seen}
-									disabled={episode.id in player.plays}
+									disabled={player.keepsSeen(episode)}
 									onclick={() => toggleSeen(episode, i)}
 								>
 									{seen ? 'Mark as unseen' : 'Mark as seen'}

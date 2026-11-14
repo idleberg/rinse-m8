@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { load, type Store } from '@tauri-apps/plugin-store';
 import { tick, untrack } from 'svelte';
 import { choose, confirm } from './confirm.svelte';
-import { type DownloadQueue, type Episode, moveItem } from './episodes';
+import { type DownloadQueue, type Episode, moveItem, weeksAgo } from './episodes';
 import { episodes } from './episodes.svelte';
 import { errors } from './errors.svelte';
 import {
@@ -107,8 +107,8 @@ class Player {
 	loved = $derived(this.episode !== null && this.lovedIds.includes(this.episode.id));
 	/** How often each episode has been played, by episode id. An episode never played has no entry. */
 	plays = $state<Record<string, number>>({});
-	/** The ids of episodes marked seen from their flyout. Change them through `toggleSeen`. A played episode counts as
-	 * seen without being listed, see `isSeen`. */
+	/** The ids of episodes marked seen from their flyout. Change them through `toggleSeen`. A played or old episode
+	 * counts as seen without being listed, see `keepsSeen`. */
 	seenIds = $state<string[]>([]);
 	/** `seenIds` as a set, since the dashboard checks every row against it, and the copied downloaded record can be long. */
 	#seen = $derived(new Set(this.seenIds));
@@ -322,8 +322,16 @@ class Player {
 		}
 	};
 
-	/** Whether the dashboard leaves the episode out: it was marked seen, or it has been played at least once. */
-	isSeen = (id: string) => this.#seen.has(id) || id in this.plays;
+	/** Whether the dashboard leaves the episode out: it was marked seen, or `keepsSeen`. */
+	isSeen = (episode: Episode) => this.#seen.has(episode.id) || this.keepsSeen(episode);
+
+	/** Whether the episode counts as seen however it's marked: it has been played at least once, or it's as old as the
+	 * Seen after setting. */
+	keepsSeen = (episode: Episode) => {
+		const weeks = settings.stored.seenAfter;
+
+		return episode.id in this.plays || (weeks > 0 && episode.date <= weeksAgo(weeks));
+	};
 
 	/** Marks `episode` seen or unseen. Waits for the stored list, so loading it can't undo the change. */
 	toggleSeen = async (episode: Episode) => {

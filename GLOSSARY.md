@@ -15,7 +15,7 @@ The default view. It opens with a table of each subscribed show's newest episode
 _Avoid_: Subscribed table, for you, feed
 
 **Seen**:
-An episode marked seen from its flyout, or played at least once. The dashboard hides seen episodes unless "show seen" is ticked. Downloading never marks an episode seen.
+An episode marked seen from its flyout, played at least once, or as old as the Seen after setting. The dashboard hides seen episodes unless "show seen" is ticked. Downloading never marks an episode seen.
 _Avoid_: Read, dismissed, expired
 
 **Show directory**:

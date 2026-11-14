@@ -87,13 +87,15 @@ export function deadFav(episode: Episode, file?: string): boolean {
 	return !file && episode.mp3Found === false;
 }
 
+/** The London date of `now`, as year, month and day numbers. */
+function londonDate(now: Date) {
+	// en-CA formats as `YYYY-MM-DD`, in London like the episode dates
+	return now.toLocaleDateString('en-CA', { timeZone: 'Europe/London' }).split('-').map(Number);
+}
+
 /** The London date `months` before `now`, as `YYYY-MM-DD`. */
 export function monthsAgo(months: number, now = new Date()): string {
-	// en-CA formats as `YYYY-MM-DD`, in London like the episode dates
-	const [year, month, day] = now
-		.toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
-		.split('-')
-		.map(Number);
+	const [year, month, day] = londonDate(now);
 
 	// Day 0 is the last of the month before, so 31 October goes back to 30 September, as in the backend
 	const lastDay = new Date(Date.UTC(year, month - months, 0)).getUTCDate();
@@ -101,6 +103,13 @@ export function monthsAgo(months: number, now = new Date()): string {
 	return new Date(Date.UTC(year, month - 1 - months, Math.min(day, lastDay)))
 		.toISOString()
 		.slice(0, 10);
+}
+
+/** The London date `weeks` before `now`, as `YYYY-MM-DD`. */
+export function weeksAgo(weeks: number, now = new Date()): string {
+	const [year, month, day] = londonDate(now);
+
+	return new Date(Date.UTC(year, month - 1, day - 7 * weeks)).toISOString().slice(0, 10);
 }
 
 /** The genre and show dropdown options for `episodes`: every genre once and every show once, each sorted. */
