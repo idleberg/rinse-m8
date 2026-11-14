@@ -120,7 +120,7 @@
 	>
 		Copy download link
 	</button>
-	<!-- Copies a rinse-m8:// link that opens the episode's show view in another M8's app -->
+	<!-- Copies a rinse-m8:// link that plays or queues the episode in another M8's app -->
 	<button type="button" role="menuitem" onclick={() => navigator.clipboard.writeText(shareLink(episode)).catch(errors.report)}>
 		Share with a M8
 	</button>

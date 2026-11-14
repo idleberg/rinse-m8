@@ -28,8 +28,8 @@ static PLAYING: AtomicBool = AtomicBool::new(false);
 /// The tray menu's play/pause item, relabelled as playback starts and stops.
 static TOGGLE_ITEM: Mutex<Option<MenuItem<tauri::Wry>>> = Mutex::new(None);
 
-/// The show of the last opened share link, until the frontend takes it. A link that launches the app arrives before the frontend listens.
-static OPENED_SHOW: Mutex<Option<String>> = Mutex::new(None);
+/// The show slug and episode id of the last opened share link, until the frontend takes them. A link that launches the app arrives before the frontend listens.
+static OPENED_LINK: Mutex<Option<(String, String)>> = Mutex::new(None);
 
 /// Stops the pending Last.fm connect.
 static LASTFM_CANCEL: Mutex<Option<tokio::sync::oneshot::Sender<()>>> = Mutex::new(None);
@@ -859,44 +859,50 @@ fn set_tray_playing(playing: bool) -> Result<(), String> {
     Ok(())
 }
 
-/// The show slug of a share link, `rinse-m8://shows/<showSlug>/<episodeId>`, URL-decoded. The slug ends up in a Rinse API
-/// URL, so it must be a plain slug: lowercase letters and digits in any script, `-` and `.`, but not `.` or `..` alone.
-fn share_link_show(url: &tauri::Url) -> Option<String> {
+/// The show slug and episode id of a share link, `rinse-m8://shows/<showSlug>/<episodeId>`, both URL-decoded. The slug
+/// ends up in a Rinse API URL, so it must be a plain slug: lowercase letters and digits in any script, `-` and `.`, but
+/// not `.` or `..` alone. The id is only compared with episode ids, so it just mustn't be empty.
+fn share_link(url: &tauri::Url) -> Option<(String, String)> {
     if url.host_str() != Some("shows") {
         return None;
     }
 
     let mut segments = url.path_segments()?;
-    let slug = percent_encoding::percent_decode_str(segments.next()?)
-        .decode_utf8()
-        .ok()?;
+    let mut decoded = || {
+        percent_encoding::percent_decode_str(segments.next()?)
+            .decode_utf8()
+            .ok()
+            .map(|s| s.into_owned())
+    };
+    let slug = decoded()?;
+    let id = decoded()?;
 
     let plain = !matches!(&*slug, "" | "." | "..")
         && slug
             .chars()
             .all(|c| (c.is_alphanumeric() && !c.is_uppercase()) || c == '-' || c == '.');
 
-    (plain && segments.count() == 1).then(|| slug.into_owned())
+    (plain && !id.is_empty() && segments.next().is_none()).then_some((slug, id))
 }
 
-/// Keeps the show of the first valid share link for the frontend to take, and tells it one is waiting. Other links do nothing.
+/// Keeps the first valid share link for the frontend to take, and tells it one is waiting. Other links do nothing.
 fn open_share_link(app: &tauri::AppHandle, urls: &[tauri::Url]) {
-    let Some(slug) = urls.iter().find_map(share_link_show) else {
+    let Some(link) = urls.iter().find_map(share_link) else {
         return;
     };
 
-    *OPENED_SHOW.lock().unwrap() = Some(slug);
+    *OPENED_LINK.lock().unwrap() = Some(link);
     show_window(app);
 
     if let Err(e) = app.emit("open-link", ()) {
-        eprintln!("opening the linked show failed: {e}");
+        eprintln!("playing the linked episode failed: {e}");
     }
 }
 
-/// Hands the frontend the show of the last opened share link, once.
+/// Hands the frontend the show slug and episode id of the last opened share link, once.
 #[tauri::command]
-fn take_opened_show() -> Option<String> {
-    OPENED_SHOW.lock().unwrap().take()
+fn take_opened_link() -> Option<(String, String)> {
+    OPENED_LINK.lock().unwrap().take()
 }
 
 /// Brings the hidden or minimised window back to the front.
@@ -1366,7 +1372,7 @@ pub fn run() {
             import_subscriptions,
             get_show_directory,
             get_recommended_shows,
-            take_opened_show
+            take_opened_link
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
@@ -1383,16 +1389,37 @@ pub fn run() {
 mod tests {
     use super::*;
 
-    fn slug(link: &str) -> Option<String> {
-        share_link_show(&tauri::Url::parse(link).unwrap())
+    fn link(link: &str) -> Option<(String, String)> {
+        share_link(&tauri::Url::parse(link).unwrap())
+    }
+
+    fn slug(link_: &str) -> Option<String> {
+        link(link_).map(|(slug, _)| slug)
     }
 
     #[test]
-    fn a_share_link_names_its_show() {
+    fn a_share_link_names_its_show_and_episode() {
         assert_eq!(
-            slug("rinse-m8://shows/hessle-audio/123").as_deref(),
-            Some("hessle-audio")
+            link("rinse-m8://shows/hessle-audio/123"),
+            Some(("hessle-audio".into(), "123".into()))
         );
+    }
+
+    // As shareLink in episodes.ts builds it, with the episode id URL-encoded
+    #[test]
+    fn a_share_link_decodes_its_episode_id() {
+        assert_eq!(
+            link("rinse-m8://shows/hessle-audio/a%20b%2Fc")
+                .map(|(_, id)| id)
+                .as_deref(),
+            Some("a b/c")
+        );
+    }
+
+    #[test]
+    fn a_share_link_without_an_episode_id_names_nothing() {
+        assert_eq!(link("rinse-m8://shows/hessle-audio/"), None);
+        assert_eq!(link("rinse-m8://shows/hessle-audio"), None);
     }
 
     // Real slugs from Rinse, URL-encoded as shareLink in episodes.ts encodes them

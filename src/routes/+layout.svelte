@@ -7,7 +7,7 @@
 	import UpdateBanner from '#lib/components/UpdateBanner.svelte';
 	import { directory } from '#lib/directory.svelte';
 	import { downloads } from '#lib/downloads.svelte';
-	import type { Show } from '#lib/episodes';
+	import { available, type Show, type ShowPage } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { errors } from '#lib/errors.svelte';
 	import { filters } from '#lib/filters.svelte';
@@ -47,16 +47,33 @@
 	// A click on a new-episode notification opens its show, refetched so the new episode is listed
 	listen<Show>('open-show', (event) => openShow(event.payload.slug)).catch(errors.report);
 
-	// A share link's show waits in the backend, so one that launched the app is taken once this listens
-	async function openLinkedShow() {
-		const slug = await invoke<string | null>('take_opened_show');
+	// A share link waits in the backend, so one that launched the app is taken once this listens. Its episode plays or
+	// queues as the Play behaviour setting says.
+	async function playLinkedEpisode() {
+		const link = await invoke<[string, string] | null>('take_opened_link');
 
-		if (slug) {
-			await openShow(slug);
+		if (!link) {
+			return;
 		}
+
+		const [slug, id] = link;
+
+		// The show is refetched, so an episode not cached yet is found. The reply is the whole cache.
+		const fetched = await invoke<ShowPage>('refresh_show', { slug });
+		episodes.replace(fetched.episodes);
+
+		const episode = fetched.episodes.find((e) => e.id === id);
+
+		if (!(episode && available(episode))) {
+			throw new Error("The shared episode can't be played.");
+		}
+
+		await player.playOrQueue(episode);
 	}
 
-	listen('open-link', openLinkedShow).then(openLinkedShow).catch(errors.report);
+	const playLinked = () => playLinkedEpisode().catch(errors.report);
+
+	listen('open-link', playLinked).then(playLinked).catch(errors.report);
 
 	// The tray menu's Settings item, which has already shown the window
 	listen('open-settings', () => goto('/settings')).catch(errors.report);
