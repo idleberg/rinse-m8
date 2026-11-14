@@ -37,3 +37,6 @@ image = { version = "0.25.10", default-features = false, features = ["jpeg", "pn
 tauri-plugin-deep-link = "2.6.3"
 percent-encoding = "2.3.2"
 
+[target.'cfg(any(windows, target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = { version = "2.5.5", features = ["deep-link"] }
+

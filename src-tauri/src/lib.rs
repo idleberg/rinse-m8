@@ -1201,7 +1201,15 @@ async fn refresh_stale_show_directory(app: &tauri::AppHandle) -> Result<(), Stri
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+
+    // Ahead of the other plugins, as its docs require. A second launch exits and hands its link to this instance's deep-link handler
+    #[cfg(any(windows, target_os = "linux"))]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+        show_window(app);
+    }));
+
+    builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -1275,6 +1283,12 @@ pub fn run() {
             let handle = app.handle().clone();
             app.deep_link()
                 .on_open_url(move |event| open_share_link(&handle, &event.urls()));
+
+            // Installers register the scheme, but dev builds and AppImages aren't installed
+            #[cfg(any(windows, target_os = "linux"))]
+            if let Err(e) = app.deep_link().register_all() {
+                eprintln!("registering the link scheme failed: {e}");
+            }
 
             if let Ok(Some(urls)) = app.deep_link().get_current() {
                 open_share_link(app.handle(), &urls);
