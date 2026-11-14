@@ -56,6 +56,26 @@ async function findFile(episode: Episode) {
 	return { id: episode.id, path: path ?? null };
 }
 
+/** The stored seen list. Before it existed, the dashboard hid downloaded episodes, so until one is stored it starts as a
+ * copy of the downloaded record. Not stored when that lookup fails, so the next launch copies it. */
+async function loadSeen(store: Store) {
+	const seen = await store.get<string[]>('seen');
+
+	if (seen) {
+		return seen;
+	}
+
+	const queue = await invoke<DownloadQueue>('get_download_queue').catch(errors.report);
+
+	if (!queue) {
+		return [];
+	}
+
+	await store.set('seen', queue.downloaded);
+
+	return queue.downloaded;
+}
+
 /** Playback, the play queue and loves, shared by the player bar, the Player tab, the episode tables and the tray.
  * `Player.svelte` owns the `<audio>` element, binds it to `audio`, and forwards its events to the `handle…`
  * methods. */
@@ -90,6 +110,8 @@ class Player {
 	/** The ids of episodes marked seen from their flyout. Change them through `toggleSeen`. A played episode counts as
 	 * seen without being listed, see `isSeen`. */
 	seenIds = $state<string[]>([]);
+	/** `seenIds` as a set, since the dashboard checks every row against it, and the copied downloaded record can be long. */
+	#seen = $derived(new Set(this.seenIds));
 	/** What the `<audio>` plays: the episode's download, or its stream when there's none. Unset until `findFile`
 	 * has looked for the download. */
 	src = $derived.by(() => {
@@ -301,7 +323,7 @@ class Player {
 	};
 
 	/** Whether the dashboard leaves the episode out: it was marked seen, or it has been played at least once. */
-	isSeen = (id: string) => this.seenIds.includes(id) || id in this.plays;
+	isSeen = (id: string) => this.#seen.has(id) || id in this.plays;
 
 	/** Marks `episode` seen or unseen. Waits for the stored list, so loading it can't undo the change. */
 	toggleSeen = async (episode: Episode) => {
@@ -310,7 +332,7 @@ class Player {
 
 			const { id } = episode;
 
-			this.seenIds = this.seenIds.includes(id)
+			this.seenIds = this.#seen.has(id)
 				? this.seenIds.filter((seenId) => seenId !== id)
 				: [...this.seenIds, id];
 			await this.#save('seen', $state.snapshot(this.seenIds));
@@ -456,21 +478,7 @@ class Player {
 			this.lovedIds = (await store.get<string[]>('loved')) ?? [];
 			this.playHistory = (await store.get<Episode[]>('history')) ?? [];
 			this.plays = (await store.get<Record<string, number>>('plays')) ?? {};
-
-			const seen = await store.get<string[]>('seen');
-
-			// Before the seen list existed, the dashboard hid downloaded episodes, so those stay hidden. Not stored when the
-			// lookup fails, so the next launch copies them
-			if (seen) {
-				this.seenIds = seen;
-			} else {
-				const queue = await invoke<DownloadQueue>('get_download_queue').catch(errors.report);
-
-				if (queue) {
-					this.seenIds = queue.downloaded;
-					await store.set('seen', this.seenIds);
-				}
-			}
+			this.seenIds = await loadSeen(store);
 
 			return store;
 		});
