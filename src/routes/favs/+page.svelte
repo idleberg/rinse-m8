@@ -90,7 +90,7 @@
 	<label><input type="checkbox" bind:checked={showDead} /> show missing episodes</label>
 </EpisodeFilters>
 
-<h2>Your Favs</h2>
+<h2>Your Favourites</h2>
 
 {#if favEpisodes.length}
 	<EpisodeTable episodes={favEpisodes} {files} plays={player.plays} />
