@@ -4,8 +4,8 @@
 
 **Blocked by:** 01: Search and station filters on Downloads
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] A station with nothing queued, running, failed or previously downloaded has a disabled checkbox on Downloads
-- [ ] A station with only a queued download has an enabled checkbox
-- [ ] The dashboard, schedule, show directory and FAVS keep every station checkbox enabled
+- [x] A station with nothing queued, running, failed or previously downloaded has a disabled checkbox on Downloads
+- [x] A station with only a queued download has an enabled checkbox
+- [x] The dashboard, schedule, show directory and FAVS keep every station checkbox enabled

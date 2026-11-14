@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The search box and station checkboxes show at the top of Downloads, and stay in sync with the other views because they share the same state
-- [ ] Searching or unchecking a station narrows the current, waiting and failed downloads and Previous Downloads
-- [ ] Dragging a waiting download or moving it with Alt+Arrow while filtering moves it to the right place in the full queue, not its position in the filtered list
-- [ ] A section whose list has entries but none that pass the filters says "No downloads match the filters". An empty list keeps its current message
-- [ ] Retry All and Clear Downloads still act on every download, filtered or not
+- [x] The search box and station checkboxes show at the top of Downloads, and stay in sync with the other views because they share the same state
+- [x] Searching or unchecking a station narrows the current, waiting and failed downloads and Previous Downloads
+- [x] Dragging a waiting download or moving it with Alt+Arrow while filtering moves it to the right place in the full queue, not its position in the filtered list
+- [x] A section whose list has entries but none that pass the filters says "No downloads match the filters". An empty list keeps its current message
+- [x] Retry All and Clear Downloads still act on every download, filtered or not
