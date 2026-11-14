@@ -15,11 +15,15 @@
 	import { openShow } from '#lib/navigation';
 	import { player } from '#lib/player.svelte';
 	import { settings } from '#lib/settings.svelte';
+	import { toast } from '#lib/toast.svelte';
 	import { updates } from '#lib/updates.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 
 	let { children } = $props();
+
+	/** Settings swap light and dark, to stand apart from the other pages. */
+	const inverted = $derived(page.url.pathname === '/settings');
 
 	const tabs = [
 		['/', 'My Shows'],
@@ -116,8 +120,7 @@
 	{/each}
 </nav>
 
-<!-- Settings swap light and dark, to stand apart from the other pages -->
-<main class:inverted={page.url.pathname === '/settings'}>
+<main class:inverted>
 	{#if errors.message}
 		<p role="alert">
 			{errors.message}
@@ -133,6 +136,8 @@
 </main>
 
 <div class="bars">
+	<!-- Always in the page, so screen readers announce a new message. Inverted with Settings, so it stays the page's reverse. -->
+	<p class="toast" class:inverted role="status" hidden={!toast.message}>{toast.message}</p>
 	<DownloadStatus />
 	<Player />
 </div>
@@ -209,6 +214,20 @@
 		position: sticky;
 		bottom: 0;
 		margin-top: auto;
+	}
+
+	/* Centred just above the bars, in the page's colours reversed. Scoped, so it beats .inverted's own colours. */
+	.toast {
+		position: absolute;
+		bottom: calc(100% + 1rem);
+		left: 50%;
+		transform: translateX(-50%);
+		margin: 0;
+		padding: 0.5rem 1rem;
+		background: var(--ink);
+		color: var(--paper);
+		text-transform: uppercase;
+		white-space: nowrap;
 	}
 
 	[role='alert'] {

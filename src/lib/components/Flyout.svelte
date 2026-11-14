@@ -4,6 +4,7 @@
 	import { type Episode, shareLink, webPage } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
 	import { placeFlyout } from '#lib/flyout';
+	import { toast } from '#lib/toast.svelte';
 
 	/** The row's entries, as buttons with `role="menuitem"` or `role="menuitemcheckbox"`; the default entries for
 	 * `episode` follow them. Choosing one closes the flyout. */
@@ -18,6 +19,18 @@
 	let open = $state(false);
 
 	const entries = () => [...menu.querySelectorAll<HTMLButtonElement>('[role^="menuitem"]:not(:disabled)')];
+
+	async function copy(text: string) {
+		try {
+			await navigator.clipboard.writeText(text);
+		} catch (e) {
+			errors.report(e);
+
+			return;
+		}
+
+		toast.show('Link copied to clipboard');
+	}
 </script>
 
 <!-- A fixed flyout would drift from its trigger as the page scrolls -->
@@ -111,12 +124,12 @@
 		type="button"
 		role="menuitem"
 		disabled={!episode.mp3}
-		onclick={() => episode.mp3 && navigator.clipboard.writeText(episode.mp3).catch(errors.report)}
+		onclick={() => episode.mp3 && copy(episode.mp3)}
 	>
 		Copy download link
 	</button>
 	<!-- Copies an m8:// link that plays or queues the episode in another M8's app -->
-	<button type="button" role="menuitem" onclick={() => navigator.clipboard.writeText(shareLink(episode)).catch(errors.report)}>
+	<button type="button" role="menuitem" onclick={() => copy(shareLink(episode))}>
 		Share with M8
 	</button>
 </div>

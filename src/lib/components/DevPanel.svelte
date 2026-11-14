@@ -3,6 +3,7 @@
 	import { downloads } from '#lib/downloads.svelte';
 	import { errors } from '#lib/errors.svelte';
 	import { player } from '#lib/player.svelte';
+	import { toast } from '#lib/toast.svelte';
 	import { updates } from '#lib/updates.svelte';
 
 	let open = $state(false);
@@ -27,6 +28,11 @@
 		<label>
 			<input type="checkbox" checked={downloads.faked} onchange={(event) => downloads.fake(event.currentTarget.checked)} />
 			Fake download
+		</label>
+		<!-- Shown until unchecked; a real toast unchecks it once it times out -->
+		<label>
+			<input type="checkbox" checked={!!toast.message} onchange={(event) => (event.currentTarget.checked ? toast.show('Link copied to clipboard', null) : toast.hide())} />
+			Fake toast
 		</label>
 		<div class="buttons">
 			<button type="button" onclick={player.fake}>Load episode</button>
