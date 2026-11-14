@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { openUrl } from '@tauri-apps/plugin-opener';
 	import type { Snippet } from 'svelte';
-	import { type Episode, webPage } from '#lib/episodes';
+	import { type Episode, shareLink, webPage } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
 	import { placeFlyout } from '#lib/flyout';
 
@@ -107,9 +107,13 @@
 		type="button"
 		role="menuitem"
 		disabled={!episode.mp3}
-		onclick={() => episode.mp3 && navigator.clipboard.writeText(episode.mp3)}
+		onclick={() => episode.mp3 && navigator.clipboard.writeText(episode.mp3).catch(errors.report)}
 	>
 		Copy download link
+	</button>
+	<!-- Copies a rinse-m8:// link that opens the episode's show view in another M8's app -->
+	<button type="button" role="menuitem" onclick={() => navigator.clipboard.writeText(shareLink(episode)).catch(errors.report)}>
+		Share with a M8
 	</button>
 </div>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
 	import ConfirmDialog from '#lib/components/ConfirmDialog.svelte';
 	import DownloadStatus from '#lib/components/DownloadStatus.svelte';
@@ -45,6 +46,17 @@
 
 	// A click on a new-episode notification opens its show, refetched so the new episode is listed
 	listen<Show>('open-show', (event) => openShow(event.payload.slug)).catch(errors.report);
+
+	// A share link's show waits in the backend, so one that launched the app is taken once this listens
+	async function openLinkedShow() {
+		const slug = await invoke<string | null>('take_opened_show');
+
+		if (slug) {
+			await openShow(slug);
+		}
+	}
+
+	listen('open-link', openLinkedShow).then(openLinkedShow).catch(errors.report);
 
 	// The tray menu's Settings item, which has already shown the window
 	listen('open-settings', () => goto('/settings')).catch(errors.report);

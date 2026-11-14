@@ -17,6 +17,7 @@ import {
 	orderSections,
 	passesCheckboxes,
 	type ShowOrder,
+	shareLink,
 	sortEpisodes,
 	sortShows,
 	stationsOf,
@@ -60,6 +61,18 @@ it("the web page is the episode's page, or its show's page for an episode withou
 
 	expect(webPage(withSlug)).toBe('https://www.rinse.fm/episodes/a-01-10-2026-1200');
 	expect(webPage(episode('a', '2026-10-01', 'Alpha'))).toBe('https://www.rinse.fm/shows/a');
+});
+
+// Read back like share_link_show in lib.rs: the host, then the show slug and episode id as path segments
+it("a share link parses back to the episode's show slug", () => {
+	const url = new URL(
+		shareLink({ ...episode('a b/c', '2026-10-01', 'Alpha'), showSlug: 'hessle-audio' }),
+	);
+	const segments = url.pathname.slice(1).split('/');
+
+	expect(url.protocol).toBe('rinse-m8:');
+	expect(url.host).toBe('shows');
+	expect(segments).toEqual(['hessle-audio', 'a%20b%2Fc']);
 });
 
 it('the default order is newest first', () => {

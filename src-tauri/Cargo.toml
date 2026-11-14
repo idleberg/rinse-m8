@@ -34,4 +34,6 @@ chrono-tz = "0.10.4"
 tauri-plugin-updater = "2.14.1"
 tauri-plugin-process = "2.4.0"
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }
+tauri-plugin-deep-link = "2.6.3"
+percent-encoding = "2.3.2"
 

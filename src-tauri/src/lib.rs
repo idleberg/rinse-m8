@@ -14,6 +14,7 @@ use std::time::Duration;
 use tauri::menu::{MenuBuilder, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager};
+use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_notification::{Action, ActionPerformed, ActionType, NotificationExt};
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_store::StoreExt;
@@ -26,6 +27,9 @@ static PLAYING: AtomicBool = AtomicBool::new(false);
 
 /// The tray menu's play/pause item, relabelled as playback starts and stops.
 static TOGGLE_ITEM: Mutex<Option<MenuItem<tauri::Wry>>> = Mutex::new(None);
+
+/// The show of the last opened share link, until the frontend takes it. A link that launches the app arrives before the frontend listens.
+static OPENED_SHOW: Mutex<Option<String>> = Mutex::new(None);
 
 /// Stops the pending Last.fm connect.
 static LASTFM_CANCEL: Mutex<Option<tokio::sync::oneshot::Sender<()>>> = Mutex::new(None);
@@ -855,6 +859,46 @@ fn set_tray_playing(playing: bool) -> Result<(), String> {
     Ok(())
 }
 
+/// The show slug of a share link, `rinse-m8://shows/<showSlug>/<episodeId>`, URL-decoded. The slug ends up in a Rinse API
+/// URL, so it must be a plain slug: lowercase letters and digits in any script, `-` and `.`, but not `.` or `..` alone.
+fn share_link_show(url: &tauri::Url) -> Option<String> {
+    if url.host_str() != Some("shows") {
+        return None;
+    }
+
+    let mut segments = url.path_segments()?;
+    let slug = percent_encoding::percent_decode_str(segments.next()?)
+        .decode_utf8()
+        .ok()?;
+
+    let plain = !matches!(&*slug, "" | "." | "..")
+        && slug
+            .chars()
+            .all(|c| (c.is_alphanumeric() && !c.is_uppercase()) || c == '-' || c == '.');
+
+    (plain && segments.count() == 1).then(|| slug.into_owned())
+}
+
+/// Keeps the show of the first valid share link for the frontend to take, and tells it one is waiting. Other links do nothing.
+fn open_share_link(app: &tauri::AppHandle, urls: &[tauri::Url]) {
+    let Some(slug) = urls.iter().find_map(share_link_show) else {
+        return;
+    };
+
+    *OPENED_SHOW.lock().unwrap() = Some(slug);
+    show_window(app);
+
+    if let Err(e) = app.emit("open-link", ()) {
+        eprintln!("opening the linked show failed: {e}");
+    }
+}
+
+/// Hands the frontend the show of the last opened share link, once.
+#[tauri::command]
+fn take_opened_show() -> Option<String> {
+    OPENED_SHOW.lock().unwrap().take()
+}
+
 /// Brings the hidden or minimised window back to the front.
 fn show_window(app: &tauri::AppHandle) {
     let Some(window) = app.get_webview_window("main") else {
@@ -1164,6 +1208,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_deep_link::init())
         .register_asynchronous_uri_scheme_protocol("image", |ctx, request, responder| {
             let app = ctx.app_handle().clone();
             let name = request.uri().path().trim_start_matches('/').to_owned();
@@ -1225,6 +1270,15 @@ pub fn run() {
                     }
                 }
             })?;
+
+            // A link that launched the app comes from get_current on Windows and Linux, and as an event on macOS
+            let handle = app.handle().clone();
+            app.deep_link()
+                .on_open_url(move |event| open_share_link(&handle, &event.urls()));
+
+            if let Ok(Some(urls)) = app.deep_link().get_current() {
+                open_share_link(app.handle(), &urls);
+            }
 
             if let Ok(root) = app.path().app_cache_dir() {
                 tauri::async_runtime::spawn_blocking(move || {
@@ -1297,7 +1351,8 @@ pub fn run() {
             export_subscriptions,
             import_subscriptions,
             get_show_directory,
-            get_recommended_shows
+            get_recommended_shows,
+            take_opened_show
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
@@ -1308,4 +1363,72 @@ pub fn run() {
                 show_window(_app);
             }
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn slug(link: &str) -> Option<String> {
+        share_link_show(&tauri::Url::parse(link).unwrap())
+    }
+
+    #[test]
+    fn a_share_link_names_its_show() {
+        assert_eq!(
+            slug("rinse-m8://shows/hessle-audio/123").as_deref(),
+            Some("hessle-audio")
+        );
+    }
+
+    // Real slugs from Rinse, URL-encoded as shareLink in episodes.ts encodes them
+    #[test]
+    fn a_share_link_names_a_show_with_accents_dots_or_another_script() {
+        assert_eq!(
+            slug("rinse-m8://shows/chlo%C3%A9-caillet/1").as_deref(),
+            Some("chloé-caillet")
+        );
+        assert_eq!(
+            slug("rinse-m8://shows/lysiane-n./1").as_deref(),
+            Some("lysiane-n.")
+        );
+        assert_eq!(
+            slug("rinse-m8://shows/%DA%AD%D9%84%D9%8A%D8%AB%D8%B1-glitter-%D9%A5%D9%A5/1")
+                .as_deref(),
+            Some("ڭليثر-glitter-٥٥")
+        );
+    }
+
+    // As shareLink in episodes.ts builds it, with the episode id URL-encoded
+    #[test]
+    fn a_copied_share_link_names_its_show() {
+        assert_eq!(
+            slug("rinse-m8://shows/hessle-audio/a%20b%2Fc").as_deref(),
+            Some("hessle-audio")
+        );
+    }
+
+    #[test]
+    fn a_share_link_with_another_host_or_no_slug_names_no_show() {
+        assert_eq!(slug("rinse-m8://episodes/hessle-audio/123"), None);
+        assert_eq!(slug("rinse-m8://shows/"), None);
+        assert_eq!(slug("rinse-m8://shows//123"), None);
+        assert_eq!(slug("rinse-m8://shows"), None);
+    }
+
+    #[test]
+    fn a_dot_dot_segment_resolves_before_it_reaches_the_slug() {
+        assert_eq!(slug("rinse-m8://shows/../x/1").as_deref(), Some("x"));
+        assert_eq!(slug("rinse-m8://shows/%2E%2E/x/1").as_deref(), Some("x"));
+    }
+
+    #[test]
+    fn a_share_link_with_a_path_in_its_slug_names_no_show() {
+        assert_eq!(slug("rinse-m8://shows/a%2Fb/1"), None);
+        assert_eq!(slug("rinse-m8://shows/%2E%2E/1"), None);
+        assert_eq!(slug("rinse-m8://shows/a/b/1"), None);
+        assert_eq!(slug("rinse-m8://shows/Hessle/1"), None);
+        assert_eq!(slug("rinse-m8://shows/a%3Fb/1"), None);
+        assert_eq!(slug("rinse-m8://shows/%C3/1"), None);
+    }
 }

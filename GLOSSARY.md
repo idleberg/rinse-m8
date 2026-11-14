@@ -26,6 +26,10 @@ _Avoid_: Show list, artists
 The screen for a single show, listing its known episodes.
 _Avoid_: Show page, show detail
 
+**Share link**:
+A `rinse-m8://shows/<showSlug>/<episodeId>` link, copied with "Share with a M8" in an episode's flyout, that opens the episode's show view in Rinse M8.
+_Avoid_: Deep link, app link, invite
+
 **Show record**:
 What the app keeps about a show between runs: its image and description from the last show view refresh, and its recorded last aired date. Lets a show view open instantly.
 _Avoid_: Show cache, show details
