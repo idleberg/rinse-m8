@@ -145,7 +145,7 @@ export function webPage(episode: Episode): string {
 /** The link that plays or queues the episode in Rinse M8, as the Play behaviour setting says. It names the episode by id, since older cached episodes have no
  * slug. */
 export function shareLink(episode: Episode): string {
-	return `rinse-m8://shows/${encodeURIComponent(episode.showSlug)}/${encodeURIComponent(episode.id)}`;
+	return `m8://shows/${encodeURIComponent(episode.showSlug)}/${encodeURIComponent(episode.id)}`;
 }
 
 export function showOf(episode: Episode): Show {

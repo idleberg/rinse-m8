@@ -859,7 +859,7 @@ fn set_tray_playing(playing: bool) -> Result<(), String> {
     Ok(())
 }
 
-/// The show slug and episode id of a share link, `rinse-m8://shows/<showSlug>/<episodeId>`, both URL-decoded. The slug
+/// The show slug and episode id of a share link, `m8://shows/<showSlug>/<episodeId>` (or the older `rinse-m8://`), both URL-decoded. The slug
 /// ends up in a Rinse API URL, so it must be a plain slug: lowercase letters and digits in any script, `-` and `.`, but
 /// not `.` or `..` alone. The id is only compared with episode ids, so it just mustn't be empty.
 fn share_link(url: &tauri::Url) -> Option<(String, String)> {
@@ -1399,10 +1399,12 @@ mod tests {
 
     #[test]
     fn a_share_link_names_its_show_and_episode() {
-        assert_eq!(
-            link("rinse-m8://shows/hessle-audio/123"),
-            Some(("hessle-audio".into(), "123".into()))
-        );
+        for scheme in ["m8", "rinse-m8"] {
+            assert_eq!(
+                link(&format!("{scheme}://shows/hessle-audio/123")),
+                Some(("hessle-audio".into(), "123".into()))
+            );
+        }
     }
 
     // As shareLink in episodes.ts builds it, with the episode id URL-encoded

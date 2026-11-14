@@ -70,7 +70,7 @@ it("a share link parses back to the episode's show slug", () => {
 	);
 	const segments = url.pathname.slice(1).split('/');
 
-	expect(url.protocol).toBe('rinse-m8:');
+	expect(url.protocol).toBe('m8:');
 	expect(url.host).toBe('shows');
 	expect(segments).toEqual(['hessle-audio', 'a%20b%2Fc']);
 });

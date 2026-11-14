@@ -49,7 +49,7 @@
 	"plugins": {
 		"deep-link": {
 			"desktop": {
-				"schemes": ["rinse-m8"]
+				"schemes": ["m8", "rinse-m8"]
 			}
 		},
 		"updater": {
