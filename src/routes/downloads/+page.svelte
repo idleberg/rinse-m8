@@ -4,6 +4,7 @@
 	import DownloadButton from '#lib/components/DownloadButton.svelte';
 	import EpisodeFilters from '#lib/components/EpisodeFilters.svelte';
 	import Flyout from '#lib/components/Flyout.svelte';
+	import { deferRows } from '#lib/defer.svelte';
 	import { downloads } from '#lib/downloads.svelte';
 	import { available, type Episode, formatDate, stationsOf } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
@@ -12,6 +13,7 @@
 	import { player } from '#lib/player.svelte';
 
 	const queue = $derived(downloads.queue);
+	const defer = deferRows();
 
 	/** Downloaded and marked episodes, newest first, with the mp3 when it's in the download folder. */
 	let previous = $state<(Episode & { file: string | null })[]>([]);
@@ -125,7 +127,7 @@
 					</td>
 				</tr>
 			{/if}
-			{#each waiting as { episode, index }, position (episode.id)}
+			{#each defer(waiting) as { episode, index }, position (episode.id)}
 				<tr
 					bind:this={rows[episode.id]}
 					class={{
@@ -170,7 +172,7 @@
 					<td><button type="button" onclick={() => downloads.remove(episode.id)}>Remove</button></td>
 				</tr>
 			{/each}
-			{#each failures as episode (episode.id)}
+			{#each defer(failures) as episode (episode.id)}
 				<tr class="failed">
 					<td>{formatDate(episode.date)}</td>
 					<td>
@@ -223,7 +225,7 @@
 		</thead>
 		<tbody>
 			<!-- Without `file`, which would otherwise travel into the play queue and history -->
-			{#each shownPrevious as { file, ...episode } (episode.id)}
+			{#each defer(shownPrevious) as { file, ...episode } (episode.id)}
 				{@const loved = player.lovedIds.includes(episode.id)}
 				<tr>
 					<td>{formatDate(episode.date)}</td>

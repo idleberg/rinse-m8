@@ -5,6 +5,7 @@
 	import DownloadButton from '#lib/components/DownloadButton.svelte';
 	import Flyout from '#lib/components/Flyout.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
+	import { deferRows } from '#lib/defer.svelte';
 	import { downloads } from '#lib/downloads.svelte';
 	import {
 		available,
@@ -63,6 +64,7 @@
 	const direction = $derived(sort.ascending ? 'ascending' : 'descending');
 
 	const rows = $derived(sortEpisodes(episodes, sort, plays).slice(0, limit));
+	const defer = deferRows();
 
 	/** The download-folder file of each row that has one, so its download button stays disabled. Fetched only without
 	 * `files`, which already says. */
@@ -122,7 +124,7 @@
 		</tr>
 	</thead>
 	<tbody bind:this={body}>
-		{#each rows as episode, i (episode.id)}
+		{#each defer(rows) as episode, i (episode.id)}
 			{@const onDisk = episode.id in found}
 			<!-- Given `files`, an episode without one has lost its file, so it no longer counts -->
 			{@const downloaded = onDisk || (!files && downloads.queue.downloaded.includes(episode.id))}

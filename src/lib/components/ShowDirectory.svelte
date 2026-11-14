@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
+	import { deferRows } from '#lib/defer.svelte';
 	import { directory } from '#lib/directory.svelte';
 	import { type DirectoryShow, formatDate, type ShowSortColumn, type Sort, sortShows, toggleSort } from '#lib/episodes';
 	import { openShow } from '#lib/navigation';
@@ -22,6 +23,8 @@
 	const direction = $derived(sort?.ascending ? 'ascending' : 'descending');
 
 	const rows = $derived(shows && sortShows(shows, sort, directory.lastAired));
+
+	const defer = deferRows();
 </script>
 
 {#if rows === null}
@@ -49,7 +52,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each rows as show (show.slug)}
+			{#each defer(rows) as show (show.slug)}
 				{@const aired = directory.lastAired[show.slug]}
 				<tr>
 					<td><button type="button" class="plain link" onclick={() => openShow(show.slug)}>{show.title}</button></td>

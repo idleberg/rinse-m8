@@ -4,6 +4,7 @@
 	import PlayerControls from '#lib/components/PlayerControls.svelte';
 	import Recommendations from '#lib/components/Recommendations.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
+	import { deferRows } from '#lib/defer.svelte';
 	import { type Episode, formatDate, showOf } from '#lib/episodes';
 	import { refocusTrigger } from '#lib/flyout';
 	import { openShow } from '#lib/navigation';
@@ -19,6 +20,8 @@
 	let dragged = $state<number | null>(null);
 	let over = $state<number | null>(null);
 	let rows: HTMLTableRowElement[] = [];
+
+	const defer = deferRows();
 
 	/** How many history rows show, growing a page at a time. */
 	const historyPage = 20;
@@ -101,7 +104,7 @@
 		</thead>
 		<tbody bind:this={queueBody}>
 			<!-- Unkeyed, since an episode can be queued more than once -->
-			{#each player.playQueue as episode, index}
+			{#each defer(player.playQueue) as episode, index}
 				<tr
 					bind:this={rows[index]}
 					class={{
