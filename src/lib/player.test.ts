@@ -98,13 +98,14 @@ it('counts a played episode as seen', () => {
 	expect(player.isSeen(a)).toBe(false);
 });
 
-it('counts an episode as seen once it is older than the Seen after setting, and not while that is never', () => {
+it('counts an episode as old once it is older than the Seen after setting, and not while that is never', () => {
 	settings.stored.seenAfter = 4;
-	expect(player.isSeen(a)).toBe(true);
-	expect(player.isSeen(episode('new', '2099-01-01'))).toBe(false);
+	expect(player.isOld(a)).toBe(true);
+	expect(player.isSeen(a)).toBe(false);
+	expect(player.isOld(episode('new', '2099-01-01'))).toBe(false);
 
 	settings.stored.seenAfter = 0;
-	expect(player.isSeen(a)).toBe(false);
+	expect(player.isOld(a)).toBe(false);
 });
 
 it('marks an episode seen and unseen, and stores it', async () => {

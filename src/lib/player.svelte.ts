@@ -107,7 +107,7 @@ class Player {
 	loved = $derived(this.episode !== null && this.lovedIds.includes(this.episode.id));
 	/** How often each episode has been played, by episode id. An episode never played has no entry. */
 	plays = $state<Record<string, number>>({});
-	/** The ids of episodes marked seen from their flyout. Change them through `toggleSeen`. A played or old episode
+	/** The ids of episodes marked seen from their flyout. Change them through `toggleSeen`. A played episode
 	 * counts as seen without being listed, see `keepsSeen`. */
 	seenIds = $state<string[]>([]);
 	/** `seenIds` as a set, since the dashboard checks every row against it, and the copied downloaded record can be long. */
@@ -348,15 +348,18 @@ class Player {
 		}
 	};
 
-	/** Whether the dashboard leaves the episode out: it was marked seen, or `keepsSeen`. */
+	/** Whether the dashboard leaves the episode out: it was marked seen, or `keepsSeen`. Latest also leaves out
+	 * `isOld` episodes. */
 	isSeen = (episode: Episode) => this.#seen.has(episode.id) || this.keepsSeen(episode);
 
-	/** Whether the episode counts as seen however it's marked: it has been played at least once, or it's as old as the
-	 * Seen after setting. */
-	keepsSeen = (episode: Episode) => {
+	/** Whether the episode counts as seen however it's marked: it has been played at least once. */
+	keepsSeen = (episode: Episode) => episode.id in this.plays;
+
+	/** Whether the episode is as old as the Seen after setting. Only Latest treats that as seen. */
+	isOld = (episode: Episode) => {
 		const weeks = settings.stored.seenAfter;
 
-		return episode.id in this.plays || (weeks > 0 && episode.date <= weeksAgo(weeks));
+		return weeks > 0 && episode.date <= weeksAgo(weeks);
 	};
 
 	/** Marks `episode` seen or unseen. Waits for the stored list, so loading it can't undo the change. */

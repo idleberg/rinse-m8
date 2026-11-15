@@ -31,6 +31,7 @@
 		linkShows = true,
 		markable = false,
 		plays,
+		seenByAge = false,
 		subscribable = false,
 	}: {
 		episodes: Episode[];
@@ -48,6 +49,8 @@
 		/** How often each episode has been played, by episode id. When given, the table has a Plays column and starts out
 		 * sorted by it. */
 		plays?: Record<string, number>;
+		/** With `markable`, also counts an episode as seen once it's as old as the Seen after setting. */
+		seenByAge?: boolean;
 		/** Adds "Subscribe" to each row's flyout. */
 		subscribable?: boolean;
 	} = $props();
@@ -188,13 +191,14 @@
 						{/if}
 						<Flyout {episode}>
 							{#if markable}
-								{@const seen = player.isSeen(episode)}
+								{@const old = seenByAge && player.isOld(episode)}
+								{@const seen = player.isSeen(episode) || old}
 								<!-- Disabled once played or old enough, since that keeps it seen either way -->
 								<button
 									type="button"
 									role="menuitemcheckbox"
 									aria-checked={seen}
-									disabled={player.keepsSeen(episode)}
+									disabled={player.keepsSeen(episode) || old}
 									onclick={() => toggleSeen(episode, i)}
 								>
 									{seen ? 'Mark as unseen' : 'Mark as seen'}

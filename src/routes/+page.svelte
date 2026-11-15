@@ -37,7 +37,7 @@
 
 			seen.add(episode.showSlug);
 
-			return showSeen || !player.isSeen(episode);
+			return showSeen || !(player.isSeen(episode) || player.isOld(episode));
 		});
 	});
 </script>
@@ -53,7 +53,7 @@
 	<section class="latest">
 		<h2>Latest</h2>
 		{#if latestEpisodes.length}
-			<EpisodeTable episodes={latestEpisodes} markable subscribable />
+			<EpisodeTable episodes={latestEpisodes} markable seenByAge subscribable />
 		{:else if episodes.loading}
 			<p role="status">Loading episodes…</p>
 		{:else}
