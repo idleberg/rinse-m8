@@ -10,6 +10,9 @@
 
 	let showSeen = $state(false);
 
+	const latestLimit = 15;
+	let latestExpanded = $state(false);
+
 	const filteredEpisodes = $derived(episodes.list.filter(filters.matchesEpisode));
 
 	const showSections = $derived(
@@ -53,7 +56,20 @@
 	<section class="latest">
 		<h2>Latest</h2>
 		{#if latestEpisodes.length}
-			<EpisodeTable episodes={latestEpisodes} markable seenByAge subscribable />
+			<EpisodeTable
+				episodes={latestEpisodes}
+				limit={latestExpanded ? undefined : latestLimit}
+				markable
+				seenByAge
+				subscribable
+			/>
+			{#if latestEpisodes.length > latestLimit}
+				<button type="button" aria-expanded={latestExpanded} onclick={() => {
+					latestExpanded = !latestExpanded;
+				}}>
+					{latestExpanded ? 'Show less' : `Show all (${latestEpisodes.length})`}
+				</button>
+			{/if}
 		{:else if episodes.loading}
 			<p role="status">Loading episodes…</p>
 		{:else}
@@ -84,6 +100,10 @@
 		margin: 0 0 0.5rem;
 		font-size: 1.25rem;
 		text-transform: uppercase;
+	}
+
+	.latest > button {
+		margin-top: 0.5rem;
 	}
 
 	.latest p {
