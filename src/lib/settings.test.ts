@@ -29,6 +29,7 @@ mock.module('@tauri-apps/api/core', () => ({
 const { settings } = await import('./settings.svelte');
 const { confirmation } = await import('./confirm.svelte');
 const { errors } = await import('./errors.svelte');
+const { toast } = await import('./toast.svelte');
 
 beforeEach(() => {
 	calls.length = 0;
@@ -63,24 +64,28 @@ it('subscribes without asking', async () => {
 	expect(settings.subscribed).toEqual(['a']);
 });
 
-it('keeps the subscription when unsubscribing is declined', async () => {
-	const toggled = settings.toggle(show);
-
-	expect(confirmation.question?.title).toBe('Unsubscribe');
-	confirmation.answer();
-	await toggled;
-	expect(settings.subscribed).toEqual(['a']);
-	expect(calls).toEqual([]);
-});
-
-it('unsubscribes once confirmed', async () => {
-	const toggled = settings.toggle(show);
-
-	expect(settings.subscribing).toEqual([]);
-	confirmation.answer('primary');
-	await toggled;
+it('unsubscribes without asking and offers to undo it', async () => {
+	await settings.toggle(show);
+	expect(confirmation.question).toBeNull();
 	expect(settings.subscribed).toEqual([]);
 	expect(settings.subscribing).toEqual([]);
+	expect(toast.message).toBe('You unsubscribed from A');
+	expect(toast.action?.label).toBe('Undo');
+});
+
+it('subscribes again on undo', async () => {
+	await toast.act();
+	expect(calls).toEqual([['subscribe', { slug: 'a', title: 'A' }]]);
+	expect(settings.subscribed).toEqual(['a']);
+	expect(toast.message).toBe('');
+});
+
+it('reports a failed unsubscribe without a toast', async () => {
+	failing = 'unsubscribe';
+	await settings.toggle(show);
+	expect(settings.subscribed).toEqual(['a']);
+	expect(errors.message).toBe('saving failed');
+	expect(toast.message).toBe('');
 });
 
 it('puts the image style in the image URL, except for the original', async () => {

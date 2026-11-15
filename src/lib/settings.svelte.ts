@@ -1,8 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
-import { confirm } from './confirm.svelte';
 import type { Show, ShowOrder } from './episodes';
 import { errors } from './errors.svelte';
+import { toast } from './toast.svelte';
 
 export interface Stored {
 	subscriptions: Show[];
@@ -32,6 +32,9 @@ export type ImageStyle = 'original' | 'dithered' | 'grayscale';
 export type PlayBehaviour = 'ask' | 'play' | 'queue';
 
 const jsonFilters = [{ name: 'JSON', extensions: ['json'] }];
+
+/** How long the unsubscribe toast shows, in milliseconds: long enough to reach its UNDO button. */
+const undoShownFor = 5000;
 
 /** The stored settings, subscriptions included, and the changes the Settings view and subscribe buttons make. */
 class Settings {
@@ -123,31 +126,28 @@ class Settings {
 		}
 	}
 
-	/** Subscribes to the show, or unsubscribes once confirmed. */
+	/** Subscribes to the show, or unsubscribes with a toast that offers to undo it. */
 	async toggle(show: Show) {
 		errors.clear();
 
-		// Read before the dialog, so what the user confirmed is what happens
 		const unsubscribing = this.subscribed.includes(show.slug);
-
-		if (
-			unsubscribing &&
-			!(await confirm({
-				title: 'Unsubscribe',
-				message: `Unsubscribe from ${show.title}?`,
-				primaryAction: 'Unsubscribe',
-				secondaryAction: 'Cancel',
-			}))
-		) {
-			return;
-		}
 
 		this.subscribing.push(show.slug);
 
 		try {
-			this.stored = unsubscribing
-				? await invoke<Stored>('unsubscribe', { slug: show.slug })
-				: await invoke<Stored>('subscribe', { slug: show.slug, title: show.title });
+			if (unsubscribing) {
+				this.stored = await invoke<Stored>('unsubscribe', { slug: show.slug });
+
+				// Skipped if the show was subscribed again meanwhile, so UNDO never unsubscribes.
+				// ponytail: subscribing again appends the show, so it drops to the bottom of the subscribed order; the backend
+				// would need to restore its index to keep it in place
+				toast.show(`You unsubscribed from ${show.title}`, undoShownFor, {
+					label: 'Undo',
+					run: () => (this.subscribed.includes(show.slug) ? undefined : this.toggle(show)),
+				});
+			} else {
+				this.stored = await invoke<Stored>('subscribe', { slug: show.slug, title: show.title });
+			}
 		} catch (e) {
 			errors.report(e);
 		} finally {

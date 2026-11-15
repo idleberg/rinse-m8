@@ -31,7 +31,7 @@
 		</label>
 		<!-- Shown until unchecked; a real toast unchecks it once it times out -->
 		<label>
-			<input type="checkbox" checked={!!toast.message} onchange={(event) => (event.currentTarget.checked ? toast.show('Link copied to clipboard', null) : toast.hide())} />
+			<input type="checkbox" checked={!!toast.message} onchange={(event) => (event.currentTarget.checked ? toast.show('You unsubscribed from Fake Show', null, { label: 'Undo', run: () => toast.show('Undone') }) : toast.hide())} />
 			Fake toast
 		</label>
 		<div class="buttons">

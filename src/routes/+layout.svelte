@@ -137,7 +137,12 @@
 
 <div class="bars">
 	<!-- Always in the page, so screen readers announce a new message. Inverted with Settings, so it stays the page's reverse. -->
-	<p class="toast" class:inverted role="status" hidden={!toast.message}>{toast.message}</p>
+	<p class="toast" class:inverted role="status" hidden={!toast.message}>
+		{toast.message}
+		{#if toast.action}
+			<button type="button" onclick={toast.act}>{toast.action.label}</button>
+		{/if}
+	</p>
 	<DownloadStatus />
 	<Player />
 </div>
@@ -228,6 +233,17 @@
 		color: var(--paper);
 		text-transform: uppercase;
 		white-space: nowrap;
+	}
+
+	.toast button {
+		margin-left: 1ch;
+	}
+
+	/* The global hover fills with ink, which is the toast's background here, so it fills with paper instead */
+	.toast button:hover {
+		border-color: var(--paper);
+		background: var(--paper);
+		color: var(--ink);
 	}
 
 	[role='alert'] {
