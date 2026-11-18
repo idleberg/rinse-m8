@@ -22,8 +22,11 @@
 
 	let { children } = $props();
 
+	/** The built app launches at tauri://localhost, a custom scheme, whose URL has an empty path rather than "/" */
+	const pathname = $derived(page.url.pathname || '/');
+
 	/** Settings swap light and dark, to stand apart from the other pages. */
-	const inverted = $derived(page.url.pathname === '/settings');
+	const inverted = $derived(pathname === '/settings');
 
 	const tabs = [
 		['/', 'My Shows'],
@@ -104,10 +107,10 @@
 	{#each tabs as [path, label] (path)}
 		<!-- Favs is a heart, labelled for screen readers and on hover -->
 		<button type="button"
-			aria-current={page.url.pathname === path ? 'page' : undefined}
+			aria-current={pathname === path ? 'page' : undefined}
 			aria-label={path === '/favs' ? label : undefined}
 			title={path === '/favs' ? label : undefined}
-			onclick={() => page.url.pathname !== path && goto(path)}
+			onclick={() => pathname !== path && goto(path)}
 		>
 			{#if path === '/favs'}
 				<svg viewBox="0 0 16 16" aria-hidden="true">
