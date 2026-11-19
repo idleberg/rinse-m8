@@ -1,5 +1,15 @@
-<script lang="ts">
+<script module lang="ts">
 	import { getVersion } from '@tauri-apps/api/app';
+
+	let show: (version: string) => void;
+
+	/** Opens the dialog with the bundled notes, leaving the seen version alone. For the DevPanel. */
+	export async function preview() {
+		show(await getVersion());
+	}
+</script>
+
+<script lang="ts">
 	import { errors } from '#lib/errors.svelte';
 	import { shouldShow } from '#lib/whats-new';
 	import notes from '#lib/whats-new.md';
@@ -9,6 +19,12 @@
 	let dialog: HTMLDialogElement;
 	let ok: HTMLButtonElement;
 	let version = $state('');
+
+	show = (current) => {
+		version = current;
+		dialog.showModal();
+		ok.focus();
+	};
 
 	// Recorded on every launch, so a fresh install stays quiet and each version shows its notes at most once
 	getVersion()
@@ -21,9 +37,7 @@
 				return;
 			}
 
-			version = current;
-			dialog.showModal();
-			ok.focus();
+			show(current);
 		})
 		.catch(errors.report);
 </script>
@@ -43,7 +57,10 @@
 </dialog>
 
 <style>
+	/* About 10 to 15 words per line, and never wider than the window allows */
 	dialog {
+		width: 66ch;
+		max-width: calc(100% - 2rem);
 		border: 1px solid currentColor;
 		padding: 0;
 		/* Redefined, so hovered buttons invert to white on blue */
@@ -76,7 +93,7 @@
 
 	/* Long notes scroll, keeping the header and OK in view */
 	.notes {
-		max-height: 60vh;
+		max-height: 50vh;
 		overflow: auto;
 		padding: 1rem 1ch;
 	}

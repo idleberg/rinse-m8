@@ -1,9 +1,23 @@
 import process from 'node:process';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { marked } from 'marked';
 import { defineConfig } from 'vite';
 
 const host = process.env.TAURI_DEV_HOST;
+
+/**
+ * Imported Markdown becomes its HTML at build time, so the converter stays out of the app bundle.
+ * @type {import('vite').Plugin}
+ */
+const markdown = {
+	name: 'markdown',
+	transform(code, id) {
+		if (id.endsWith('.md')) {
+			return `export default ${JSON.stringify(marked.parse(code, { async: false }))};`;
+		}
+	},
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
@@ -15,6 +29,7 @@ export default defineConfig(async () => ({
 		// Runes everywhere: a component without runes compiles in legacy mode, where every binding write to an imported
 		// rune module invalidates the whole import, so bind:paused re-plays the audio before its pause event lands
 		sveltekit({ adapter: adapter({ fallback: 'index.html' }), compilerOptions: { runes: true } }),
+		markdown,
 	],
 
 	// Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

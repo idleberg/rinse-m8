@@ -1,10 +1,13 @@
 <script lang="ts">
+	import { preview } from '#lib/components/WhatsNew.svelte';
 	import { confirm } from '#lib/confirm.svelte';
 	import { downloads } from '#lib/downloads.svelte';
 	import { errors } from '#lib/errors.svelte';
 	import { player } from '#lib/player.svelte';
 	import { toast } from '#lib/toast.svelte';
 	import { updates } from '#lib/updates.svelte';
+	import { hasNotes } from '#lib/whats-new';
+	import notes from '#lib/whats-new.md';
 
 	let open = $state(false);
 </script>
@@ -42,6 +45,8 @@
 		<!-- Through the real event, which the errors module turns into its offline message -->
 		<button type="button" onclick={() => window.dispatchEvent(new Event('offline'))}>Set offline</button>
 		<button type="button" onclick={() => confirm({ title: 'Sample Question', message: 'Answer the sample question?', primaryAction: 'Answer', secondaryAction: 'Cancel' })}>Show dialog</button>
+		<!-- Disabled until whats-new.md has notes, since the dialog would be empty -->
+		<button type="button" disabled={!hasNotes(notes)} onclick={() => preview().catch(errors.report)}>What's new</button>
 	</aside>
 {/if}
 
