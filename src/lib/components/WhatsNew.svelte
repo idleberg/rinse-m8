@@ -11,7 +11,7 @@
 
 <script lang="ts">
 	import { errors } from '#lib/errors.svelte';
-	import { shouldShow } from '#lib/whats-new';
+	import { seenVersion, shouldShow } from '#lib/whats-new';
 	import notes from '#lib/whats-new.md';
 
 	const id = $props.id();
@@ -26,11 +26,12 @@
 		ok.focus();
 	};
 
+	// Read now, before the filters' effect first saves them on a fresh install
+	const seen = seenVersion(localStorage);
+
 	// Recorded on every launch, so a fresh install stays quiet and each version shows its notes at most once
 	getVersion()
 		.then((current) => {
-			const seen = localStorage.getItem('seenVersion');
-
 			localStorage.setItem('seenVersion', current);
 
 			if (!shouldShow(seen, current, notes)) {
