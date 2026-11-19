@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Artwork from '#lib/components/Artwork.svelte';
+	import AutoDownloadEntry from '#lib/components/AutoDownloadEntry.svelte';
 	import Flyout from '#lib/components/Flyout.svelte';
 	import PlayerControls from '#lib/components/PlayerControls.svelte';
 	import Recommendations from '#lib/components/Recommendations.svelte';
@@ -162,6 +163,7 @@
 							{@render remove('Remove from queue', () => removeFromQueue(episode, index))}
 							<Flyout {episode}>
 								<SubscribeButton show={showOf(episode)} entry />
+								<AutoDownloadEntry show={showOf(episode)} />
 								{@render love(episode)}
 							</Flyout>
 						</div>
@@ -210,6 +212,7 @@
 							{@render remove('Remove from history', () => removeFromHistory(episode, index))}
 							<Flyout {episode}>
 								<SubscribeButton show={showOf(episode)} entry />
+								<AutoDownloadEntry show={showOf(episode)} />
 								{@render love(episode)}
 							</Flyout>
 						</div>

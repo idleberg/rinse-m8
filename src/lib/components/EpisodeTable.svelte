@@ -2,6 +2,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { revealItemInDir } from '@tauri-apps/plugin-opener';
 	import { untrack } from 'svelte';
+	import AutoDownloadEntry from '#lib/components/AutoDownloadEntry.svelte';
 	import DownloadButton from '#lib/components/DownloadButton.svelte';
 	import Flyout from '#lib/components/Flyout.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
@@ -207,6 +208,7 @@
 							{#if subscribable}
 								<SubscribeButton show={showOf(episode)} entry />
 							{/if}
+							<AutoDownloadEntry show={showOf(episode)} />
 							<button type="button" role="menuitemcheckbox" aria-checked={loved} onclick={() => toggleLove(episode, i)}>
 								{loved ? 'Unlove' : 'Love'}
 							</button>
