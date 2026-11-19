@@ -61,6 +61,11 @@ body {
 		monospace;
 }
 
+/* The page stays put behind a modal dialog */
+html:has(dialog:modal) {
+	overflow: hidden;
+}
+
 /* Window frame, fixed so it stays put while the page scrolls */
 body::after {
 	content: "";
