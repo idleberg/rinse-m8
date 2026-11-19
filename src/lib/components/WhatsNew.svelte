@@ -9,13 +9,21 @@
 	/** The newest bundled notes' version, if any are bundled. */
 	export const newest = Object.keys(notes).sort(byVersion).at(-1);
 
-	let show: (version: string, html: string) => void;
+	interface Page {
+		version: string;
+		html: string;
+	}
 
-	/** Opens the dialog with the given notes, or else the newest bundled ones, leaving the seen version alone. For the
-	 * DevPanel. */
-	export function preview(version = newest, html = version && notes[version]) {
-		if (version && html) {
-			show(version, html);
+	let show: (pages: Page[]) => void;
+
+	/** The pages for the given versions, in the order given. */
+	const toPages = (versions: string[]) => versions.map((version) => ({ version, html: notes[version] }));
+
+	/** Opens the dialog with the given pages, if there are any, leaving the seen version alone. The DevPanel's default is
+	 * every bundled note, newest first. */
+	export function preview(shown = toPages(Object.keys(notes).sort((a, b) => byVersion(b, a)))) {
+		if (shown.length > 0) {
+			show(shown);
 		}
 	}
 </script>
@@ -29,12 +37,24 @@
 
 	let dialog: HTMLDialogElement;
 	let ok: HTMLButtonElement;
-	let version = $state('');
-	let html = $state('');
+	let newer: HTMLButtonElement | undefined = $state();
+	let older: HTMLButtonElement | undefined = $state();
+	let pages: Page[] = $state([]);
+	let index = $state(0);
+	let page = $derived(pages[index]);
 
-	show = (shown, shownHtml) => {
-		version = shown;
-		html = shownHtml;
+	/** Turns by one page, handing focus to the other arrow when this one ends up disabled at either end. */
+	function turn(by: -1 | 1, other?: HTMLButtonElement) {
+		index += by;
+
+		if (index === 0 || index === pages.length - 1) {
+			other?.focus();
+		}
+	}
+
+	show = (shown) => {
+		pages = shown;
+		index = 0;
 		dialog.showModal();
 		ok.focus();
 	};
@@ -47,13 +67,7 @@
 		.then((current) => {
 			localStorage.setItem('seenVersion', current);
 
-			const picked = pickNotes(seen, current, Object.keys(notes));
-
-			if (!picked) {
-				return;
-			}
-
-			show(picked, notes[picked]);
+			preview(toPages(pickNotes(seen, current, Object.keys(notes))));
 		})
 		.catch(errors.report);
 </script>
@@ -62,11 +76,27 @@
 <dialog bind:this={dialog} aria-labelledby="{id}-title">
 	<form method="dialog">
 		<header>
-			<h2 id="{id}-title">What's new in {version}</h2>
+			<h2 id="{id}-title">What's new in {page?.version}</h2>
 			<button type="submit" class="plain" aria-label="Close">[×]</button>
 		</header>
-		<div class="notes">{@html html}</div>
+		<div class="notes">{@html page?.html}</div>
 		<footer>
+			<!-- Newest first, so Newer goes back and Older goes on -->
+			{#if pages.length > 1}
+				<div class="buttons">
+					<button type="button" class="icon" aria-label="Newer" title="Newer" disabled={index === 0} bind:this={newer} onclick={() => turn(-1, older)}>
+						<svg viewBox="0 0 16 16" aria-hidden="true">
+							<path d="M10 3l-5 5 5 5" />
+						</svg>
+					</button>
+					<span>{index + 1}/{pages.length}</span>
+					<button type="button" class="icon" aria-label="Older" title="Older" disabled={index === pages.length - 1} bind:this={older} onclick={() => turn(1, newer)}>
+						<svg viewBox="0 0 16 16" aria-hidden="true">
+							<path d="M6 3l5 5-5 5" />
+						</svg>
+					</button>
+				</div>
+			{/if}
 			<button type="submit" bind:this={ok}>OK</button>
 		</footer>
 	</form>
@@ -130,6 +160,13 @@
 	footer {
 		display: flex;
 		justify-content: flex-end;
+		align-items: center;
 		padding: 0.5rem 1ch;
+	}
+
+	/* Paging on the left, when there is any, and OK on the right */
+	footer .buttons {
+		align-items: center;
+		margin-right: auto;
 	}
 </style>

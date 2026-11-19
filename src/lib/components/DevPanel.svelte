@@ -48,7 +48,7 @@
 		<div class="buttons">
 			<button type="button" disabled={!newest} onclick={() => preview()}>What's new</button>
 			<!-- Every Markdown feature the notes might use, to check the dialog's styling -->
-			<button type="button" onclick={() => preview('0.0.0', sample)}>Sample</button>
+			<button type="button" onclick={() => preview([{ version: '0.0.0', html: sample }])}>Sample</button>
 		</div>
 	</aside>
 {/if}
