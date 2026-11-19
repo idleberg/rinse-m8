@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
+import { choose } from './confirm.svelte';
 import type { Show, ShowOrder } from './episodes';
 import { errors } from './errors.svelte';
 import { toast } from './toast.svelte';
@@ -162,28 +163,77 @@ class Settings {
 		}
 	}
 
-	/** Subscribes to the show, or unsubscribes with a toast that offers to undo it. */
+	/** Subscribes to the show, asking about auto-download as the Auto-downloads setting says, or unsubscribes with a
+	 * toast that offers to undo it. */
 	async toggle(show: Show) {
+		if (!this.subscribed.includes(show.slug)) {
+			return this.#subscribe(show);
+		}
+
+		await this.#run(show, async () => {
+			this.stored = await invoke<Stored>('unsubscribe', { slug: show.slug });
+
+			// Skipped if the show was subscribed again meanwhile, so UNDO never unsubscribes. UNDO neither asks nor
+			// touches the auto-download flag, which the unsubscribe kept.
+			// ponytail: subscribing again appends the show, so it drops to the bottom of the subscribed order; the backend
+			// would need to restore its index to keep it in place
+			toast.show(`You unsubscribed from ${show.title}`, undoShownFor, {
+				label: 'Undo',
+				run: () =>
+					this.subscribed.includes(show.slug)
+						? undefined
+						: this.#run(show, async () => {
+								this.stored = await invoke<Stored>('subscribe', {
+									slug: show.slug,
+									title: show.title,
+								});
+							}),
+			});
+		});
+	}
+
+	async #subscribe(show: Show) {
+		const mode = this.stored.autoDownloads;
+		let download = false;
+
+		if (mode === 'selected') {
+			const choice = await choose({
+				title: 'Subscribe',
+				message: `Download new episodes of ${show.title} automatically?`,
+				primaryAction: '…with download',
+				primaryName: 'Subscribe with download',
+				secondaryAction: 'Subscribe',
+			});
+
+			if (!choice) {
+				return;
+			}
+
+			download = choice === 'primary';
+		}
+
+		await this.#run(show, async () => {
+			this.stored = await invoke<Stored>('subscribe', { slug: show.slug, title: show.title });
+
+			// All subscribed shows download without a folder check, as they do with the flag unset
+			if (mode === 'all') {
+				this.stored = await invoke<Stored>('set_auto_download', { slug: show.slug, enabled: true });
+			}
+		});
+
+		// After the subscribe, so a cancelled folder dialog still leaves the show subscribed
+		if (download && this.subscribed.includes(show.slug)) {
+			await this.setAutoDownload(show.slug, true);
+		}
+	}
+
+	/** Runs a subscribe or unsubscribe of the show, disabling its buttons meanwhile and reporting a failure. */
+	async #run(show: Show, change: () => Promise<void>) {
 		errors.clear();
-
-		const unsubscribing = this.subscribed.includes(show.slug);
-
 		this.subscribing.push(show.slug);
 
 		try {
-			if (unsubscribing) {
-				this.stored = await invoke<Stored>('unsubscribe', { slug: show.slug });
-
-				// Skipped if the show was subscribed again meanwhile, so UNDO never unsubscribes.
-				// ponytail: subscribing again appends the show, so it drops to the bottom of the subscribed order; the backend
-				// would need to restore its index to keep it in place
-				toast.show(`You unsubscribed from ${show.title}`, undoShownFor, {
-					label: 'Undo',
-					run: () => (this.subscribed.includes(show.slug) ? undefined : this.toggle(show)),
-				});
-			} else {
-				this.stored = await invoke<Stored>('subscribe', { slug: show.slug, title: show.title });
-			}
+			await change();
 		} catch (e) {
 			errors.report(e);
 		} finally {

@@ -57,7 +57,9 @@
 		<p>{confirmation.question?.message}</p>
 		<footer>
 			<button type="submit" value="secondary" bind:this={secondary}>{confirmation.question?.secondaryAction}</button>
-			<button type="submit" value="primary">{confirmation.question?.primaryAction}</button>
+			<button type="submit" value="primary" aria-label={confirmation.question?.primaryName}>
+				{confirmation.question?.primaryAction}
+			</button>
 		</footer>
 	</form>
 </dialog>

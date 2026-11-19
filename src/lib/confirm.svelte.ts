@@ -3,6 +3,8 @@ export interface Question {
 	message: string;
 	/** The label of the button that confirms. */
 	primaryAction: string;
+	/** The confirming button's accessible name, when its label is shortened. */
+	primaryName?: string;
 	/** The label of the other answer, focused when the dialog opens, so it is the default. */
 	secondaryAction: string;
 }

@@ -14,11 +14,11 @@ Only a subscribe the user starts asks. Importing subscriptions and UNDO after an
 
 **Status:** ready-for-agent
 
-- [ ] With Off, subscribing shows no dialog and leaves the show's auto-download flag unchanged
-- [ ] With Selected shows, subscribing opens a dialog offering SUBSCRIBE and SUBSCRIBE WITH DOWNLOAD
-- [ ] SUBSCRIBE subscribes without enabling auto-download; SUBSCRIBE WITH DOWNLOAD subscribes and enables it
-- [ ] Closing the dialog without choosing leaves the show unsubscribed
-- [ ] SUBSCRIBE WITH DOWNLOAD with no download folder and no default asks for one; cancelling still subscribes, with auto-download disabled
-- [ ] With All subscribed shows, subscribing enables the show's auto-download with no dialog
-- [ ] Importing subscriptions and UNDO after an unsubscribe never open the dialog
-- [ ] Tests cover subscribing in each mode, closing the dialog without choosing, and the cancelled folder dialog
+- [x] With Off, subscribing shows no dialog and leaves the show's auto-download flag unchanged
+- [x] With Selected shows, subscribing opens a dialog offering SUBSCRIBE and SUBSCRIBE WITH DOWNLOAD
+- [x] SUBSCRIBE subscribes without enabling auto-download; SUBSCRIBE WITH DOWNLOAD subscribes and enables it
+- [x] Closing the dialog without choosing leaves the show unsubscribed
+- [x] SUBSCRIBE WITH DOWNLOAD with no download folder and no default asks for one; cancelling still subscribes, with auto-download disabled
+- [x] With All subscribed shows, subscribing enables the show's auto-download with no dialog
+- [x] Importing subscriptions and UNDO after an unsubscribe never open the dialog
+- [x] Tests cover subscribing in each mode, closing the dialog without choosing, and the cancelled folder dialog

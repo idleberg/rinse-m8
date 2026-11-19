@@ -1,7 +1,9 @@
 /// <reference types="bun" />
 
 import { beforeEach, expect, test as it, mock } from 'bun:test';
+import type { Choice } from './confirm.svelte';
 import type { Show } from './episodes';
+import type { AutoDownloads } from './settings.svelte';
 
 const calls: [string, unknown][] = [];
 let failing = '';
@@ -156,4 +158,75 @@ it('asks for a folder before enabling a show, then disables it again', async () 
 
 	await settings.setAutoDownload('a', false);
 	expect(settings.stored.autoDownloadShows).toEqual([]);
+});
+
+/** Starts subscribing to the show in the mode and answers the dialog, if one opens. */
+async function subscribeIn(mode: AutoDownloads, answer?: Choice) {
+	settings.stored.subscriptions = [];
+	settings.stored.autoDownloadShows = [];
+	settings.stored.autoDownloads = mode;
+
+	const subscribing = settings.toggle(show);
+	const asked = confirmation.question;
+
+	confirmation.answer(answer);
+	await subscribing;
+
+	return asked;
+}
+
+it('leaves the show unsubscribed when the subscribe dialog is closed', async () => {
+	const asked = await subscribeIn('selected');
+	expect(asked?.primaryAction).toBe('…with download');
+	expect(asked?.primaryName).toBe('Subscribe with download');
+	expect(asked?.secondaryAction).toBe('Subscribe');
+	expect(settings.subscribed).toEqual([]);
+	expect(calls).toEqual([]);
+});
+
+it('subscribes without auto-download on SUBSCRIBE', async () => {
+	await subscribeIn('selected', 'secondary');
+	expect(settings.subscribed).toEqual(['a']);
+	expect(settings.stored.autoDownloadShows).toEqual([]);
+});
+
+it('subscribes and enables auto-download on SUBSCRIBE WITH DOWNLOAD', async () => {
+	settings.stored.downloadFolder = '/m';
+	await subscribeIn('selected', 'primary');
+	expect(settings.subscribed).toEqual(['a']);
+	expect(settings.stored.autoDownloadShows).toEqual(['a']);
+});
+
+it('still subscribes when the folder dialog after SUBSCRIBE WITH DOWNLOAD is cancelled', async () => {
+	settings.stored.downloadFolder = null;
+	chosenFolder = null;
+	await subscribeIn('selected', 'primary');
+	expect(settings.subscribed).toEqual(['a']);
+	expect(settings.stored.autoDownloadShows).toEqual([]);
+	expect(calls.map(([command]) => command)).not.toContain('set_auto_download');
+});
+
+it('enables auto-download without asking with All subscribed shows', async () => {
+	settings.stored.downloadFolder = null;
+	const asked = await subscribeIn('all');
+	expect(asked).toBeNull();
+	expect(settings.subscribed).toEqual(['a']);
+	expect(settings.stored.autoDownloadShows).toEqual(['a']);
+});
+
+it('subscribes without asking or flagging the show with Off', async () => {
+	const asked = await subscribeIn('off');
+	expect(asked).toBeNull();
+	expect(settings.subscribed).toEqual(['a']);
+	expect(calls.map(([command]) => command)).toEqual(['subscribe']);
+});
+
+it('subscribes again on undo without asking', async () => {
+	settings.stored.autoDownloads = 'selected';
+	await settings.toggle(show);
+	calls.length = 0;
+	await toast.act();
+	expect(confirmation.question).toBeNull();
+	expect(settings.subscribed).toEqual(['a']);
+	expect(calls).toEqual([['subscribe', { slug: 'a', title: 'A' }]]);
 });
