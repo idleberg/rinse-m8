@@ -5,6 +5,7 @@
 	import DownloadStatus from '#lib/components/DownloadStatus.svelte';
 	import Player from '#lib/components/Player.svelte';
 	import UpdateBanner from '#lib/components/UpdateBanner.svelte';
+	import WhatsNew from '#lib/components/WhatsNew.svelte';
 	import { directory } from '#lib/directory.svelte';
 	import { downloads } from '#lib/downloads.svelte';
 	import { available, type Show, type ShowPage } from '#lib/episodes';
@@ -151,6 +152,8 @@
 </div>
 
 <ConfirmDialog />
+
+<WhatsNew />
 
 <!-- Imported only in dev, so release builds drop the panel and its shortcut -->
 {#if import.meta.env.DEV}
