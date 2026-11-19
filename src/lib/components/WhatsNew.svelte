@@ -169,4 +169,9 @@
 		align-items: center;
 		margin-right: auto;
 	}
+
+	/* Hidden at either end rather than greyed out, still taking its space so the counter stays put */
+	footer .buttons button:disabled {
+		visibility: hidden;
+	}
 </style>

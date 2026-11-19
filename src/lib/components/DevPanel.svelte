@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { newest, preview } from '#lib/components/WhatsNew.svelte';
-	import sample from '#lib/components/whats-new-sample.md';
 	import { confirm } from '#lib/confirm.svelte';
 	import { downloads } from '#lib/downloads.svelte';
 	import { errors } from '#lib/errors.svelte';
@@ -45,11 +44,7 @@
 		<button type="button" onclick={() => window.dispatchEvent(new Event('offline'))}>Set offline</button>
 		<button type="button" onclick={() => confirm({ title: 'Sample Question', message: 'Answer the sample question?', primaryAction: 'Answer', secondaryAction: 'Cancel' })}>Show dialog</button>
 		<!-- Disabled until some version has notes, since the dialog would be empty -->
-		<div class="buttons">
-			<button type="button" disabled={!newest} onclick={() => preview()}>What's new</button>
-			<!-- Every Markdown feature the notes might use, to check the dialog's styling -->
-			<button type="button" onclick={() => preview([{ version: '0.0.0', html: sample }])}>Sample</button>
-		</div>
+		<button type="button" disabled={!newest} onclick={() => preview()}>What's new</button>
 	</aside>
 {/if}
 
