@@ -62,12 +62,12 @@
 	dialog {
 		width: 66ch;
 		max-width: calc(100% - 2rem);
-		border: 1px solid currentColor;
 		padding: 0;
 		/* Redefined, so hovered buttons invert to white on blue */
 		--ink: white;
 		--paper: var(--info);
 		background: var(--paper);
+		border: 1px solid var(--paper);
 		color: var(--ink);
 	}
 
