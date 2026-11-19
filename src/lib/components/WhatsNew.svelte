@@ -112,7 +112,9 @@
 		--ink: white;
 		--paper: var(--info);
 		background: var(--paper);
-		border: 1px solid var(--paper);
+		/* White inside black in both modes, as a shadow so it stays clear of any focus outline */
+		border: 1px solid white;
+		box-shadow: 0 0 0 1px black;
 		color: var(--ink);
 	}
 
