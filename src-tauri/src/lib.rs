@@ -951,6 +951,22 @@ fn unsubscribe(app: tauri::AppHandle, slug: String) -> Result<rinse::Settings, S
     update_settings(&app, |s| s.unsubscribe(&slug))
 }
 
+/// Enables or disables auto-download for the show. Episodes already seen stay seen, so only later ones download.
+#[tauri::command]
+fn set_auto_download(
+    app: tauri::AppHandle,
+    slug: String,
+    enabled: bool,
+) -> Result<rinse::Settings, String> {
+    update_settings(&app, |s| {
+        if enabled {
+            s.auto_download_shows.insert(slug);
+        } else {
+            s.auto_download_shows.remove(&slug);
+        }
+    })
+}
+
 #[tauri::command]
 fn export_subscriptions(app: tauri::AppHandle, path: PathBuf) -> Result<(), String> {
     let subscriptions = load_settings(&app, serde_json::Map::new())?.subscriptions;
@@ -990,6 +1006,8 @@ fn load_settings(
     let store = app.store("settings.json").map_err(|e| e.to_string())?;
     let mut fields: serde_json::Map<_, _> = store.entries().into_iter().collect();
 
+    // Before the patch, so choosing a folder can't turn an old ticked box without one into downloads
+    rinse::migrate(&mut fields);
     fields.extend(patch);
 
     serde_json::from_value(fields.into()).map_err(|e| e.to_string())
@@ -1091,15 +1109,11 @@ async fn update_episodes(app: &tauri::AppHandle) -> Result<(), String> {
         .cloned()
         .collect();
     let mut unseen = Vec::new();
-    let mut auto_download = false;
-    let mut offer_download = false;
 
     // Seen is saved before notifying, so a crash can drop a notification but never repeat one.
-    update_settings(app, |settings| {
+    let settings = update_settings(app, |settings| {
         unseen = rinse::new_episodes(&settings.subscriptions, &settings.seen, fetched);
         settings.seen.extend(unseen.iter().map(|e| e.id.clone()));
-        auto_download = settings.auto_download && settings.download_folder.is_some();
-        offer_download = !settings.auto_download && settings.download_folder.is_some();
     })?;
 
     // ponytail: the startup update can emit before the webview listens, which then fetches the schedule itself
@@ -1130,7 +1144,7 @@ async fn update_episodes(app: &tauri::AppHandle) -> Result<(), String> {
             .extra("show", show);
 
         // An auto-download already queues the episode, so the button would have nothing left to do
-        if offer_download {
+        if settings.download_folder.is_some() && !settings.auto_downloads_show(&episode.show_slug) {
             notification = notification
                 .action_type_id("new-episode")
                 .extra("episode", episode);
@@ -1142,8 +1156,8 @@ async fn update_episodes(app: &tauri::AppHandle) -> Result<(), String> {
     }
 
     // ponytail: queued auto-downloads survive restarts, but a failed one isn't retried, since the episode is already seen
-    if auto_download {
-        for episode in unseen {
+    for episode in unseen {
+        if settings.auto_downloads_show(&episode.show_slug) {
             if let Err(e) = download(app.clone(), episode) {
                 eprintln!("queueing an auto-download failed: {e}");
             }
@@ -1368,6 +1382,7 @@ pub fn run() {
             set_tray_playing,
             subscribe,
             unsubscribe,
+            set_auto_download,
             export_subscriptions,
             import_subscriptions,
             get_show_directory,

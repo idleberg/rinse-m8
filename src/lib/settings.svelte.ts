@@ -8,7 +8,9 @@ export interface Stored {
 	subscriptions: Show[];
 	seen: string[];
 	downloadFolder: string | null;
-	autoDownload: boolean;
+	autoDownloads: AutoDownloads;
+	/** Slugs of the shows enabled for auto-download while `autoDownloads` is `selected`. */
+	autoDownloadShows: string[];
 	/** Whether new downloads go into a folder named after their show inside the download folder. */
 	groupByShow: boolean;
 	keepRunning: boolean;
@@ -28,6 +30,9 @@ export interface Stored {
 /** How show and episode artwork looks in the Player tab and the show view. */
 export type ImageStyle = 'original' | 'dithered' | 'grayscale';
 
+/** Which subscribed shows get their new episodes downloaded. */
+export type AutoDownloads = 'off' | 'selected' | 'all';
+
 /** What PLAY on an episode row does while another episode plays. */
 export type PlayBehaviour = 'ask' | 'play' | 'queue';
 
@@ -42,7 +47,8 @@ class Settings {
 		subscriptions: [],
 		seen: [],
 		downloadFolder: null,
-		autoDownload: false,
+		autoDownloads: 'off',
+		autoDownloadShows: [],
 		groupByShow: false,
 		keepRunning: true,
 		clearPlayer: false,
@@ -102,7 +108,7 @@ class Settings {
 	/** Saves a checkbox, interval or menu choice, and puts the stored value back if saving fails. */
 	async save<
 		K extends
-			| 'autoDownload'
+			| 'autoDownloads'
 			| 'groupByShow'
 			| 'keepRunning'
 			| 'clearPlayer'
@@ -122,6 +128,36 @@ class Settings {
 			await invoke('set_settings', { patch: { [key]: value } });
 		} catch (e) {
 			this.stored[key] = previous;
+			errors.report(e);
+		}
+	}
+
+	/** Why the show's auto-download can't be toggled, or undefined if it can. Only subscribed shows are polled, so a
+	 * flag on any other show would do nothing. */
+	autoDownloadBlocked(slug: string) {
+		if (!this.subscribed.includes(slug)) {
+			return 'Subscribe to the show to auto-download it';
+		}
+
+		return {
+			off: 'Auto-download is off in Settings',
+			selected: undefined,
+			all: 'All subscribed shows auto-download',
+		}[this.stored.autoDownloads];
+	}
+
+	/** Enables or disables the show's auto-download. Enabling asks for a download folder first if none is set, and
+	 * does nothing if that dialog is cancelled. */
+	async setAutoDownload(slug: string, enabled: boolean) {
+		if (enabled && !(await this.ensureFolder())) {
+			return;
+		}
+
+		errors.clear();
+
+		try {
+			this.stored = await invoke<Stored>('set_auto_download', { slug, enabled });
+		} catch (e) {
 			errors.report(e);
 		}
 	}

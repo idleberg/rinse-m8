@@ -7,7 +7,7 @@
 	import type { ShowOrder } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
-	import { type ImageStyle, type PlayBehaviour, settings } from '#lib/settings.svelte';
+	import { type AutoDownloads, type ImageStyle, type PlayBehaviour, settings } from '#lib/settings.svelte';
 	import { updates } from '#lib/updates.svelte';
 
 	/** In hours. */
@@ -28,6 +28,11 @@
 		['alphabetical', 'Alphabetical'],
 		['subscribed', 'Subscription date'],
 		['lastUpdated', 'Last updated'],
+	];
+	const autoDownloads: [AutoDownloads, string][] = [
+		['off', 'Off'],
+		['selected', 'Selected shows'],
+		['all', 'All subscribed shows'],
 	];
 	const playBehaviours: [PlayBehaviour, string][] = [
 		['ask', 'Always ask'],
@@ -165,10 +170,11 @@
 			</dd>
 			<dt>Automatic Downloads</dt>
 			<dd>
-				<label>
-					<input type="checkbox" checked={settings.stored.autoDownload} onchange={(e) => settings.save('autoDownload', e.currentTarget.checked)} />
-					download new episodes of subscribed shows
-				</label>
+				<select aria-label="Automatic downloads" value={settings.stored.autoDownloads} onchange={(e) => settings.save('autoDownloads', e.currentTarget.value as AutoDownloads)}>
+					{#each autoDownloads as [mode, label]}
+						<option value={mode}>{label}</option>
+					{/each}
+				</select>
 			</dd>
 			<dt>Group by show</dt>
 			<dd>

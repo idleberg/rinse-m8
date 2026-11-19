@@ -23,7 +23,22 @@ mock.module('@tauri-apps/api/core', () => ({
 		if (command === 'unsubscribe') {
 			return { ...settings.stored, subscriptions: [] };
 		}
+
+		if (command === 'set_auto_download') {
+			const { slug, enabled } = args as { slug: string; enabled: boolean };
+			const others = settings.stored.autoDownloadShows.filter((s) => s !== slug);
+
+			return { ...settings.stored, autoDownloadShows: enabled ? [...others, slug] : others };
+		}
 	},
+}));
+
+/** What the folder dialog returns: null when cancelled. */
+let chosenFolder: string | null = null;
+
+mock.module('@tauri-apps/plugin-dialog', () => ({
+	open: () => Promise.resolve(chosenFolder),
+	save: () => Promise.resolve(null),
 }));
 
 const { settings } = await import('./settings.svelte');
@@ -38,10 +53,10 @@ beforeEach(() => {
 });
 
 it('unticks a checkbox again when saving it fails', async () => {
-	settings.stored.autoDownload = false;
+	settings.stored.groupByShow = false;
 	failing = 'set_settings';
-	await settings.save('autoDownload', true);
-	expect(settings.stored.autoDownload).toBe(false);
+	await settings.save('groupByShow', true);
+	expect(settings.stored.groupByShow).toBe(false);
 	expect(errors.message).toBe('saving failed');
 });
 
@@ -101,4 +116,44 @@ it('keeps a saved show order', async () => {
 	await settings.save('showOrder', 'alphabetical');
 	expect(settings.stored.showOrder).toBe('alphabetical');
 	expect(calls).toContainEqual(['set_settings', { patch: { showOrder: 'alphabetical' } }]);
+});
+
+it('keeps a saved auto-downloads choice', async () => {
+	await settings.save('autoDownloads', 'selected');
+	expect(settings.stored.autoDownloads).toBe('selected');
+	expect(calls).toContainEqual(['set_settings', { patch: { autoDownloads: 'selected' } }]);
+});
+
+it('says why a show cannot be enabled for auto-download', () => {
+	settings.stored.subscriptions = [];
+	settings.stored.autoDownloads = 'selected';
+	expect(settings.autoDownloadBlocked('a')).toBe('Subscribe to the show to auto-download it');
+
+	settings.stored.subscriptions = [show];
+	expect(settings.autoDownloadBlocked('a')).toBeUndefined();
+
+	settings.stored.autoDownloads = 'all';
+	expect(settings.autoDownloadBlocked('a')).toBe('All subscribed shows auto-download');
+
+	settings.stored.autoDownloads = 'off';
+	expect(settings.autoDownloadBlocked('a')).toBe('Auto-download is off in Settings');
+});
+
+it('leaves a show disabled when the folder dialog is cancelled', async () => {
+	settings.stored.downloadFolder = null;
+	settings.stored.autoDownloadShows = [];
+	chosenFolder = null;
+	await settings.setAutoDownload('a', true);
+	expect(settings.stored.autoDownloadShows).toEqual([]);
+	expect(calls.map(([command]) => command)).not.toContain('set_auto_download');
+});
+
+it('asks for a folder before enabling a show, then disables it again', async () => {
+	chosenFolder = '/m';
+	await settings.setAutoDownload('a', true);
+	expect(settings.stored.downloadFolder).toBe('/m');
+	expect(settings.stored.autoDownloadShows).toEqual(['a']);
+
+	await settings.setAutoDownload('a', false);
+	expect(settings.stored.autoDownloadShows).toEqual([]);
 });

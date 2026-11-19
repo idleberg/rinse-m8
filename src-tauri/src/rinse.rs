@@ -105,8 +105,12 @@ pub struct Settings {
     /// Ids of episodes that must never trigger a notification.
     pub seen: BTreeSet<String>,
     pub download_folder: Option<PathBuf>,
-    /// Whether the poller also downloads each new episode into `download_folder`.
-    pub auto_download: bool,
+    /// Which subscribed shows the poller downloads new episodes of, into `download_folder`. Stored under a new key, so
+    /// older versions keep reading their own `autoDownload` boolean.
+    pub auto_downloads: AutoDownloads,
+    /// Slugs of the shows enabled for auto-download while `auto_downloads` is `Selected`. Kept apart from
+    /// `subscriptions`, like `seen`, so an unsubscribe keeps them and the export format stays the same.
+    pub auto_download_shows: BTreeSet<String>,
     /// Whether new downloads go into a folder named after their show inside `download_folder`.
     pub group_by_show: bool,
     /// Whether closing the window hides it behind a menu bar or tray icon instead of quitting.
@@ -125,6 +129,30 @@ pub struct Settings {
     pub show_order: ShowOrder,
     /// What PLAY on an episode row does while another episode plays.
     pub play_behaviour: PlayBehaviour,
+}
+
+/// Which subscribed shows get their new episodes downloaded, set in Settings.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum AutoDownloads {
+    /// Downloads nothing; notifications offer a Download button instead.
+    #[default]
+    Off,
+    /// The shows marked for auto-download.
+    Selected,
+    /// Every subscribed show.
+    All,
+}
+
+/// Turns the `autoDownload` boolean of older versions into `autoDownloads`, unless that is already stored. A ticked box
+/// without a download folder downloaded nothing, so it stays off.
+pub fn migrate(fields: &mut serde_json::Map<String, serde_json::Value>) {
+    let ticked = fields.get("autoDownload") == Some(&serde_json::Value::Bool(true));
+    let folder = fields.get("downloadFolder").is_some_and(|f| !f.is_null());
+
+    if ticked && folder && !fields.contains_key("autoDownloads") {
+        fields.insert("autoDownloads".into(), "all".into());
+    }
 }
 
 /// What PLAY on an episode row does while another episode plays, set in Settings.
@@ -159,7 +187,8 @@ impl Default for Settings {
             subscriptions: Vec::new(),
             seen: BTreeSet::new(),
             download_folder: None,
-            auto_download: false,
+            auto_downloads: AutoDownloads::Off,
+            auto_download_shows: BTreeSet::new(),
             group_by_show: false,
             keep_running: true,
             clear_player: false,
@@ -206,6 +235,17 @@ impl Settings {
     /// Stops following the show. Its seen ids stay, so resubscribing never re-notifies them.
     pub fn unsubscribe(&mut self, slug: &str) {
         self.subscriptions.retain(|s| s.slug != slug);
+    }
+
+    /// Whether the poller downloads the show's new episodes. Only subscribed shows are polled, so this doesn't check
+    /// the subscription.
+    pub fn auto_downloads_show(&self, slug: &str) -> bool {
+        self.download_folder.is_some()
+            && match self.auto_downloads {
+                AutoDownloads::Off => false,
+                AutoDownloads::Selected => self.auto_download_shows.contains(slug),
+                AutoDownloads::All => true,
+            }
     }
 }
 
@@ -1833,6 +1873,62 @@ mod tests {
         assert_eq!(settings.show_order, ShowOrder::LastUpdated);
     }
 
+    /// The settings an older store's `json` loads as.
+    fn migrated(json: &str) -> Settings {
+        let mut fields = serde_json::from_str(json).unwrap();
+
+        migrate(&mut fields);
+
+        serde_json::from_value(fields.into()).unwrap()
+    }
+
+    #[test]
+    fn an_empty_store_auto_downloads_nothing() {
+        assert_eq!(migrated("{}").auto_downloads, AutoDownloads::Off);
+    }
+
+    #[test]
+    fn a_ticked_auto_download_box_with_a_folder_downloads_all_subscribed_shows() {
+        let settings = migrated(r#"{"autoDownload":true,"downloadFolder":"/m"}"#);
+
+        assert_eq!(settings.auto_downloads, AutoDownloads::All);
+    }
+
+    #[test]
+    fn an_unticked_auto_download_box_downloads_nothing() {
+        let settings = migrated(r#"{"autoDownload":false,"downloadFolder":"/m"}"#);
+
+        assert_eq!(settings.auto_downloads, AutoDownloads::Off);
+    }
+
+    #[test]
+    fn a_ticked_auto_download_box_without_a_folder_downloads_nothing() {
+        assert_eq!(
+            migrated(r#"{"autoDownload":true}"#).auto_downloads,
+            AutoDownloads::Off
+        );
+        assert_eq!(
+            migrated(r#"{"autoDownload":true,"downloadFolder":null}"#).auto_downloads,
+            AutoDownloads::Off
+        );
+    }
+
+    #[test]
+    fn a_stored_auto_downloads_choice_wins_over_the_old_box() {
+        let settings =
+            migrated(r#"{"autoDownloads":"selected","autoDownload":true,"downloadFolder":"/m"}"#);
+
+        assert_eq!(settings.auto_downloads, AutoDownloads::Selected);
+    }
+
+    #[test]
+    fn saving_leaves_the_old_auto_download_box_for_older_versions() {
+        let fields = serde_json::to_value(Settings::default()).unwrap();
+
+        assert_eq!(fields["autoDownloads"], "off");
+        assert!(fields.get("autoDownload").is_none());
+    }
+
     #[test]
     fn an_empty_store_asks_what_play_does() {
         let settings: Settings = serde_json::from_str("{}").unwrap();
@@ -1894,6 +1990,49 @@ mod tests {
                 title: "Other".into(),
             }]
         );
+    }
+
+    #[test]
+    fn auto_download_follows_the_mode_and_the_shows_flag() {
+        let mut settings = Settings {
+            download_folder: Some("/m".into()),
+            auto_download_shows: BTreeSet::from(["flagged".into()]),
+            ..Settings::default()
+        };
+
+        assert!(!settings.auto_downloads_show("flagged"));
+
+        settings.auto_downloads = AutoDownloads::Selected;
+        assert!(settings.auto_downloads_show("flagged"));
+        assert!(!settings.auto_downloads_show("other"));
+
+        settings.auto_downloads = AutoDownloads::All;
+        assert!(settings.auto_downloads_show("flagged"));
+        assert!(settings.auto_downloads_show("other"));
+    }
+
+    #[test]
+    fn auto_download_needs_a_download_folder() {
+        let settings = Settings {
+            auto_downloads: AutoDownloads::All,
+            ..Settings::default()
+        };
+
+        assert!(!settings.auto_downloads_show("any"));
+    }
+
+    #[test]
+    fn unsubscribing_and_subscribing_again_keeps_the_auto_download_flag() {
+        let mut settings = Settings::default();
+
+        settings.subscribe("dubquake-records", "Dubquake Records", &[]);
+        settings
+            .auto_download_shows
+            .insert("dubquake-records".into());
+        settings.unsubscribe("dubquake-records");
+        settings.subscribe("dubquake-records", "Dubquake Records", &[]);
+
+        assert!(settings.auto_download_shows.contains("dubquake-records"));
     }
 
     #[test]
