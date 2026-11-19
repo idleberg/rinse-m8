@@ -60,6 +60,10 @@ class Settings {
 		showOrder: 'subscribed',
 		playBehaviour: 'ask',
 	});
+	/** `Rinse M8` in the OS music folder, used while no folder is stored, or null where there's no music folder. */
+	defaultFolder = $state<string | null>(null);
+	/** Where downloads go: the stored folder, else the default one. */
+	folder = $derived(this.stored.downloadFolder ?? this.defaultFolder);
 	/** Show slugs. */
 	subscribed = $derived(this.stored.subscriptions.map((s) => s.slug));
 	/** Show slugs, while their subscribe or unsubscribe runs. */
@@ -77,7 +81,7 @@ class Settings {
 			const folder = await open({
 				directory: true,
 				title: 'Choose a download folder',
-				defaultPath: this.stored.downloadFolder ?? undefined,
+				defaultPath: this.folder ?? undefined,
 			});
 
 			if (!folder) {
@@ -95,8 +99,20 @@ class Settings {
 		}
 	};
 
-	/** Resolves true once a download folder is set, asking for one if needed. */
-	ensureFolder = async () => Boolean(this.stored.downloadFolder) || this.chooseFolder();
+	/** Forgets the chosen folder, so downloads go to the default one again. */
+	useDefaultFolder = async () => {
+		errors.clear();
+
+		try {
+			await invoke('set_settings', { patch: { downloadFolder: null } });
+			this.stored.downloadFolder = null;
+		} catch (e) {
+			errors.report(e);
+		}
+	};
+
+	/** Resolves true once there's a download folder, asking for one if neither a stored nor a default one exists. */
+	ensureFolder = async () => Boolean(this.folder) || this.chooseFolder();
 
 	/** The `image` scheme URL `src` in the stored image style. Each style has its own URL, so the webview never mixes
 	 * up copies from different styles. */
@@ -283,6 +299,12 @@ class Settings {
 		invoke<Stored>('get_settings')
 			.then((loaded) => {
 				this.stored = loaded;
+			})
+			.catch(errors.report);
+
+		invoke<string | null>('get_default_folder')
+			.then((folder) => {
+				this.defaultFolder = folder;
 			})
 			.catch(errors.report);
 	}

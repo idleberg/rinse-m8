@@ -161,12 +161,18 @@
 		<dl>
 			<dt>Folder</dt>
 			<dd>
-				{#if settings.stored.downloadFolder}
-					<code>{settings.stored.downloadFolder}</code>
+				{#if settings.folder}
+					<code>{settings.folder}</code>
 				{:else}
 					<span class="muted">None set</span>
 				{/if}
+				{#if !settings.stored.downloadFolder && settings.defaultFolder}
+					<span class="muted">(default)</span>
+				{/if}
 				<button type="button" onclick={settings.chooseFolder}>Change…</button>
+				{#if settings.stored.downloadFolder && settings.defaultFolder}
+					<button type="button" onclick={settings.useDefaultFolder}>Use default</button>
+				{/if}
 			</dd>
 			<dt>Automatic Downloads</dt>
 			<dd>

@@ -230,3 +230,24 @@ it('subscribes again on undo without asking', async () => {
 	expect(settings.subscribed).toEqual(['a']);
 	expect(calls).toEqual([['subscribe', { slug: 'a', title: 'A' }]]);
 });
+
+it('enables a show without asking for a folder when there is a default one', async () => {
+	settings.stored.downloadFolder = null;
+	settings.stored.autoDownloadShows = [];
+	settings.defaultFolder = '/music/Rinse M8';
+	chosenFolder = null;
+	await settings.setAutoDownload('a', true);
+	expect(settings.folder).toBe('/music/Rinse M8');
+	expect(settings.stored.autoDownloadShows).toEqual(['a']);
+	settings.defaultFolder = null;
+});
+
+it('goes back to the default folder by storing none', async () => {
+	settings.stored.downloadFolder = '/m';
+	settings.defaultFolder = '/music/Rinse M8';
+	await settings.useDefaultFolder();
+	expect(calls).toContainEqual(['set_settings', { patch: { downloadFolder: null } }]);
+	expect(settings.stored.downloadFolder).toBeNull();
+	expect(settings.folder).toBe('/music/Rinse M8');
+	settings.defaultFolder = null;
+});

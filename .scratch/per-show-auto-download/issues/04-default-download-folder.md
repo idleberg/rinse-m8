@@ -14,10 +14,10 @@ With a default in place, notifications offer Download even to users who never ch
 
 **Status:** ready-for-agent
 
-- [ ] With no folder set, a download lands in `<music folder>/Rinse M8`, which is created if missing
-- [ ] The default is never written to the settings file
-- [ ] Settings shows the folder in use and marks the default as such
-- [ ] A chosen folder wins over the default, and Settings can switch back to the default
-- [ ] With no folder set but a default available, notifications offer Download and downloading doesn't ask for a folder
-- [ ] With no music folder and no folder set, downloading asks for a folder, as before
-- [ ] Tests cover resolving the folder with a stored folder, with only the default, and with neither
+- [x] With no folder set, a download lands in `<music folder>/Rinse M8`, which is created if missing
+- [x] The default is never written to the settings file
+- [x] Settings shows the folder in use and marks the default as such
+- [x] A chosen folder wins over the default, and Settings can switch back to the default
+- [x] With no folder set but a default available, notifications offer Download and downloading doesn't ask for a folder
+- [x] With no music folder and no folder set, downloading asks for a folder, as before
+- [x] Tests cover resolving the folder with a stored folder, with only the default, and with neither

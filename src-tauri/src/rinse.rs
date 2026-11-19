@@ -104,8 +104,13 @@ pub struct Settings {
     pub subscriptions: Vec<Subscription>,
     /// Ids of episodes that must never trigger a notification.
     pub seen: BTreeSet<String>,
+    /// The folder the user chose, or None for `default_folder`.
     pub download_folder: Option<PathBuf>,
-    /// Which subscribed shows the poller downloads new episodes of, into `download_folder`. Stored under a new key, so
+    /// `Rinse M8` in the OS music folder, if there is one. Never stored, so a change to it reaches everyone who never
+    /// chose a folder; `load_settings` fills it in.
+    #[serde(skip)]
+    pub default_folder: Option<PathBuf>,
+    /// Which subscribed shows the poller downloads new episodes of, into `folder()`. Stored under a new key, so
     /// older versions keep reading their own `autoDownload` boolean.
     pub auto_downloads: AutoDownloads,
     /// Slugs of the shows enabled for auto-download while `auto_downloads` is `Selected`. Kept apart from
@@ -187,6 +192,7 @@ impl Default for Settings {
             subscriptions: Vec::new(),
             seen: BTreeSet::new(),
             download_folder: None,
+            default_folder: None,
             auto_downloads: AutoDownloads::Off,
             auto_download_shows: BTreeSet::new(),
             group_by_show: false,
@@ -237,10 +243,17 @@ impl Settings {
         self.subscriptions.retain(|s| s.slug != slug);
     }
 
+    /// Where downloads go: the chosen folder, else the default one, if any.
+    pub fn folder(&self) -> Option<&Path> {
+        self.download_folder
+            .as_deref()
+            .or(self.default_folder.as_deref())
+    }
+
     /// Whether the poller downloads the show's new episodes. Only subscribed shows are polled, so this doesn't check
     /// the subscription.
     pub fn auto_downloads_show(&self, slug: &str) -> bool {
-        self.download_folder.is_some()
+        self.folder().is_some()
             && match self.auto_downloads {
                 AutoDownloads::Off => false,
                 AutoDownloads::Selected => self.auto_download_shows.contains(slug),
@@ -1261,13 +1274,9 @@ pub fn downloaded_file(folder: &Path, episode: &Episode, group_by_show: bool) ->
 }
 
 impl Settings {
-    /// The episode's `downloaded_file` in the download folder, if one is set.
+    /// The episode's `downloaded_file` in the download folder, if there is one.
     pub fn downloaded_file(&self, episode: &Episode) -> Option<PathBuf> {
-        downloaded_file(
-            self.download_folder.as_deref()?,
-            episode,
-            self.group_by_show,
-        )
+        downloaded_file(self.folder()?, episode, self.group_by_show)
     }
 }
 
@@ -2009,6 +2018,51 @@ mod tests {
         settings.auto_downloads = AutoDownloads::All;
         assert!(settings.auto_downloads_show("flagged"));
         assert!(settings.auto_downloads_show("other"));
+    }
+
+    #[test]
+    fn a_stored_folder_wins_over_the_default() {
+        let mut settings = Settings {
+            default_folder: Some("/music/Rinse M8".into()),
+            ..Settings::default()
+        };
+
+        assert_eq!(settings.folder(), Some(Path::new("/music/Rinse M8")));
+
+        settings.download_folder = Some("/m".into());
+
+        assert_eq!(settings.folder(), Some(Path::new("/m")));
+
+        settings.default_folder = None;
+
+        assert_eq!(settings.folder(), Some(Path::new("/m")));
+
+        settings.download_folder = None;
+
+        assert_eq!(settings.folder(), None);
+    }
+
+    #[test]
+    fn the_default_folder_is_never_stored() {
+        let settings = Settings {
+            default_folder: Some("/music/Rinse M8".into()),
+            ..Settings::default()
+        };
+        let value = serde_json::to_value(&settings).unwrap();
+
+        assert!(value.get("defaultFolder").is_none());
+        assert_eq!(value["downloadFolder"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn auto_download_uses_the_default_folder() {
+        let settings = Settings {
+            auto_downloads: AutoDownloads::All,
+            default_folder: Some("/music/Rinse M8".into()),
+            ..Settings::default()
+        };
+
+        assert!(settings.auto_downloads_show("any"));
     }
 
     #[test]

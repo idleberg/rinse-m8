@@ -217,8 +217,8 @@ fn download(app: tauri::AppHandle, episode: rinse::Episode) -> Result<(), String
         return Ok(());
     }
 
-    let folder = settings.download_folder.ok_or("no download folder set")?;
-    let folder = rinse::save_folder(&folder, &episode, settings.group_by_show);
+    let folder = settings.folder().ok_or("no download folder set")?;
+    let folder = rinse::save_folder(folder, &episode, settings.group_by_show);
 
     if update_downloads(&app, |queue| {
         queue.push(rinse::Download { episode, folder })
@@ -271,7 +271,7 @@ struct PreviousDownload {
     #[serde(flatten)]
     episode: rinse::Episode,
     /// The mp3 in the current download folder, if it's there.
-    file: Option<std::path::PathBuf>,
+    file: Option<PathBuf>,
 }
 
 /// Every episode recorded as downloaded or marked, newest first, as far as the episode cache has it.
@@ -737,7 +737,7 @@ fn migrate_store_files(app: &tauri::AppHandle) {
     }
 }
 
-fn image_cache(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+fn image_cache(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     app.path()
         .app_cache_dir()
         .map(|dir| rinse::image_cache_dir(&dir))
@@ -1010,7 +1010,26 @@ fn load_settings(
     rinse::migrate(&mut fields);
     fields.extend(patch);
 
-    serde_json::from_value(fields.into()).map_err(|e| e.to_string())
+    let mut settings: rinse::Settings =
+        serde_json::from_value(fields.into()).map_err(|e| e.to_string())?;
+
+    settings.default_folder = default_folder(app);
+
+    Ok(settings)
+}
+
+/// `Rinse M8` in the OS music folder, or None where there's no music folder, e.g. on Linux without XDG user dirs.
+fn default_folder(app: &tauri::AppHandle) -> Option<PathBuf> {
+    app.path()
+        .audio_dir()
+        .ok()
+        .map(|music| music.join("Rinse M8"))
+}
+
+/// The folder downloads go to when none is chosen, for Settings to show.
+#[tauri::command]
+fn get_default_folder(app: tauri::AppHandle) -> Option<PathBuf> {
+    default_folder(&app)
 }
 
 /// Writes one store key per settings field.
@@ -1144,7 +1163,7 @@ async fn update_episodes(app: &tauri::AppHandle) -> Result<(), String> {
             .extra("show", show);
 
         // An auto-download already queues the episode, so the button would have nothing left to do
-        if settings.download_folder.is_some() && !settings.auto_downloads_show(&episode.show_slug) {
+        if settings.folder().is_some() && !settings.auto_downloads_show(&episode.show_slug) {
             notification = notification
                 .action_type_id("new-episode")
                 .extra("episode", episode);
@@ -1369,6 +1388,7 @@ pub fn run() {
             clear_downloaded,
             recheck_mp3,
             get_settings,
+            get_default_folder,
             set_settings,
             get_lastfm,
             connect_lastfm,
