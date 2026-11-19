@@ -1,11 +1,17 @@
-/** Whether to show the release notes: only after an update, never on a fresh install, and only when there are notes. */
-export function shouldShow(seen: string | null, current: string, notes: string) {
-	return seen !== null && seen !== current && hasNotes(notes);
-}
+/** Orders versions by number, so 0.10.0 comes after 0.9.0. */
+export const byVersion = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
 
-/** Whether the rendered notes have any content, beyond whitespace. */
-export function hasNotes(notes: string) {
-	return notes.trim() !== '';
+/** The newest version with notes that is newer than the seen one and no newer than the current one. A fresh install,
+ * with no seen version, gets none; an unknown seen version, the empty string, counts as older than every version. */
+export function pickNotes(seen: string | null, current: string, versions: string[]) {
+	if (seen === null) {
+		return;
+	}
+
+	return versions
+		.filter((version) => byVersion(version, seen) > 0 && byVersion(version, current) <= 0)
+		.sort(byVersion)
+		.at(-1);
 }
 
 /** The version whose notes were last seen. Versions before 0.23.0 recorded none, but every version saved the filters,

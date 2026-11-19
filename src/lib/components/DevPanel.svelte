@@ -1,13 +1,12 @@
 <script lang="ts">
-	import { preview } from '#lib/components/WhatsNew.svelte';
+	import { newest, preview } from '#lib/components/WhatsNew.svelte';
+	import sample from '#lib/components/whats-new-sample.md';
 	import { confirm } from '#lib/confirm.svelte';
 	import { downloads } from '#lib/downloads.svelte';
 	import { errors } from '#lib/errors.svelte';
 	import { player } from '#lib/player.svelte';
 	import { toast } from '#lib/toast.svelte';
 	import { updates } from '#lib/updates.svelte';
-	import { hasNotes } from '#lib/whats-new';
-	import notes from '#lib/whats-new.md';
 
 	let open = $state(false);
 </script>
@@ -45,8 +44,12 @@
 		<!-- Through the real event, which the errors module turns into its offline message -->
 		<button type="button" onclick={() => window.dispatchEvent(new Event('offline'))}>Set offline</button>
 		<button type="button" onclick={() => confirm({ title: 'Sample Question', message: 'Answer the sample question?', primaryAction: 'Answer', secondaryAction: 'Cancel' })}>Show dialog</button>
-		<!-- Disabled until whats-new.md has notes, since the dialog would be empty -->
-		<button type="button" disabled={!hasNotes(notes)} onclick={() => preview().catch(errors.report)}>What's new</button>
+		<!-- Disabled until some version has notes, since the dialog would be empty -->
+		<div class="buttons">
+			<button type="button" disabled={!newest} onclick={() => preview()}>What's new</button>
+			<!-- Every Markdown feature the notes might use, to check the dialog's styling -->
+			<button type="button" onclick={() => preview('0.0.0', sample)}>Sample</button>
+		</div>
 	</aside>
 {/if}
 

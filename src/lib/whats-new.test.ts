@@ -1,29 +1,31 @@
 /// <reference types="bun" />
 
 import { expect, test as it } from 'bun:test';
-import { seenVersion, shouldShow } from './whats-new';
+import { pickNotes, seenVersion } from './whats-new';
 
-const notes = '<p>New things</p>';
-
-it('hides on a fresh install, with no seen version', () => {
-	expect(shouldShow(null, '1.1.0', notes)).toBe(false);
+it('picks nothing on a fresh install, with no seen version', () => {
+	expect(pickNotes(null, '1.1.0', ['1.1.0'])).toBeUndefined();
 });
 
-it('hides when the seen version is the current one', () => {
-	expect(shouldShow('1.1.0', '1.1.0', notes)).toBe(false);
+it('picks nothing after a patch update without notes of its own', () => {
+	expect(pickNotes('0.23.0', '0.23.2', ['0.22.0', '0.23.0'])).toBeUndefined();
 });
 
-it('hides empty or whitespace-only notes', () => {
-	expect(shouldShow('1.0.0', '1.1.0', '')).toBe(false);
-	expect(shouldShow('1.0.0', '1.1.0', ' \n\t')).toBe(false);
+it('picks the newest notes in range', () => {
+	expect(pickNotes('0.21.0', '0.23.2', ['0.21.0', '0.22.0', '0.23.0'])).toBe('0.23.0');
 });
 
-it('shows after an update with notes', () => {
-	expect(shouldShow('1.0.0', '1.1.0', notes)).toBe(true);
+it('ignores notes newer than the current version', () => {
+	expect(pickNotes('0.21.0', '0.23.2', ['0.22.0', '0.24.0'])).toBe('0.22.0');
 });
 
-it('shows after an update from a version that recorded no seen version', () => {
-	expect(shouldShow('', '1.1.0', notes)).toBe(true);
+it('compares versions by number', () => {
+	expect(pickNotes('0.9.0', '0.10.0', ['0.9.5', '0.10.0'])).toBe('0.10.0');
+	expect(pickNotes('0.10.0', '0.10.1', ['0.9.5'])).toBeUndefined();
+});
+
+it('picks notes up to the current version after an update from an unknown version', () => {
+	expect(pickNotes('', '0.23.2', ['0.1.0', '0.23.0', '0.24.0'])).toBe('0.23.0');
 });
 
 const storage = (items: Record<string, string>) => ({
