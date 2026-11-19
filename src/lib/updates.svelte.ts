@@ -2,9 +2,11 @@ import { relaunch } from '@tauri-apps/plugin-process';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { errors } from './errors.svelte';
 import { settings } from './settings.svelte';
+import { toast } from './toast.svelte';
 
 const millisecondsPerHour = 3_600_000;
-const manualCheckCooldown = 60_000;
+const millisecondsPerMinute = 60_000;
+const manualCheckCooldown = millisecondsPerMinute;
 
 /** App updates: checked at launch and on the interval from the settings, then downloaded and installed. */
 class Updates {
@@ -22,6 +24,7 @@ class Updates {
 
 	// Arrow functions, so they can be passed as callbacks such as `onclick={updates.install}`
 
+	/** Resolves to the found update, null when there is none, or undefined when the check failed or was skipped. */
 	check = async () => {
 		// A running download keeps the update it started with
 		if (this.available && this.available.percent !== null) {
@@ -37,18 +40,28 @@ class Updates {
 				this.faked = false;
 				this.available = { version: found.version, percent: null };
 			}
+
+			return found;
 		} catch {
 			// Being offline is normal, so a failed check stays silent
 		}
 	};
 
-	checkNow = () => {
+	/** Says so when there is no update, since the disabled button alone doesn't tell. */
+	checkNow = async () => {
 		this.cooling = true;
-		this.check();
 
 		setTimeout(() => {
 			this.cooling = false;
 		}, manualCheckCooldown);
+
+		if ((await this.check()) === null) {
+			const minutes = Math.ceil(manualCheckCooldown / millisecondsPerMinute);
+
+			toast.show(
+				`No update available, try again in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`,
+			);
+		}
 	};
 
 	dismiss = () => {

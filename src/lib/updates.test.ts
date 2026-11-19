@@ -28,6 +28,7 @@ mock.module('@tauri-apps/plugin-process', () => ({
 
 const { updates } = await import('./updates.svelte');
 const { errors } = await import('./errors.svelte');
+const { toast } = await import('./toast.svelte');
 
 beforeEach(() => {
 	checks = 0;
@@ -71,6 +72,25 @@ it('locks Check now for a minute after it checks', async () => {
 	jest.advanceTimersByTime(60_000);
 	expect(updates.cooling).toBe(false);
 	jest.useRealTimers();
+});
+
+it('tells Check now that no update is available', async () => {
+	updates.dismiss();
+	await updates.checkNow();
+	expect(toast.message).toBe('No update available, try again in 1 minute');
+	toast.hide();
+});
+
+it('tells Check now nothing when an update is found or the check fails', async () => {
+	updates.dismiss();
+	offline = true;
+	await updates.checkNow();
+	expect(toast.message).toBe('');
+
+	offline = false;
+	found = { version: '2.0.3' };
+	await updates.checkNow();
+	expect(toast.message).toBe('');
 });
 
 it('fakes an update whose download stops at 100% without relaunching', async () => {
