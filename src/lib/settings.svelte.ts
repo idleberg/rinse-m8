@@ -216,9 +216,8 @@ class Settings {
 			const choice = await choose({
 				title: 'Subscribe',
 				message: `Download new episodes of ${show.title} automatically?`,
-				primaryAction: '…with download',
-				primaryName: 'Subscribe with download',
-				secondaryAction: 'Subscribe',
+				primaryAction: 'Also download',
+				secondaryAction: 'Only subscribe',
 			});
 
 			if (!choice) {

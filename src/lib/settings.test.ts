@@ -177,27 +177,26 @@ async function subscribeIn(mode: AutoDownloads, answer?: Choice) {
 
 it('leaves the show unsubscribed when the subscribe dialog is closed', async () => {
 	const asked = await subscribeIn('selected');
-	expect(asked?.primaryAction).toBe('…with download');
-	expect(asked?.primaryName).toBe('Subscribe with download');
-	expect(asked?.secondaryAction).toBe('Subscribe');
+	expect(asked?.primaryAction).toBe('Also download');
+	expect(asked?.secondaryAction).toBe('Only subscribe');
 	expect(settings.subscribed).toEqual([]);
 	expect(calls).toEqual([]);
 });
 
-it('subscribes without auto-download on SUBSCRIBE', async () => {
+it('subscribes without auto-download on ONLY SUBSCRIBE', async () => {
 	await subscribeIn('selected', 'secondary');
 	expect(settings.subscribed).toEqual(['a']);
 	expect(settings.stored.autoDownloadShows).toEqual([]);
 });
 
-it('subscribes and enables auto-download on SUBSCRIBE WITH DOWNLOAD', async () => {
+it('subscribes and enables auto-download on ALSO DOWNLOAD', async () => {
 	settings.stored.downloadFolder = '/m';
 	await subscribeIn('selected', 'primary');
 	expect(settings.subscribed).toEqual(['a']);
 	expect(settings.stored.autoDownloadShows).toEqual(['a']);
 });
 
-it('still subscribes when the folder dialog after SUBSCRIBE WITH DOWNLOAD is cancelled', async () => {
+it('still subscribes when the folder dialog after ALSO DOWNLOAD is cancelled', async () => {
 	settings.stored.downloadFolder = null;
 	chosenFolder = null;
 	await subscribeIn('selected', 'primary');
