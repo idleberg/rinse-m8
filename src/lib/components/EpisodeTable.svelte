@@ -194,12 +194,12 @@
 							{#if markable}
 								{@const old = seenByAge && player.isOld(episode)}
 								{@const seen = player.isSeen(episode) || old}
-								<!-- Disabled once played or old enough, since that keeps it seen either way -->
+								<!-- Disabled once old enough, since that keeps it seen either way -->
 								<button
 									type="button"
 									role="menuitemcheckbox"
 									aria-checked={seen}
-									disabled={player.keepsSeen(episode) || old}
+									disabled={old}
 									onclick={() => toggleSeen(episode, i)}
 								>
 									{seen ? 'Mark as unseen' : 'Mark as seen'}

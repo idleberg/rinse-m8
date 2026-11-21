@@ -93,9 +93,8 @@ it('starts the seen list as a copy of the downloaded record while none is stored
 	expect(stored.get('seen')).toEqual(['b']);
 });
 
-it('counts a played episode as seen', () => {
-	expect(player.isSeen(c)).toBe(true);
-	expect(player.isSeen(a)).toBe(false);
+it("doesn't count a played episode as seen", () => {
+	expect(player.isSeen(c)).toBe(false);
 });
 
 it('counts an episode as old once it is older than the Seen after setting, and not while that is never', () => {
