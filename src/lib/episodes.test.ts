@@ -14,6 +14,7 @@ import {
 	monthsAgo,
 	mostPlayed,
 	moveItem,
+	newestPerShow,
 	orderSections,
 	passesCheckboxes,
 	type ShowOrder,
@@ -259,4 +260,21 @@ it('the stations of episodes list each station once', () => {
 		stationsOf([episode('a', '2026-10-01', 'Beta'), onKool, episode('c', '2026-10-02', 'Alpha')]),
 	).toEqual(['Rinse FM', 'Kool FM']);
 	expect(stationsOf([])).toEqual([]);
+});
+
+it("picks each subscribed show's newest episode before hiding, so an older one never stands in", () => {
+	const ofShow = (id: string, date: string, showSlug: string) => ({
+		...episode(id, date, showSlug),
+		showSlug,
+	});
+
+	const newestA = ofShow('a2', '2026-10-02', 'a');
+	const olderA = ofShow('a1', '2026-10-01', 'a');
+	const newestB = ofShow('b2', '2026-10-02', 'b');
+	const olderB = ofShow('b1', '2026-10-01', 'b');
+	const unsubscribed = ofShow('c1', '2026-10-03', 'c');
+	const list = [unsubscribed, newestA, newestB, olderA, olderB];
+
+	expect(newestPerShow(list, ['a', 'b'], () => false)).toEqual([newestA, newestB]);
+	expect(newestPerShow(list, ['a', 'b'], (e) => e === newestB)).toEqual([newestA]);
 });

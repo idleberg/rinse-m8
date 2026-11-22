@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
+	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import ConfirmDialog from '#lib/components/ConfirmDialog.svelte';
 	import DownloadStatus from '#lib/components/DownloadStatus.svelte';
 	import Player from '#lib/components/Player.svelte';
@@ -13,6 +14,7 @@
 	import { errors } from '#lib/errors.svelte';
 	import { filters } from '#lib/filters.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
+	import { latestEpisodes } from '#lib/latest.svelte';
 	import { openShow } from '#lib/navigation';
 	import { player } from '#lib/player.svelte';
 	import { settings } from '#lib/settings.svelte';
@@ -85,6 +87,17 @@
 
 	// The tray menu's Settings item, which has already shown the window
 	listen('open-settings', () => goto('/settings')).catch(errors.report);
+
+	// The Dock badge counts Latest without seen episodes; undefined clears it.
+	// ponytail: the clock isn't reactive, so an episode that becomes old under the "Seen after" setting stays counted
+	// until the episodes, seen list or settings next change; add a timer if that lag shows
+	$effect(() => {
+		const count = settings.stored.unseenBadge ? latestEpisodes(false).length : 0;
+
+		getCurrentWindow()
+			.setBadgeCount(count || undefined)
+			.catch(errors.report);
+	});
 </script>
 
 <!-- With Tauri's file drop off, a dropped file would otherwise open in the window. Cmd+K (Ctrl+K off macOS) focuses the page's filter input -->

@@ -5,6 +5,7 @@
 	import { orderSections } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { filters } from '#lib/filters.svelte';
+	import { latestEpisodes } from '#lib/latest.svelte';
 	import { player } from '#lib/player.svelte';
 	import { settings } from '#lib/settings.svelte';
 
@@ -28,21 +29,7 @@
 		),
 	);
 
-	/** The newest filtered episode of each subscribed show, newest first. */
-	const latestEpisodes = $derived.by(() => {
-		const seen = new Set<string>();
-
-		// The latest is picked before the seen check, so an older episode doesn't stand in for it
-		return filteredEpisodes.filter((episode) => {
-			if (!settings.subscribed.includes(episode.showSlug) || seen.has(episode.showSlug)) {
-				return false;
-			}
-
-			seen.add(episode.showSlug);
-
-			return showSeen || !(player.isSeen(episode) || player.isOld(episode));
-		});
-	});
+	const latest = $derived(latestEpisodes(showSeen));
 </script>
 
 <EpisodeFilters shared bind:mp3Only={filters.mp3Only} bind:hideRebroadcasts={filters.hideRebroadcasts}>
@@ -55,19 +42,19 @@
 {#if settings.stored.subscriptions.length}
 	<section class="latest">
 		<h2>Latest</h2>
-		{#if latestEpisodes.length}
+		{#if latest.length}
 			<EpisodeTable
-				episodes={latestEpisodes}
+				episodes={latest}
 				limit={latestExpanded ? undefined : latestLimit}
 				markable
 				seenByAge
 				subscribable
 			/>
-			{#if latestEpisodes.length > latestLimit}
+			{#if latest.length > latestLimit}
 				<button type="button" aria-expanded={latestExpanded} onclick={() => {
 					latestExpanded = !latestExpanded;
 				}}>
-					{latestExpanded ? 'Show less' : `Show all (${latestEpisodes.length})`}
+					{latestExpanded ? 'Show less' : `Show all (${latest.length})`}
 				</button>
 			{/if}
 		{:else if episodes.loading}

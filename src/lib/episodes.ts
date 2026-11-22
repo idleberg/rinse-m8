@@ -292,6 +292,26 @@ export function orderSections<T extends { show: Show; episodes: Episode[] }>(
 	}
 }
 
+/** The first, so newest, episode in `list` of each subscribed show, unless `hidden`. The newest is picked before the
+ * check, so an older episode doesn't stand in for a hidden one. */
+export function newestPerShow(
+	list: Episode[],
+	subscribed: string[],
+	hidden: (episode: Episode) => boolean,
+): Episode[] {
+	const picked = new Set<string>();
+
+	return list.filter((episode) => {
+		if (!subscribed.includes(episode.showSlug) || picked.has(episode.showSlug)) {
+			return false;
+		}
+
+		picked.add(episode.showSlug);
+
+		return !hidden(episode);
+	});
+}
+
 /** `YYYY-MM-DD` as `YYYY/MM/DD`. */
 export function formatDate(date: string): string {
 	return date.replaceAll('-', '/');

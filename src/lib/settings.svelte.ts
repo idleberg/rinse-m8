@@ -15,6 +15,8 @@ export interface Stored {
 	/** Whether new downloads go into a folder named after their show inside the download folder. */
 	groupByShow: boolean;
 	keepRunning: boolean;
+	/** Whether the Dock icon shows how many episodes the Dashboard's Latest lists. */
+	unseenBadge: boolean;
 	/** Whether the player empties once the last episode ends, with nothing queued or repeating. */
 	clearPlayer: boolean;
 	/** In hours. */
@@ -52,6 +54,7 @@ class Settings {
 		autoDownloadShows: [],
 		groupByShow: false,
 		keepRunning: true,
+		unseenBadge: false,
 		clearPlayer: false,
 		updateInterval: 6,
 		appUpdateInterval: 24,
@@ -128,6 +131,7 @@ class Settings {
 			| 'autoDownloads'
 			| 'groupByShow'
 			| 'keepRunning'
+			| 'unseenBadge'
 			| 'clearPlayer'
 			| 'updateInterval'
 			| 'appUpdateInterval'

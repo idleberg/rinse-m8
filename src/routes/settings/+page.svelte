@@ -107,6 +107,13 @@
 					keep running in menu bar
 				</label>
 			</dd>
+			<dt>Dock icon</dt>
+			<dd>
+				<label>
+					<input type="checkbox" checked={settings.stored.unseenBadge} onchange={(e) => settings.save('unseenBadge', e.currentTarget.checked)} />
+					show the number of unseen episodes
+				</label>
+			</dd>
 			<dt>App updates</dt>
 			<dd>
 				<select aria-label="App update check" value={settings.stored.appUpdateInterval} onchange={(e) => settings.save('appUpdateInterval', Number(e.currentTarget.value))}>
