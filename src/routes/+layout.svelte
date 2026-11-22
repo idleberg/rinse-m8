@@ -117,7 +117,8 @@
 
 <UpdateBanner />
 
-<nav>
+<!-- Inverted with Settings, so the whole bar flips and the active tab still meets the inverted page without a seam -->
+<nav class:inverted>
 	{#each tabs as [path, label] (path)}
 		<!-- Favs is a heart, labelled for screen readers and on hover -->
 		<button type="button"
@@ -188,7 +189,9 @@
 		/* As tall as the player bar, lines included */
 		height: 40px;
 		border-block: 1px solid var(--ink);
-		background: var(--paper);
+		/* TESTING: reversed tab colours. The bar and idle tabs are ink; active or hovered tabs are paper. */
+		background: var(--ink);
+		color: var(--paper);
 	}
 
 	/* Full-height cells. Each draws a 1px ring just outside itself, onto the nav's lines and into the gaps, so every tab is boxed on all four sides. Ink, not currentColor, so it doesn't vanish beside the active tab. */
@@ -197,6 +200,18 @@
 		padding: 0 1rem;
 		white-space: nowrap;
 		box-shadow: 0 0 0 1px var(--ink);
+	}
+
+	nav button:is([aria-current="page"], :hover) {
+		background: var(--paper);
+		color: var(--ink);
+	}
+
+	/* A paper strip over the ring's bottom edge, so the active tab opens into the page below */
+	nav button[aria-current="page"] {
+		box-shadow:
+			0 1px var(--paper),
+			0 0 0 1px var(--ink);
 	}
 
 	/* A block, so the button centers it on the cell like the uppercase labels. Inline, vertical-align: middle centers it on the x-height and sits it 1.5px low. */
