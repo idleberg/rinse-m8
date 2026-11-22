@@ -267,6 +267,8 @@
 		grid-template-columns: max-content 1fr;
 		gap: 1rem 2ch;
 		align-items: baseline;
+		/* The footer's auto margin shrinks to nothing once the page scrolls */
+		margin-bottom: 1rem;
 	}
 
 	section,
