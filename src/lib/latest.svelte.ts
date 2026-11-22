@@ -6,7 +6,7 @@ import { settings } from './settings.svelte';
 
 /** The Dashboard's Latest: each subscribed show's newest filtered episode, leaving out seen and old ones unless
  * `showSeen`. Kept apart from the episode cache, which the player imports. */
-export function latestEpisodes(showSeen: boolean) {
+export function findLatest({ showSeen }: { showSeen: boolean }) {
 	return newestPerShow(
 		episodes.list.filter(filters.matchesEpisode),
 		settings.subscribed,

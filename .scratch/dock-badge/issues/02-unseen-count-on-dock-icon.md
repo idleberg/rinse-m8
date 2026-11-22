@@ -11,7 +11,7 @@ Known limit: an episode that ages past the Seen after setting only drops from th
 **Status:** ready-for-agent
 
 - [x] Settings has a checkbox in the Window row, e.g. "show unseen count on Dock icon", off by default, stored with the other settings and restored on launch.
-- [ ] With it ticked, the Dock icon shows the number of episodes Latest lists with "show seen" unticked; with none, no badge.
-- [ ] Marking an episode Seen or unseen updates the badge right away, also when the Dashboard isn't the open tab.
-- [ ] Unticking the setting clears the badge.
+- [x] With it ticked, the Dock icon shows the number of episodes Latest lists with "show seen" unticked; with none, no badge.
+- [x] Marking an episode Seen or unseen updates the badge right away, also when the Dashboard isn't the open tab.
+- [x] Unticking the setting clears the badge.
 - [x] Type check, `cargo check` and existing tests pass.

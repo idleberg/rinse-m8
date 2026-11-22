@@ -5,7 +5,7 @@
 	import { orderSections } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { filters } from '#lib/filters.svelte';
-	import { latestEpisodes } from '#lib/latest.svelte';
+	import { findLatest } from '#lib/latest.svelte';
 	import { player } from '#lib/player.svelte';
 	import { settings } from '#lib/settings.svelte';
 
@@ -29,7 +29,7 @@
 		),
 	);
 
-	const latest = $derived(latestEpisodes(showSeen));
+	const latest = $derived(findLatest({ showSeen }));
 </script>
 
 <EpisodeFilters shared bind:mp3Only={filters.mp3Only} bind:hideRebroadcasts={filters.hideRebroadcasts}>

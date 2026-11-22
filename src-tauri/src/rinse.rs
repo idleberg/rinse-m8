@@ -120,6 +120,8 @@ pub struct Settings {
     pub group_by_show: bool,
     /// Whether closing the window hides it behind a menu bar or tray icon instead of quitting.
     pub keep_running: bool,
+    /// Whether the Dock icon shows how many episodes the Dashboard's Latest lists.
+    pub unseen_badge: bool,
     /// Whether the player empties once the last episode ends, with nothing queued or repeating.
     pub clear_player: bool,
     /// Hours between updates of the schedule and the subscribed shows.
@@ -197,6 +199,7 @@ impl Default for Settings {
             auto_download_shows: BTreeSet::new(),
             group_by_show: false,
             keep_running: true,
+            unseen_badge: false,
             clear_player: false,
             update_interval: 6,
             app_update_interval: 24,

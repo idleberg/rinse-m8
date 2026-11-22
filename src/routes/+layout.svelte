@@ -14,7 +14,7 @@
 	import { errors } from '#lib/errors.svelte';
 	import { filters } from '#lib/filters.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
-	import { latestEpisodes } from '#lib/latest.svelte';
+	import { findLatest } from '#lib/latest.svelte';
 	import { openShow } from '#lib/navigation';
 	import { player } from '#lib/player.svelte';
 	import { settings } from '#lib/settings.svelte';
@@ -92,7 +92,7 @@
 	// ponytail: the clock isn't reactive, so an episode that becomes old under the "Seen after" setting stays counted
 	// until the episodes, seen list or settings next change; add a timer if that lag shows
 	$effect(() => {
-		const count = settings.stored.unseenBadge ? latestEpisodes(false).length : 0;
+		const count = settings.stored.unseenBadge ? findLatest({ showSeen: false }).length : 0;
 
 		getCurrentWindow()
 			.setBadgeCount(count || undefined)

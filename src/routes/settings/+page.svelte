@@ -111,7 +111,7 @@
 			<dd>
 				<label>
 					<input type="checkbox" checked={settings.stored.unseenBadge} onchange={(e) => settings.save('unseenBadge', e.currentTarget.checked)} />
-					show the number of unseen episodes
+					show the number of unseen episodes in Latest
 				</label>
 			</dd>
 			<dt>App updates</dt>
