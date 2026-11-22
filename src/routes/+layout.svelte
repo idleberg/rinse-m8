@@ -162,7 +162,8 @@
 		{/if}
 	</p>
 	<DownloadStatus />
-	<Player />
+	<!-- TESTING: the player bar in the page's colours reversed, hover states included -->
+	<Player inverted={!inverted} />
 </div>
 
 <ConfirmDialog />

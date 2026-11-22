@@ -1,10 +1,12 @@
 <script lang="ts">
 	import PlayerControls from '#lib/components/PlayerControls.svelte';
 	import { player } from '#lib/player.svelte';
+
+	let { inverted = false }: { inverted?: boolean } = $props();
 </script>
 
 {#if player.episode?.mp3}
-	<footer>
+	<footer class:inverted>
 		<PlayerControls />
 		<!-- biome-ignore lint/a11y/useMediaCaption: Rinse has no captions for its mixes -->
 		<audio
