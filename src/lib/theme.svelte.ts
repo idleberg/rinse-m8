@@ -1,9 +1,9 @@
-/** The built-in themes by stored name, with their labels, the default first. Each has a stylesheet imported in
- * `+layout.ts`, except Asciitron, the unprefixed styles in app.css. The inline script in app.html keeps its own copy of
- * the names and the default. */
+/** The built-in themes by stored name, with their labels, in the menu's alphabetical order. Each has a stylesheet
+ * imported in `+layout.ts`, except Asciitron, the unprefixed styles in app.css. The inline script in app.html keeps its
+ * own copy of the names and the default. */
 export const themes = {
-	graphix: 'Graphix',
 	asciitron: 'Asciitron',
+	graphix: 'Graphix',
 } as const;
 
 export type Theme = keyof typeof themes;
