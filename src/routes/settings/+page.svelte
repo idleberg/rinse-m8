@@ -183,7 +183,7 @@
 				{:else if imageCacheSize === 0}
 					<span class="muted">Empty</span>
 				{/if}
-				<button type="button" onclick={clearImageCache} disabled={!imageCacheSize}>Clear</button>
+				<button type="button" class="destructive" onclick={clearImageCache} disabled={!imageCacheSize}>Clear</button>
 			</dd>
 		</dl>
 	</section>
@@ -202,7 +202,7 @@
 				{/if}
 				<button type="button" onclick={settings.chooseFolder}>Change…</button>
 				{#if settings.stored.downloadFolder && settings.defaultFolder}
-					<button type="button" onclick={settings.useDefaultFolder}>Use default</button>
+					<button type="button" class="destructive" onclick={settings.useDefaultFolder}>Reset to default</button>
 				{/if}
 			</dd>
 			<dt>Automatic Downloads</dt>
@@ -248,7 +248,7 @@
 						<button type="button" onclick={lastfm.cancel}>Cancel</button>
 					{:else if lastfm.account.user}
 						connected as {lastfm.account.user}
-						<button type="button" onclick={lastfm.disconnect}>Disconnect</button>
+						<button type="button" class="destructive" onclick={lastfm.disconnect}>Disconnect</button>
 					{:else}
 						<button type="button" onclick={lastfm.connect}>Connect</button>
 					{/if}

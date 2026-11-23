@@ -18,6 +18,7 @@
 {#if entry}
 	<button
 		type="button"
+		class={{ destructive: subscribed }}
 		role="menuitemcheckbox"
 		aria-checked={subscribed}
 		{disabled}
@@ -29,7 +30,7 @@
 	<!-- The toggle's state is in `aria-pressed`, so only the hover text names the action -->
 	<button
 		type="button"
-		class="icon"
+		class={['icon', { destructive: subscribed }]}
 		aria-label="Subscribe"
 		title={subscribed ? 'Unsubscribe' : 'Subscribe'}
 		aria-pressed={subscribed}

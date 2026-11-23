@@ -90,7 +90,7 @@
 <header>
 	<h2>Play Queue</h2>
 	{#if player.playQueue.length}
-		<button type="button" onclick={player.clearQueue}>Clear Queue</button>
+		<button type="button" class="destructive" onclick={player.clearQueue}>Clear Queue</button>
 	{/if}
 </header>
 
@@ -179,7 +179,7 @@
 <header>
 	<h2>History</h2>
 	{#if player.playHistory.length}
-		<button type="button" onclick={player.clearHistory}>Clear History</button>
+		<button type="button" class="destructive" onclick={player.clearHistory}>Clear History</button>
 	{/if}
 </header>
 

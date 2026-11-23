@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
-import { choose } from './confirm.svelte';
+import { choose, confirm } from './confirm.svelte';
 import type { Show, ShowOrder } from './episodes';
 import { errors } from './errors.svelte';
 import { toast } from './toast.svelte';
@@ -102,9 +102,20 @@ class Settings {
 		}
 	};
 
-	/** Forgets the chosen folder, so downloads go to the default one again. */
+	/** Forgets the chosen folder, once confirmed, so downloads go to the default one again. */
 	useDefaultFolder = async () => {
 		errors.clear();
+
+		if (
+			!(await confirm({
+				title: 'Reset Download Folder',
+				message: `Reset the download folder to ${this.defaultFolder}?`,
+				primaryAction: 'Reset',
+				secondaryAction: 'Cancel',
+			}))
+		) {
+			return;
+		}
 
 		try {
 			await invoke('set_settings', { patch: { downloadFolder: null } });

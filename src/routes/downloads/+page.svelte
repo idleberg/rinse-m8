@@ -210,7 +210,7 @@
 <header>
 	<h2>Previous Downloads</h2>
 	{#if previous.length}
-		<button type="button" onclick={downloads.clear}>Clear Downloads</button>
+		<button type="button" class="destructive" onclick={downloads.clear}>Clear Downloads</button>
 	{/if}
 </header>
 

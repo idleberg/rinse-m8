@@ -241,10 +241,25 @@ it('enables a show without asking for a folder when there is a default one', asy
 	settings.defaultFolder = null;
 });
 
+it('keeps the chosen folder when the reset is cancelled', async () => {
+	settings.stored.downloadFolder = '/m';
+
+	const resetting = settings.useDefaultFolder();
+
+	confirmation.answer('secondary');
+	await resetting;
+	expect(settings.stored.downloadFolder).toBe('/m');
+});
+
 it('goes back to the default folder by storing none', async () => {
 	settings.stored.downloadFolder = '/m';
 	settings.defaultFolder = '/music/Rinse M8';
-	await settings.useDefaultFolder();
+
+	const resetting = settings.useDefaultFolder();
+
+	expect(confirmation.question?.title).toBe('Reset Download Folder');
+	confirmation.answer('primary');
+	await resetting;
 	expect(calls).toContainEqual(['set_settings', { patch: { downloadFolder: null } }]);
 	expect(settings.stored.downloadFolder).toBeNull();
 	expect(settings.folder).toBe('/music/Rinse M8');
