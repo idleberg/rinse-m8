@@ -24,21 +24,21 @@
 </script>
 
 {#if queue.current}
-	<footer role="status">
+	<footer class="download-bar" role="status">
 		<span>Downloading {started} / {started + queue.waiting.length}…</span>
 		<progress max="100" value={queue.percent ?? undefined} aria-label={episodeLabel(queue.current)}></progress>
 		{queue.percent === null ? '' : `${queue.percent}%`}
 		<div class="buttons">
 			<button type="button" onclick={() => goto('/downloads')}>View queue</button>
 			<button type="button" class="icon" aria-label="Cancel" title="Cancel" onclick={downloads.cancel}>
-				<svg viewBox="0 0 16 16" aria-hidden="true">
+				<svg viewBox="0 0 16 16" data-icon="close" aria-hidden="true">
 					<path d="M4 4l8 8M12 4l-8 8" />
 				</svg>
 			</button>
 		</div>
 	</footer>
 {:else if queue.failures.length}
-	<footer role="alert">
+	<footer class="download-bar" role="alert">
 		{queue.failures.length === 1 ? `Failed: ${episodeLabel(queue.failures[0])}` : `${queue.failures.length} downloads failed`}
 		<div class="buttons">
 			<button type="button" onclick={() => goto('/downloads')}>View queue</button>

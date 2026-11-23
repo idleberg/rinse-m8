@@ -85,13 +85,13 @@
 			{#if pages.length > 1}
 				<div class="buttons">
 					<button type="button" class="icon" aria-label="Newer" title="Newer" disabled={index === 0} bind:this={newer} onclick={() => turn(-1, older)}>
-						<svg viewBox="0 0 16 16" aria-hidden="true">
+						<svg viewBox="0 0 16 16" data-icon="newer" aria-hidden="true">
 							<path d="M10 3l-5 5 5 5" />
 						</svg>
 					</button>
 					<span>{index + 1}/{pages.length}</span>
 					<button type="button" class="icon" aria-label="Older" title="Older" disabled={index === pages.length - 1} bind:this={older} onclick={() => turn(1, newer)}>
-						<svg viewBox="0 0 16 16" aria-hidden="true">
+						<svg viewBox="0 0 16 16" data-icon="older" aria-hidden="true">
 							<path d="M6 3l5 5-5 5" />
 						</svg>
 					</button>

@@ -54,6 +54,20 @@ _Avoid_: Thumbnail cache, bio cache
 How artwork looks in the Player tab and the show view: Original, Dithered (Atkinson-dithered black and white) or Black & white (grayscale). Styled copies are made from the image cache's originals and kept beside them.
 _Avoid_: Filter, image mode, theme
 
+### Look
+
+**Theme**:
+The named look picked in Settings, such as Default or Brackets: a stylesheet that can change the colour tokens and restyle the theme parts. Works with every appearance. Image style is not a theme. Set as `data-skin` on the root, since `data-theme` already holds the appearance.
+_Avoid_: Style
+
+**Appearance**:
+Light, dark, or following the system, as set by the toggle in Settings. Independent of the theme.
+_Avoid_: Theme, colour scheme, mode
+
+**Theme part**:
+An element a theme may restyle, from the fixed list in `docs/theming.md`, such as the tab bar, a tab or the player bar. Renaming one breaks custom stylesheets.
+_Avoid_: Component, slot
+
 ### Queues
 
 **Play queue**:

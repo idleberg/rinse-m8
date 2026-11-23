@@ -12,6 +12,13 @@
         if (theme === 'light' || theme === 'dark') {
           document.documentElement.dataset.theme = theme;
         }
+
+        // The theme, from the built-in list in theme.svelte.ts. An unknown one falls back to Default, which sets nothing.
+        const skin = localStorage.getItem('skin');
+
+        if (skin === 'brackets') {
+          document.documentElement.dataset.skin = skin;
+        }
       } catch {
         // No storage: follow the system appearance
       }

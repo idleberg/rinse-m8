@@ -120,7 +120,7 @@
 					<td class="status">{queue.percent === null ? 'Downloading…' : `${queue.percent}%`}</td>
 					<td>
 						<button type="button" class="icon" aria-label="Cancel" title="Cancel" onclick={downloads.cancel}>
-							<svg viewBox="0 0 16 16" aria-hidden="true">
+							<svg viewBox="0 0 16 16" data-icon="close" aria-hidden="true">
 								<path d="M4 4l8 8M12 4l-8 8" />
 							</svg>
 						</button>
@@ -191,7 +191,7 @@
 								title="Remove"
 								onclick={() => downloads.remove(episode.id)}
 							>
-								<svg viewBox="0 0 16 16" aria-hidden="true">
+								<svg viewBox="0 0 16 16" data-icon="close" aria-hidden="true">
 									<path d="M4 4l8 8M12 4l-8 8" />
 								</svg>
 							</button>
@@ -244,7 +244,7 @@
 									title="Show in folder"
 									onclick={() => revealItemInDir(file).catch(errors.report)}
 								>
-									<svg viewBox="0 0 16 16" aria-hidden="true">
+									<svg viewBox="0 0 16 16" data-icon="reveal" aria-hidden="true">
 										<circle cx="7" cy="7" r="4.5" />
 										<path d="M10.5 10.5L14 14" />
 									</svg>
@@ -258,7 +258,7 @@
 								title="Remove"
 								onclick={() => downloads.unmark(episode)}
 							>
-								<svg viewBox="0 0 16 16" aria-hidden="true">
+								<svg viewBox="0 0 16 16" data-icon="close" aria-hidden="true">
 									<path d="M4 4l8 8M12 4l-8 8" />
 								</svg>
 							</button>

@@ -164,27 +164,27 @@
 	<div class="buttons">
 		{#if layout === 'tab'}
 			<button type="button" class="icon" aria-label="Previous" title="Previous" onclick={player.previous}>
-				<svg viewBox="0 0 16 16" aria-hidden="true">
+				<svg viewBox="0 0 16 16" data-icon="previous" aria-hidden="true">
 					<path d="M3 3v10M13 3l-8 5 8 5z" />
 				</svg>
 			</button>
 		{/if}
 		{#if player.paused}
 			<button type="button" class="icon" aria-label="Play" title="Play" onclick={player.resume}>
-				<svg viewBox="0 0 16 16" aria-hidden="true">
+				<svg viewBox="0 0 16 16" data-icon="play" aria-hidden="true">
 					<path d="M4 2.5l9 5.5-9 5.5z" />
 				</svg>
 			</button>
 		{:else}
 			<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={player.pause}>
-				<svg viewBox="0 0 16 16" aria-hidden="true">
+				<svg viewBox="0 0 16 16" data-icon="pause" aria-hidden="true">
 					<path d="M5 3v10M11 3v10" />
 				</svg>
 			</button>
 		{/if}
 		{#if layout === 'tab'}
 			<button type="button" class="icon" aria-label="Next" title="Next" disabled={!player.hasNext} onclick={player.skip}>
-				<svg viewBox="0 0 16 16" aria-hidden="true">
+				<svg viewBox="0 0 16 16" data-icon="next" aria-hidden="true">
 					<path d="M3 3l8 5-8 5zM13 3v10" />
 				</svg>
 			</button>
@@ -197,6 +197,7 @@
 	<div class="seek" {@attach seekByWheel}>
 		<input
 			type="range"
+			class="seek-bar"
 			aria-label="Seek"
 			min="0"
 			max={player.duration || 0}
@@ -219,7 +220,7 @@
 			<!-- The button mutes. The slider shows above it on hover or keyboard focus, as wide as it. -->
 			<div class="volume" {@attach volumeByWheel}>
 				<button type="button" class="icon" aria-label="Mute" title={player.volume ? 'Mute' : 'Unmute'} aria-pressed={!player.volume} onclick={player.toggleMute}>
-					<svg viewBox="0 0 16 16" aria-hidden="true">
+					<svg viewBox="0 0 16 16" data-icon="volume" aria-hidden="true">
 						{#each ['M2.5 10.5h2v3h-2z', 'M7 6.5h2v7H7z', 'M11.5 2.5h2v11h-2z'] as bar, index}
 							<path d={bar} class:filled={index < volumeBars(player.volume)} />
 						{/each}
@@ -231,6 +232,7 @@
 					min="0"
 					max="1"
 					step="0.01"
+					class="volume-bar"
 					class:muted={!player.volume}
 					style:--level={player.volume}
 					value={player.volume}
@@ -241,14 +243,14 @@
 		{#if layout === 'tab'}
 			<!-- Pressed in both repeat states, in the accent colour for repeat one -->
 			<button type="button" class="icon" class:one={player.repeat === 'one'} aria-label="Repeat" title={repeatTitles[player.repeat]} aria-pressed={player.repeat !== 'off'} onclick={player.cycleRepeat}>
-				<svg viewBox="0 0 16 16" aria-hidden="true">
+				<svg viewBox="0 0 16 16" data-icon="repeat" aria-hidden="true">
 					<path d="M2 9V4h11M10.5 1.5L13 4M14 7v5H3M5.5 14.5L3 12" />
 				</svg>
 			</button>
 		{/if}
 		<!-- Outlined, or filled in the accent colour when loved -->
 		<button type="button" class="icon" class:loved={player.loved} aria-label="Love" title={player.loved ? 'Unlove' : 'Love'} aria-pressed={player.loved} onclick={() => player.toggleLove()}>
-			<svg viewBox="0 0 16 16" aria-hidden="true">
+			<svg viewBox="0 0 16 16" data-icon="heart" aria-hidden="true">
 				<path d="M8 13.5C8 13.5 1.5 9.5 1.5 5.5 1.5 3.5 3 2 4.75 2 6.25 2 7.5 3 8 4.25 8.5 3 9.75 2 11.25 2 13 2 14.5 3.5 14.5 5.5 14.5 9.5 8 13.5 8 13.5z" />
 			</svg>
 		</button>
@@ -347,8 +349,9 @@
 		background: var(--accent);
 	}
 
-	/* Pressed, but shown by the red heart rather than the inverted button. Hover still inverts, like every other button. */
-	.loved:not(:hover) {
+	/* Pressed, but shown by the red heart rather than the inverted button. Hover still inverts, like every other button.
+	   The state is in :where(), so themes can override it. */
+	.loved:where(:not(:hover)) {
 		background: none;
 		color: inherit;
 	}
@@ -404,7 +407,7 @@
 		box-sizing: border-box;
 		margin: 0;
 		border: 1px solid currentColor;
-		background: linear-gradient(var(--ink), var(--ink)) left bottom / 0 0 no-repeat;
+		background: linear-gradient(var(--fill, var(--ink)), var(--fill, var(--ink))) left bottom / 0 0 no-repeat;
 		cursor: pointer;
 	}
 

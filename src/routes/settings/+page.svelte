@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { getVersion } from '@tauri-apps/api/app';
 	import { invoke } from '@tauri-apps/api/core';
-	import { openUrl } from '@tauri-apps/plugin-opener';
+	import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener';
+	import ThemePicker from '#lib/components/ThemePicker.svelte';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import { confirm } from '#lib/confirm.svelte';
 	import type { ShowOrder } from '#lib/episodes';
@@ -83,6 +84,25 @@
 			<dt>Appearance</dt>
 			<dd>
 				<ThemeToggle />
+			</dd>
+			<dt>Theme</dt>
+			<dd>
+				<ThemePicker />
+			</dd>
+			<dt>Custom style</dt>
+			<dd>
+				<button type="button" onclick={() => invoke<string>('get_config_dir').then(revealItemInDir).catch(errors.report)}>Open folder</button>
+				<span class="muted">
+					put a custom.css there, read at launch, styling the
+					<!-- Opens in the browser, since the webview would navigate away from the app -->
+					<a
+						href="https://github.com/idleberg/rinse-m8/blob/main/docs/theming.md"
+						onclick={(e) => {
+							e.preventDefault();
+							openUrl(e.currentTarget.href);
+						}}>theme parts</a
+					>
+				</span>
 			</dd>
 			<dt>Image style</dt>
 			<dd>
@@ -246,7 +266,7 @@
 			}}
 		>
 			<!-- Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0) -->
-			<svg viewBox="0 0 480 512">
+			<svg viewBox="0 0 480 512" data-icon="github">
 				<title>GitHub</title>
 				<!-- The face, which the head leaves out -->
 				<path
@@ -317,7 +337,7 @@
 	}
 
 	/* Sized like an icon button (plus its border), so it lines up with the heart in the nav below */
-	a {
+	footer a {
 		display: grid;
 		place-items: center;
 		width: calc(1.5em + 2px);

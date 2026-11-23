@@ -157,8 +157,9 @@ progress::-webkit-progress-bar {
 	background: none;
 }
 
+/* --fill is unset by default, so the fallback follows --ink where a banner redefines it */
 progress::-webkit-progress-value {
-	background: var(--ink);
+	background: var(--fill, var(--ink));
 }
 
 /* Buttons next to each other */

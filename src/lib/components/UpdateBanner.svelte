@@ -3,7 +3,7 @@
 </script>
 
 {#if updates.available}
-	<aside role="status">
+	<aside class="update-banner" role="status">
 		<span>Version {updates.available.version} is available</span>
 		{#if updates.available.percent === null}
 			<div class="buttons">

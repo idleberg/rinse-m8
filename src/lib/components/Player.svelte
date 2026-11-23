@@ -6,7 +6,7 @@
 </script>
 
 {#if player.episode?.mp3}
-	<footer class:inverted>
+	<footer class="player-bar" class:inverted>
 		<PlayerControls />
 		<!-- biome-ignore lint/a11y/useMediaCaption: Rinse has no captions for its mixes -->
 		<audio

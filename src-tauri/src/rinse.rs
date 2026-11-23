@@ -1088,6 +1088,18 @@ pub fn clear_image_cache(cache: &Path) -> Result<(), String> {
     }
 }
 
+/// The user's own stylesheet, in the app's config folder.
+const CUSTOM_CSS: &str = "custom.css";
+
+/// The text of the custom stylesheet in the config folder `config`, or None when there is none.
+pub fn read_custom_css(config: &Path) -> Result<Option<String>, String> {
+    match std::fs::read_to_string(config.join(CUSTOM_CSS)) {
+        Ok(css) => Ok(Some(css)),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(format!("Reading {CUSTOM_CSS} failed: {e}")),
+    }
+}
+
 async fn fetch_episodes(url: &str) -> Result<Vec<Episode>, String> {
     map_episodes(&fetch_text(url).await?).map_err(|e| e.to_string())
 }
@@ -1787,6 +1799,26 @@ mod tests {
         fn drop(&mut self) {
             let _ = std::fs::remove_dir_all(&self.0);
         }
+    }
+
+    #[test]
+    fn reads_the_custom_stylesheet_if_there_is_one() {
+        let config = TempDir::new("rinse-custom-css");
+
+        assert_eq!(read_custom_css(&config.0), Ok(None));
+
+        std::fs::write(config.0.join(CUSTOM_CSS), "nav { gap: 0 }").unwrap();
+
+        assert_eq!(
+            read_custom_css(&config.0),
+            Ok(Some("nav { gap: 0 }".into()))
+        );
+
+        // A folder where the file should be can't be read
+        std::fs::remove_file(config.0.join(CUSTOM_CSS)).unwrap();
+        std::fs::create_dir(config.0.join(CUSTOM_CSS)).unwrap();
+
+        assert!(read_custom_css(&config.0).is_err());
     }
 
     #[test]

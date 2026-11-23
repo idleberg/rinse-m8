@@ -754,6 +754,23 @@ fn clear_image_cache(app: tauri::AppHandle) -> Result<(), String> {
     rinse::clear_image_cache(&image_cache(&app)?)
 }
 
+/// The user's custom stylesheet, which the page loads after its own styles. Read once at launch.
+#[tauri::command]
+fn get_custom_css(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    rinse::read_custom_css(&app.path().app_config_dir().map_err(|e| e.to_string())?)
+}
+
+/// The config folder, which holds the custom stylesheet. Created if needed, so Settings can reveal it: on Linux it
+/// isn't the data folder, which the app creates anyway.
+#[tauri::command]
+fn get_config_dir(app: tauri::AppHandle) -> Result<PathBuf, String> {
+    let dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
+
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+
+    Ok(dir)
+}
+
 /// Adds the menu bar or tray icon, whose presence makes closing the window hide it, or removes it again.
 fn sync_tray(app: &tauri::AppHandle, enable: bool) -> Result<(), String> {
     if !enable {
@@ -1398,6 +1415,8 @@ pub fn run() {
             scrobble,
             love,
             get_image_cache_size,
+            get_custom_css,
+            get_config_dir,
             clear_image_cache,
             set_tray_playing,
             subscribe,

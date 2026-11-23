@@ -53,7 +53,7 @@
 	aria-expanded={open}
 	popovertarget={id}
 >
-	<svg viewBox="0 0 16 16" aria-hidden="true">
+	<svg viewBox="0 0 16 16" data-icon="more" aria-hidden="true">
 		<path d="M3 8h.01M8 8h.01M13 8h.01" stroke-linecap="round" stroke-width="2.5" />
 	</svg>
 </button>

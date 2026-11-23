@@ -7,6 +7,7 @@
 	import Player from '#lib/components/Player.svelte';
 	import UpdateBanner from '#lib/components/UpdateBanner.svelte';
 	import WhatsNew from '#lib/components/WhatsNew.svelte';
+	import { loadCustomCss } from '#lib/custom-css';
 	import { directory } from '#lib/directory.svelte';
 	import { downloads } from '#lib/downloads.svelte';
 	import { available, type Show, type ShowPage } from '#lib/episodes';
@@ -42,6 +43,7 @@
 	] as const;
 
 	errors.init();
+	loadCustomCss();
 	settings.init();
 	lastfm.init();
 	updates.init();
@@ -118,17 +120,17 @@
 <UpdateBanner />
 
 <!-- Inverted with Settings, so the whole bar flips and the active tab still meets the inverted page without a seam -->
-<nav class:inverted>
+<nav class="tab-bar" class:inverted>
 	{#each tabs as [path, label] (path)}
 		<!-- Favs is a heart, labelled for screen readers and on hover -->
-		<button type="button"
+		<button type="button" class="tab"
 			aria-current={pathname === path ? 'page' : undefined}
 			aria-label={path === '/favs' ? label : undefined}
 			title={path === '/favs' ? label : undefined}
 			onclick={() => pathname !== path && goto(path)}
 		>
 			{#if path === '/favs'}
-				<svg viewBox="0 0 16 16" aria-hidden="true">
+				<svg viewBox="0 0 16 16" data-icon="heart" aria-hidden="true">
 					<path d="M8 13.5C8 13.5 1.5 9.5 1.5 5.5 1.5 3.5 3 2 4.75 2 6.25 2 7.5 3 8 4.25 8.5 3 9.75 2 11.25 2 13 2 14.5 3.5 14.5 5.5 14.5 9.5 8 13.5 8 13.5z" />
 				</svg>
 			{:else}
@@ -140,10 +142,10 @@
 
 <main class:inverted>
 	{#if errors.message}
-		<p role="alert">
+		<p class="error-banner" role="alert">
 			{errors.message}
 			<button type="button" class="icon" aria-label="Dismiss" title="Dismiss" onclick={errors.clear}>
-				<svg viewBox="0 0 16 16" aria-hidden="true">
+				<svg viewBox="0 0 16 16" data-icon="close" aria-hidden="true">
 					<path d="M4 4l8 8M12 4l-8 8" />
 				</svg>
 			</button>
@@ -203,13 +205,13 @@
 		box-shadow: 0 0 0 1px var(--ink);
 	}
 
-	nav button:is([aria-current="page"], :hover) {
+	nav button:where([aria-current="page"], :hover) {
 		background: var(--paper);
 		color: var(--ink);
 	}
 
 	/* A paper strip over the ring's bottom edge, so the active tab opens into the page below */
-	nav button[aria-current="page"] {
+	nav button:where([aria-current="page"]) {
 		box-shadow:
 			0 1px var(--paper),
 			0 0 0 1px var(--ink);
@@ -230,12 +232,13 @@
 		margin-left: auto;
 	}
 
-	/* The ring at the window's edge is offscreen, so the outline's outer pixel is too. The shadow restores the 2px there. */
-	nav button:first-child:focus-visible {
+	/* The ring at the window's edge is offscreen, so the outline's outer pixel is too. The shadow restores the 2px there.
+	   States go in :where(), here and below, so themes can override them. */
+	nav button:first-child:where(:focus-visible) {
 		box-shadow: inset 2px 0 var(--accent);
 	}
 
-	nav button:last-child:focus-visible {
+	nav button:last-child:where(:focus-visible) {
 		box-shadow: inset -2px 0 var(--accent);
 	}
 
@@ -275,13 +278,13 @@
 	}
 
 	/* The global hover fills with ink, which is the toast's background here, so it fills with paper instead */
-	.toast button:hover {
+	.toast button:where(:hover) {
 		border-color: var(--paper);
 		background: var(--paper);
 		color: var(--ink);
 	}
 
-	[role='alert'] {
+	.error-banner {
 		display: flex;
 		gap: 1rem;
 		align-items: center;

@@ -31,7 +31,7 @@
 	disabled={downloading || queued || onDisk}
 	onclick={() => downloads.download(episode)}
 >
-	<svg viewBox="0 0 16 16" aria-hidden="true">
+	<svg viewBox="0 0 16 16" data-icon={onDisk ? 'downloaded' : downloaded ? 'redownload' : 'download'} aria-hidden="true">
 		<!-- A check only where the button is disabled; a recorded download whose file is gone gets a circular arrow -->
 		{#if onDisk}
 			<path d="M3 8l3.5 3.5L13 4" />

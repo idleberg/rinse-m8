@@ -70,7 +70,7 @@
 
 {#snippet remove(label: string, onclick: () => void)}
 	<button type="button" class="icon remove" aria-label={label} title={label} {onclick}>
-		<svg viewBox="0 0 16 16" aria-hidden="true">
+		<svg viewBox="0 0 16 16" data-icon="close" aria-hidden="true">
 			<path d="M4 4l8 8M12 4l-8 8" />
 		</svg>
 	</button>
@@ -156,7 +156,7 @@
 					<td>
 						<div class="buttons">
 							<button type="button" class="icon" aria-label="Play" title="Play" onclick={() => player.playFromQueue(index)}>
-								<svg viewBox="0 0 16 16" aria-hidden="true">
+								<svg viewBox="0 0 16 16" data-icon="play" aria-hidden="true">
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>
@@ -205,7 +205,7 @@
 					<td>
 						<div class="buttons">
 							<button type="button" class="icon" aria-label="Play" title="Play" onclick={() => player.playOrQueue(episode)}>
-								<svg viewBox="0 0 16 16" aria-hidden="true">
+								<svg viewBox="0 0 16 16" data-icon="play" aria-hidden="true">
 									<path d="M4 2.5l9 5.5-9 5.5z" />
 								</svg>
 							</button>

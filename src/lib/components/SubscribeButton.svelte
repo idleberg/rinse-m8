@@ -36,7 +36,7 @@
 		{disabled}
 		onclick={() => settings.toggle(show)}
 	>
-		<svg viewBox="0 0 16 16" aria-hidden="true">
+		<svg viewBox="0 0 16 16" data-icon={subscribed ? 'unsubscribe' : 'subscribe'} aria-hidden="true">
 			<path d={subscribed ? 'M3 8h10' : 'M3 8h10M8 3v10'} />
 		</svg>
 	</button>

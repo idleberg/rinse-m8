@@ -167,13 +167,13 @@
 						{#if available(episode) || files?.[episode.id]}
 							{#if player.playing === episode.id}
 								<button type="button" class="icon" aria-label="Pause" title="Pause" onclick={player.pause}>
-									<svg viewBox="0 0 16 16" aria-hidden="true">
+									<svg viewBox="0 0 16 16" data-icon="pause" aria-hidden="true">
 										<path d="M5 3v10M11 3v10" />
 									</svg>
 								</button>
 							{:else}
 								<button type="button" class="icon" aria-label="Play" title="Play" onclick={() => player.playOrQueue(episode)}>
-									<svg viewBox="0 0 16 16" aria-hidden="true">
+									<svg viewBox="0 0 16 16" data-icon="play" aria-hidden="true">
 										<path d="M4 2.5l9 5.5-9 5.5z" />
 									</svg>
 								</button>
@@ -182,7 +182,7 @@
 						{#if files?.[episode.id]}
 							{@const file = files[episode.id]}
 							<button type="button" class="icon" aria-label="Show in folder" title="Show in folder" onclick={() => revealItemInDir(file).catch(errors.report)}>
-								<svg viewBox="0 0 16 16" aria-hidden="true">
+								<svg viewBox="0 0 16 16" data-icon="reveal" aria-hidden="true">
 									<circle cx="7" cy="7" r="4.5" />
 									<path d="M10.5 10.5L14 14" />
 								</svg>

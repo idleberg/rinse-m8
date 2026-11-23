@@ -1,0 +1,42 @@
+/// <reference types="bun" />
+
+import { expect, test as it } from 'bun:test';
+
+// A theme removed in an update, still stored from before
+const local = new Map<string, string>([['skin', 'removed']]);
+
+globalThis.localStorage = {
+	getItem: (key: string) => local.get(key) ?? null,
+	setItem: (key: string, value: string) => {
+		local.set(key, value);
+	},
+	removeItem: (key: string) => {
+		local.delete(key);
+	},
+} as unknown as Storage;
+
+const root = { dataset: {} as DOMStringMap };
+
+globalThis.document = { documentElement: root } as unknown as Document;
+
+const { theme } = await import('./theme.svelte');
+
+it('loads an unknown stored theme as Default', () => {
+	expect(theme.current).toBe('default');
+	expect(root.dataset.skin).toBeUndefined();
+});
+
+it('sets the root attribute and stores a picked theme', () => {
+	theme.pick('brackets');
+	expect(theme.current).toBe('brackets');
+	expect(root.dataset.skin).toBe('brackets');
+	expect(local.get('skin')).toBe('brackets');
+});
+
+it('clears both for Default', () => {
+	theme.pick('brackets');
+	theme.pick('default');
+	expect(theme.current).toBe('default');
+	expect(root.dataset.skin).toBeUndefined();
+	expect(local.has('skin')).toBe(false);
+});
