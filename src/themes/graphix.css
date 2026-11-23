@@ -1,7 +1,7 @@
 /* Graphix: Asciitron in Space Mono and natural casing, with neutral greys instead of the warm paper, an orange that
    sits with the blue for hovered tabs and flyout entries and the volume bar's fill, a green toast, a focus ring in
-   the text colour, square checkboxes and dialog close buttons, and a blue download bar. Errors keep Asciitron's red
-   accent. */
+   the text colour, square checkboxes and dialog close buttons, and a blue download bar and links. Errors keep
+   Asciitron's red accent. */
 
 :root[data-skin="graphix"],
 :root[data-skin="graphix"] .inverted {
@@ -118,4 +118,11 @@
 /* The muted volume bar's thumb stays hidden: the component's rule for it is more specific */
 :root[data-skin="graphix"] .volume-bar::-webkit-slider-thumb {
 	background: var(--fill);
+}
+
+/* Links in the update banner's blue, since red is left for errors. The prefix sits in :where() so the rule only
+   replaces app.css's link colour, which it follows, and components that set their own, like What's New's white on
+   blue, still win. */
+:where(:root[data-skin="graphix"]) a {
+	color: var(--info);
 }

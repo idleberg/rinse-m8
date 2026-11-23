@@ -345,7 +345,6 @@
 		display: grid;
 		place-items: center;
 		width: calc(1.5em + 2px);
-		color: var(--accent);
 	}
 
 	svg {
