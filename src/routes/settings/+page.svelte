@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getVersion } from '@tauri-apps/api/app';
 	import { invoke } from '@tauri-apps/api/core';
-	import { openUrl } from '@tauri-apps/plugin-opener';
+	import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import { confirm } from '#lib/confirm.svelte';
 	import type { ShowOrder } from '#lib/episodes';
@@ -93,12 +93,12 @@
 					{/each}
 				</select>
 			</dd>
-			<!-- Hidden for now. The link opens in the browser, since the webview would navigate away from the app.
 			<dt>Custom style</dt>
 			<dd>
 				<button type="button" onclick={() => invoke<string>('get_config_dir').then(revealItemInDir).catch(errors.report)}>Open folder</button>
 				<span class="muted">
 					put a custom.css there, read at launch, styling the
+					<!-- Opens in the browser, since the webview would navigate away from the app -->
 					<a
 						href="https://github.com/idleberg/rinse-m8/blob/main/docs/theming.md"
 						onclick={(e) => {
@@ -108,7 +108,6 @@
 					>
 				</span>
 			</dd>
-			-->
 			<dt>Image style</dt>
 			<dd>
 				<select aria-label="Image style" value={settings.stored.imageStyle} onchange={(e) => settings.save('imageStyle', e.currentTarget.value as ImageStyle)}>
