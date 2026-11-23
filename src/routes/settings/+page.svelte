@@ -340,11 +340,13 @@
 		border-top: 1px solid currentColor;
 	}
 
-	/* Sized like an icon button (plus its border), so it lines up with the heart in the nav below */
+	/* Sized like an icon button (plus its border), so it lines up with the heart in the nav below. Red in every theme,
+	   even where links are another colour. */
 	footer a {
 		display: grid;
 		place-items: center;
 		width: calc(1.5em + 2px);
+		color: var(--accent);
 	}
 
 	svg {
