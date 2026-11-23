@@ -110,9 +110,15 @@
 	color: var(--ink);
 }
 
-/* The player's volume bar fills in orange, thumb included. Its outline keeps the ink, and the seek bar is all ink. */
+/* The player's volume bar fills in orange, thumb included, and the seek bar is all ink */
 :root[data-skin="graphix"] .volume-bar {
 	--fill: var(--orange);
+}
+
+/* Only the component's paper ring edges the volume bar: a border inside it reads as a pixel too narrow on each side.
+   Outranks the component's scoped `.volume input`. */
+:root[data-skin="graphix"] .volume .volume-bar {
+	border: none;
 }
 
 /* The muted volume bar's thumb stays hidden: the component's rule for it is more specific */
