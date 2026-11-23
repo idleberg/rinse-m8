@@ -57,7 +57,7 @@ _Avoid_: Filter, image mode, theme
 ### Look
 
 **Theme**:
-The named look picked in Settings, such as Asciitron or Graphics: a stylesheet that can change the colour tokens and restyle the theme parts. Works with every appearance. Image style is not a theme. Set as `data-skin` on the root, since `data-theme` already holds the appearance.
+The named look picked in Settings, such as Asciitron or Graphix: a stylesheet that can change the colour tokens and restyle the theme parts. Works with every appearance. Image style is not a theme. Set as `data-skin` on the root, since `data-theme` already holds the appearance.
 _Avoid_: Style
 
 **Appearance**:

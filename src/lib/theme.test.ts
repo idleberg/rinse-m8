@@ -27,14 +27,14 @@ it('loads an unknown stored theme as Asciitron', () => {
 });
 
 it('sets the root attribute and stores a picked theme', () => {
-	theme.pick('graphics');
-	expect(theme.current).toBe('graphics');
-	expect(root.dataset.skin).toBe('graphics');
-	expect(local.get('skin')).toBe('graphics');
+	theme.pick('graphix');
+	expect(theme.current).toBe('graphix');
+	expect(root.dataset.skin).toBe('graphix');
+	expect(local.get('skin')).toBe('graphix');
 });
 
 it('clears both for Asciitron', () => {
-	theme.pick('graphics');
+	theme.pick('graphix');
 	theme.pick('default');
 	expect(theme.current).toBe('default');
 	expect(root.dataset.skin).toBeUndefined();

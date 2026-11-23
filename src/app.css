@@ -76,6 +76,30 @@ body::after {
 	pointer-events: none;
 }
 
+/* Square scrollbars in the page's colours: an ink thumb on a paper track, ruled off from the content by an ink line.
+   Styled ones stay visible, where macOS would otherwise fade them out. */
+::-webkit-scrollbar {
+	width: 9px;
+	height: 9px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+	background: var(--paper);
+}
+
+::-webkit-scrollbar-track:vertical {
+	box-shadow: inset 1px 0 var(--ink);
+}
+
+::-webkit-scrollbar-track:horizontal {
+	box-shadow: inset 0 1px var(--ink);
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--ink);
+}
+
 /* SvelteKit's wrapper around the app, in app.html */
 body > div {
 	display: contents;
@@ -141,6 +165,50 @@ select {
 		calc(100% - 0.5ch) 55% / 0.3em 0.3em no-repeat;
 	text-transform: uppercase;
 	cursor: pointer;
+}
+
+/* The open menu drawn like the flyout, where the webview supports it (Safari 27, Chromium 135). Others keep the native
+   menu. */
+@supports (appearance: base-select) {
+	select,
+	::picker(select) {
+		appearance: base-select;
+	}
+
+	/* Without the 24px minimum the webview adds, so it stays as tall as a button */
+	select {
+		min-block-size: auto;
+	}
+
+	/* The `v` is the select's background already */
+	/* biome-ignore lint/suspicious/useBaseline: gated by the @supports above */
+	select::picker-icon {
+		display: none;
+	}
+
+	/* Overlaps the select's bottom border, so the two share one line */
+	::picker(select) {
+		margin-top: -1px;
+		border: 1px solid currentColor;
+		border-radius: 0;
+		padding: 0;
+		background: var(--paper);
+		box-shadow: none;
+	}
+
+	option {
+		padding: 0 0.5ch;
+	}
+
+	option:hover {
+		background: var(--ink);
+		color: var(--paper);
+	}
+
+	/* Inside the entry, since the menu would clip a ring around it */
+	option:focus-visible {
+		outline-offset: -2px;
+	}
 }
 
 /* Drawn like the player's seek bar: a thin outlined bar filled up to the value */

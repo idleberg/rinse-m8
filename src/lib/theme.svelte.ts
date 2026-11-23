@@ -2,7 +2,7 @@
  * Asciitron, stored as `default`. The inline script in app.html keeps its own copy of the names. */
 export const themes = {
 	default: 'Asciitron',
-	graphics: 'Graphics',
+	graphix: 'Graphix',
 } as const;
 
 export type Theme = keyof typeof themes;

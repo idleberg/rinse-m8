@@ -1,38 +1,39 @@
-/* Graphics: Asciitron in Space Mono and natural casing, with neutral greys instead of the warm paper, an orange that sits with the blue for hovered tabs and
-   the player bars' fill, a focus ring in the text colour, square checkboxes and dialog close buttons, a green toast
-   and a blue download bar. Errors keep Asciitron's red accent. */
+/* Graphix: Asciitron in Space Mono and natural casing, with neutral greys instead of the warm paper, an orange that
+   sits with the blue for hovered tabs and flyout entries and the volume bar's fill, a green toast, a focus ring in
+   the text colour, square checkboxes and dialog close buttons, and a blue download bar. Errors keep Asciitron's red
+   accent. */
 
-:root[data-skin="graphics"],
-:root[data-skin="graphics"] .inverted {
+:root[data-skin="graphix"],
+:root[data-skin="graphix"] .inverted {
 	--paper: light-dark(rgb(216 216 216), rgb(20 20 20));
 	--ink: light-dark(rgb(20 20 20), rgb(216 216 216));
 	--muted: light-dark(rgb(104 104 104), rgb(140 140 140));
-	/* Graphics' own, for the tab hover and the player bars' fill. The red accent is left for errors. */
+	/* Graphix's own, for the tab and flyout hover and the volume bar's fill. The red accent is left for errors. */
 	--orange: light-dark(rgb(222 104 16), rgb(255 140 50));
 }
 
 /* Form controls inherit the font from app.css */
-:root[data-skin="graphics"] body {
+:root[data-skin="graphix"] body {
 	font-family: "Space Mono", monospace;
 }
 
 /* Text shows as written */
-:root[data-skin="graphics"] :is(*, ::before, ::after) {
+:root[data-skin="graphix"] :is(*, ::before, ::after) {
 	/* biome-ignore lint/complexity/noImportantStyles: the components' scoped uppercase rules outrank this selector */
 	text-transform: none !important;
 }
 
 /* The focus ring is the element's text colour: ink on most, but paper on idle tabs, where ink is the bar itself */
-:root[data-skin="graphics"] :focus-visible {
+:root[data-skin="graphix"] :focus-visible {
 	outline-color: currentColor;
 }
 
 /* The edge tabs draw the ring's offscreen half as an inset shadow */
-:root[data-skin="graphics"] .tab:first-child:focus-visible {
+:root[data-skin="graphix"] .tab:first-child:focus-visible {
 	box-shadow: inset 2px 0 currentColor;
 }
 
-:root[data-skin="graphics"] .tab:last-child:focus-visible {
+:root[data-skin="graphix"] .tab:last-child:focus-visible {
 	box-shadow: inset -2px 0 currentColor;
 }
 
@@ -41,7 +42,7 @@
    running corner to corner inside the border,
    drawn from two diagonal strokes like the select's `v`. On a square, a 45° gradient's middle stripe is the opposite
    diagonal. */
-:root[data-skin="graphics"] :is(input[type="checkbox"], dialog button[aria-label="Close"]) {
+:root[data-skin="graphix"] :is(input[type="checkbox"], dialog button[aria-label="Close"]) {
 	box-sizing: border-box;
 	width: 1em;
 	height: 1em;
@@ -49,24 +50,24 @@
 }
 
 /* Margins fill the rest of the line, so it's centred and nothing shifts */
-:root[data-skin="graphics"] input[type="checkbox"] {
+:root[data-skin="graphix"] input[type="checkbox"] {
 	margin-block: calc((1lh - 1em) / 2);
 }
 
-:root[data-skin="graphics"] input[type="checkbox"]::before {
+:root[data-skin="graphix"] input[type="checkbox"]::before {
 	content: none;
 }
 
 /* Just the X, no border. The `[×]` text moves out of the box but stays the button's content. The accessible name is
    its aria-label anyway. */
-:root[data-skin="graphics"] dialog button[aria-label="Close"] {
+:root[data-skin="graphix"] dialog button[aria-label="Close"] {
 	border: none;
 	overflow: hidden;
 	white-space: nowrap;
 	text-indent: 1em;
 }
 
-:root[data-skin="graphics"] :is(input[type="checkbox"]:checked, dialog button[aria-label="Close"]) {
+:root[data-skin="graphix"] :is(input[type="checkbox"]:checked, dialog button[aria-label="Close"]) {
 	background:
 		linear-gradient(
 			45deg,
@@ -82,17 +83,20 @@
 		);
 }
 
-/* Not the active tab, which keeps its paper fill so it still opens into the page. The text keeps the idle tabs'
-   colour. */
-:root[data-skin="graphics"] .tab:hover:not([aria-current="page"]) {
+/* Hovered tabs, flyout entries and select options, but not the active tab, which keeps its paper fill so it still
+   opens into the page. The text is dark in both appearances: light grey on the light orange is only 2.4:1, dark is
+   5.3:1 and 7.9:1. */
+:root[data-skin="graphix"] .tab:hover:not([aria-current="page"]),
+:root[data-skin="graphix"] [role="menu"] button:hover:not(:disabled),
+:root[data-skin="graphix"] option:hover {
 	background: var(--orange);
-	color: var(--paper);
+	color: rgb(20 20 20);
 }
 
 /* Green, so it sits with the blue update banner. Redefined like the banner's tokens, so the text is the light grey in
    both appearances and the hovered button inverts to light grey on green. After the .inverted tokens above, which it
    ties with. */
-:root[data-skin="graphics"] .toast {
+:root[data-skin="graphix"] .toast {
 	--ink: light-dark(rgb(25 130 65), rgb(35 150 75));
 	--paper: rgb(216 216 216);
 }
@@ -100,18 +104,18 @@
 /* In the update banner's colours, redefined the same way, so the text, line, progress fill and hovered buttons invert
    to white on blue. After the .inverted tokens above, which it ties with. The colour is set too, since the bar only
    inherits it, already resolved from the old ink. */
-:root[data-skin="graphics"] .download-bar {
+:root[data-skin="graphix"] .download-bar {
 	--ink: white;
 	--paper: var(--info);
 	color: var(--ink);
 }
 
-/* The player's seek and volume bars fill in orange, thumb included. Their outline keeps the ink. */
-:root[data-skin="graphics"] :is(.seek-bar, .volume-bar) {
+/* The player's volume bar fills in orange, thumb included. Its outline keeps the ink, and the seek bar is all ink. */
+:root[data-skin="graphix"] .volume-bar {
 	--fill: var(--orange);
 }
 
 /* The muted volume bar's thumb stays hidden: the component's rule for it is more specific */
-:root[data-skin="graphics"] :is(.seek-bar, .volume-bar)::-webkit-slider-thumb {
+:root[data-skin="graphix"] .volume-bar::-webkit-slider-thumb {
 	background: var(--fill);
 }
