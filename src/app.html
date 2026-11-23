@@ -13,10 +13,12 @@
           document.documentElement.dataset.theme = theme;
         }
 
-        // The theme, from the built-in list in theme.svelte.ts. An unknown one falls back to Default, which sets nothing.
+        // The theme, from the built-in list in theme.svelte.ts, Asciitron (default) left out. An unknown one falls back to
+        // Asciitron, which sets nothing.
+        const skins = ['graphics'];
         const skin = localStorage.getItem('skin');
 
-        if (skin === 'brackets') {
+        if (skins.includes(skin)) {
           document.documentElement.dataset.skin = skin;
         }
       } catch {

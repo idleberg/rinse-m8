@@ -1,8 +1,8 @@
-/** The built-in themes by stored name, with their labels. Each has a stylesheet in `src/themes`, except Default.
- * The inline script in app.html keeps its own copy of the names. */
+/** The built-in themes by stored name, with their labels. Each has a stylesheet imported in `+layout.ts`, except
+ * Asciitron, stored as `default`. The inline script in app.html keeps its own copy of the names. */
 export const themes = {
-	default: 'Default',
-	brackets: 'Brackets',
+	default: 'Asciitron',
+	graphics: 'Graphics',
 } as const;
 
 export type Theme = keyof typeof themes;
@@ -16,9 +16,9 @@ function isTheme(name: string | null): name is Theme {
 
 const stored = localStorage.getItem(storageKey);
 
-/** The picked theme, set as `data-skin` on the root. Default sets no attribute. */
+/** The picked theme, set as `data-skin` on the root. Asciitron sets no attribute. */
 class ThemeStore {
-	/** A theme removed in an update loads as Default. */
+	/** A theme removed in an update loads as Asciitron. */
 	current = $state<Theme>(isTheme(stored) ? stored : 'default');
 
 	pick = (name: Theme) => {

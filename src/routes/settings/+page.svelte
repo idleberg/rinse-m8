@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { getVersion } from '@tauri-apps/api/app';
 	import { invoke } from '@tauri-apps/api/core';
-	import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener';
-	import ThemePicker from '#lib/components/ThemePicker.svelte';
+	import { openUrl } from '@tauri-apps/plugin-opener';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import { confirm } from '#lib/confirm.svelte';
 	import type { ShowOrder } from '#lib/episodes';
 	import { errors } from '#lib/errors.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
 	import { type AutoDownloads, type ImageStyle, type PlayBehaviour, settings } from '#lib/settings.svelte';
+	import { type Theme, theme, themes } from '#lib/theme.svelte';
 	import { updates } from '#lib/updates.svelte';
 
 	/** In hours. */
@@ -87,14 +87,18 @@
 			</dd>
 			<dt>Theme</dt>
 			<dd>
-				<ThemePicker />
+				<select aria-label="Theme" value={theme.current} onchange={(e) => theme.pick(e.currentTarget.value as Theme)}>
+					{#each Object.entries(themes) as [value, label] (value)}
+						<option {value}>{label}</option>
+					{/each}
+				</select>
 			</dd>
+			<!-- Hidden for now. The link opens in the browser, since the webview would navigate away from the app.
 			<dt>Custom style</dt>
 			<dd>
 				<button type="button" onclick={() => invoke<string>('get_config_dir').then(revealItemInDir).catch(errors.report)}>Open folder</button>
 				<span class="muted">
 					put a custom.css there, read at launch, styling the
-					<!-- Opens in the browser, since the webview would navigate away from the app -->
 					<a
 						href="https://github.com/idleberg/rinse-m8/blob/main/docs/theming.md"
 						onclick={(e) => {
@@ -104,6 +108,7 @@
 					>
 				</span>
 			</dd>
+			-->
 			<dt>Image style</dt>
 			<dd>
 				<select aria-label="Image style" value={settings.stored.imageStyle} onchange={(e) => settings.save('imageStyle', e.currentTarget.value as ImageStyle)}>

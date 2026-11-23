@@ -160,7 +160,8 @@
 	{/key}
 {/snippet}
 
-<div class="row" class:tab={layout === 'tab'}>
+<!-- Not `tab`, which is the Tab theme part, so themes styling tabs would restyle this row too -->
+<div class="row" class:in-tab={layout === 'tab'}>
 	<div class="buttons">
 		{#if layout === 'tab'}
 			<button type="button" class="icon" aria-label="Previous" title="Previous" onclick={player.previous}>
@@ -367,14 +368,14 @@
 	}
 
 	/* The Player tab puts the time on a line of its own, under the right end of the seek bar, so it doesn't squeeze it */
-	.row.tab {
+	.row.in-tab {
 		display: grid;
 		grid-template-columns: auto 1fr auto;
 		row-gap: 0;
 	}
 
 	/* Right under the bar */
-	.tab .time {
+	.in-tab .time {
 		grid-area: 2 / 2;
 		justify-self: end;
 	}
