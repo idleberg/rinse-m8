@@ -73,7 +73,7 @@
 </script>
 
 <!-- A modal like the confirm dialog, in the update bar's colours -->
-<dialog bind:this={dialog} aria-labelledby="{id}-title">
+<dialog class="whats-new" bind:this={dialog} aria-labelledby="{id}-title">
 	<form method="dialog">
 		<header>
 			<h2 id="{id}-title">What's new in {page?.version}</h2>
