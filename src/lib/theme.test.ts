@@ -1,9 +1,12 @@
 /// <reference types="bun" />
 
-import { beforeAll, expect, test as it, mock } from 'bun:test';
+import { expect, test as it, mock } from 'bun:test';
 
-// A theme removed in an update, still stored from before
-const local = new Map<string, string>([['skin', 'removed']]);
+// A custom theme whose folder was deleted since it was picked
+const local = new Map<string, string>([
+	['skin', 'custom:removed'],
+	['skin-href', 'asset://localhost/%2Fconfig/themes/removed/theme.css'],
+]);
 
 globalThis.localStorage = {
 	getItem: (key: string) => local.get(key) ?? null,
@@ -50,13 +53,25 @@ globalThis.document = {
 	body: { append: (element: Element) => body.push(element) },
 } as unknown as Document;
 
+// The link app.html adds for the stored custom theme before the app starts
+const startup = document.createElement('link');
+
+startup.id = 'custom-theme';
+startup.href = local.get('skin-href') ?? '';
+document.body.append(startup);
+
 const { theme } = await import('./theme.svelte');
 const { errors } = await import('./errors.svelte');
 
-beforeAll(() => theme.load());
+it('loads a stored custom theme missing from the list as Graphix', async () => {
+	expect(theme.current).toBe('custom:removed');
 
-it('loads an unknown stored theme as Graphix', () => {
+	await theme.load();
 	expect(theme.current).toBe('graphix');
+	expect(root.dataset.skin).toBe('graphix');
+	expect(local.get('skin')).toBe('graphix');
+	expect(local.has('skin-href')).toBe(false);
+	expect(body).toEqual([]);
 });
 
 it('lists the custom themes and reports the ones that cannot be read', () => {
@@ -86,6 +101,7 @@ it('clears the root attribute for a custom theme, links its stylesheet and store
 	expect(theme.current).toBe(custom.value);
 	expect(root.dataset.skin).toBeUndefined();
 	expect(local.get('skin')).toBe(custom.value);
+	expect(local.get('skin-href')).toBe('asset://localhost/%2Fconfig/themes/graphix/theme.css');
 
 	// Separators after the root stay slashes, so relative url()s resolve in the theme's folder
 	expect(body).toEqual([
@@ -97,5 +113,6 @@ it('removes the custom theme link when a built-in theme is picked', () => {
 	theme.pick(theme.custom[0].value);
 	theme.pick('graphix');
 	expect(root.dataset.skin).toBe('graphix');
+	expect(local.has('skin-href')).toBe(false);
 	expect(body).toEqual([]);
 });

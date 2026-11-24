@@ -13,12 +13,12 @@
           document.documentElement.dataset.theme = theme;
         }
 
-        // The theme, from the built-in list in theme.svelte.ts, Asciitron left out since it sets nothing. Nothing stored,
-        // or an unknown one, falls back to the default, Graphix.
+        // The theme, from the built-in list in theme.svelte.ts, Asciitron and custom themes left out since they set
+        // nothing. Nothing stored, or an unknown one, falls back to the default, Graphix.
         const skins = ['graphix'];
         const skin = localStorage.getItem('skin');
 
-        if (skin !== 'asciitron') {
+        if (skin !== 'asciitron' && !skin?.startsWith('custom:')) {
           document.documentElement.dataset.skin = skins.includes(skin) ? skin : 'graphix';
         }
       } catch {
@@ -29,5 +29,23 @@
   </head>
   <body data-sveltekit-preload-data="hover">
     <div>%sveltekit.body%</div>
+    <script>'use strict';
+      // The picked custom theme's link, which theme.svelte.ts reuses by its id. In the body, it comes after every
+      // style in the head.
+      try {
+        const href = localStorage.getItem('skin-href');
+
+        if (href) {
+          const link = document.createElement('link');
+
+          link.id = 'custom-theme';
+          link.rel = 'stylesheet';
+          link.href = href;
+          document.body.append(link);
+        }
+      } catch {
+        // No storage: no custom theme
+      }
+    </script>
   </body>
 </html>

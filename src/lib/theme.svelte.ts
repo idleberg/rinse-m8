@@ -2,8 +2,8 @@ import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { errors } from './errors.svelte';
 
 /** The built-in themes by stored name, with their labels, in the menu's alphabetical order. Each has a stylesheet
- * imported in `+layout.ts`, except Asciitron, the unprefixed styles in app.css. The inline script in app.html keeps its
- * own copy of the names and the default. */
+ * imported in `+layout.ts`, except Asciitron, the unprefixed styles in app.css. The inline scripts in app.html keep
+ * their own copy of the names, the default and the storage keys. */
 export const themes = {
 	asciitron: 'Asciitron',
 	graphix: 'Graphix',
@@ -21,11 +21,18 @@ interface CustomTheme {
 /** Not `theme`, which holds the appearance. */
 const storageKey = 'skin';
 
+/** The picked custom theme's stylesheet URL, so app.html can link it before the app starts, without the backend. */
+const hrefKey = 'skin-href';
+
 /** The link that loads the picked custom theme, in the body, so it comes after every style in the head and wins ties. */
 const linkId = 'custom-theme';
 
 function isTheme(name: string | null): name is Theme {
 	return name !== null && Object.hasOwn(themes, name);
+}
+
+function isCustom(value: string | null): value is string {
+	return value?.startsWith('custom:') ?? false;
 }
 
 /** `convertFileSrc` encodes every separator, which makes the path one URL segment, and a relative `url()` in the
@@ -35,7 +42,8 @@ function stylesheetUrl(path: string) {
 	return convertFileSrc(path).replace(/(?<before>[^/])%(?:2F|5C)/gu, '$<before>/');
 }
 
-/** Points the custom theme link at `href`, adding it if needed, or removes it without one. */
+/** Points the custom theme link at `href`, adding it if needed, or removes it without one. app.html adds it at
+ * startup, so it's found by its id. */
 function linkStylesheet(href?: string) {
 	let link = document.querySelector<HTMLLinkElement>(`#${linkId}`);
 
@@ -59,8 +67,9 @@ const stored = localStorage.getItem(storageKey);
 
 /** The picked theme, set as `data-skin` on the root. Asciitron and custom themes set no attribute. */
 class ThemeStore {
-	/** A built-in theme, or a custom theme's `value`. Nothing stored, or a theme removed in an update, loads as Graphix. */
-	current = $state<string>(isTheme(stored) ? stored : 'graphix');
+	/** A built-in theme, or a custom theme's `value`. Nothing stored, or a theme removed in an update, loads as Graphix.
+	 * So does a custom theme whose folder is gone, once `load` finds it missing. */
+	current = $state<string>(isTheme(stored) || isCustom(stored) ? stored : 'graphix');
 
 	/** The custom themes, sorted by name. `value` is what's picked and stored, prefixed so a folder can't pass for a
 	 * built-in theme. */
@@ -74,6 +83,11 @@ class ThemeStore {
 			);
 
 			this.custom = listed.themes.map((custom) => ({ ...custom, value: `custom:${custom.id}` }));
+
+			// Its folder was deleted or renamed since it was picked
+			if (isCustom(this.current) && !this.custom.some((c) => c.value === this.current)) {
+				this.pick('graphix');
+			}
 
 			if (listed.failures.length > 0) {
 				errors.report(listed.failures.join('; '));
@@ -98,7 +112,15 @@ class ThemeStore {
 			root.dataset.skin = value;
 		}
 
-		linkStylesheet(custom && stylesheetUrl(custom.path));
+		const href = custom && stylesheetUrl(custom.path);
+
+		if (href) {
+			localStorage.setItem(hrefKey, href);
+		} else {
+			localStorage.removeItem(hrefKey);
+		}
+
+		linkStylesheet(href);
 	};
 }
 
