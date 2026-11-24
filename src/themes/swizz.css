@@ -47,6 +47,15 @@
 	box-shadow: 0 0 0 1px var(--on-highlight);
 }
 
+/* In dark mode the active tab also covers the bar's light top line with its fill, so it starts on the same row as a
+   hovered tab's ring. Base's shadows otherwise, and not while focused, like the hover. */
+:root[data-skin="swizz"] nav button[aria-current="page"]:not(:focus-visible) {
+	box-shadow:
+		0 1px var(--paper),
+		0 -1px light-dark(var(--ink), var(--paper)),
+		0 0 0 1px var(--ink);
+}
+
 /* The pale surfaces below have fixed colours, so they look the same in both appearances and the inverted area. Each
    redefines --ink and --paper, so its lines, progress fill and hovered buttons follow. They come after the tokens above,
    since the toast is itself .inverted on Settings and ties with them. */
