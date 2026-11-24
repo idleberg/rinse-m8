@@ -2,6 +2,8 @@
 
 A **theme** is a stylesheet. It can change the tokens, and it can restyle, re-lay-out and realign the **theme parts** listed below. **Appearance** (light, system or dark) is separate: every theme works in all three.
 
+Every theme builds on **Base**: the unprefixed styles in `app.css` and the components. Base looks plain on its own: neutral greys, the system monospace font, text as written, links in `--info`, a focus ring in the text colour, square checkboxes with an X, the dialogs' close button as an X and a solid line between their parts. The built-in themes, Asciitron and Graphix, are stylesheets on top of it, as is a custom theme.
+
 This list is the public contract. Renaming or removing a part, a state hook or an icon name is a breaking change, since it breaks users' custom themes. Anything not listed here, such as table internals, may change without notice.
 
 ## Writing a theme
@@ -61,12 +63,12 @@ This theme keeps everything of Graphix but its colours, including in the inverte
 | `--muted`        | Secondary and disabled text                                                                                                               |
 | `--accent`       | Loved heart, repeat one, error banner                                                                                                     |
 | `--info`         | Update banner                                                                                                                             |
-| `--link`         | Links. Unset, it uses `--accent`.                                                                                                         |
-| `--focus`        | Focus ring. Unset, it uses `--accent`.                                                                                                    |
+| `--link`         | Links. Base: `--info`.                                                                                                                    |
+| `--focus`        | Focus ring. Base: `currentColor`, the text colour where the ring is drawn.                                                                |
 | `--fill`         | Fill of progress bars and the seek and volume bars. Unset, it uses `--ink`.                                                               |
 | `--highlight`    | Background of hovered tabs (but not the active one), flyout entries and select options. Unset, tabs use `--paper` and the others `--ink`. |
 | `--on-highlight` | Text on `--highlight`. Unset, tabs use `--ink` and the others `--paper`.                                                                  |
-| `--case`         | Labels' `text-transform`: `uppercase`, or `none` for text as written                                                                      |
+| `--case`         | Labels' `text-transform`: `uppercase`, or `none` for text as written. Base: `none`.                                                       |
 
 ## Theme parts
 
@@ -77,7 +79,7 @@ This theme keeps everything of Graphix but its colours, including in the inverte
 | Pressed button      | `button[aria-pressed="true"]`                                 | `:hover`, `:focus-visible`                                       |
 | Destructive button  | `button.destructive`                                          | `:hover`, `:focus-visible`, `:disabled`                          |
 | Icon                | `svg[data-icon]`, or `button.icon svg`                        |                                                                  |
-| Checkbox            | `input[type="checkbox"]`, glyph in `::before`                 | `:checked`, `:focus-visible`                                     |
+| Checkbox            | `input[type="checkbox"]`, its X in `background`               | `:checked`, `:focus-visible`                                     |
 | Select              | `select`                                                      | `:focus-visible`, `:disabled`                                    |
 | Progress bar        | `progress`, fill in `::-webkit-progress-value`                |                                                                  |
 | Search input        | `input[type="search"]`                                        | `:focus-visible`                                                 |
@@ -105,7 +107,8 @@ This theme keeps everything of Graphix but its colours, including in the inverte
 - **Volume bar.** Shown above the mute button, which shares its `.volume` wrapper, while the pointer is over it or it has keyboard focus. The component places and borders it with `.volume input`, so restyling those takes `.volume .volume-bar`.
 - **First and last tabs.** The last tab, Settings, sits at the right edge. The window clips the outer side of their focus outline, so their focus ring is an inset `box-shadow` instead.
 - **Flyout entry.** A button, drawn without a border. `.destructive` marks entries like Unsubscribe, and `[role="menuitemcheckbox"]` the ones that toggle.
-- **Dialogs.** The confirm dialog and What's New. The lines below the header and the body are their `background`, so replacing it restyles or removes them. The close button is `.plain`, so hovering it doesn't invert it.
+- **Dialogs.** The confirm dialog and What's New. The lines below the header and the body are their `background`, so replacing it restyles or removes them. The close button is `.plain`, so hovering it doesn't invert it. Its X is its `background`; its text, `[×]`, is pushed out of view with `text-indent`, which Asciitron undoes to show it.
+- **Checkbox.** Asciitron draws `[ ]` and `[×]` in `::before` instead, with the border and the X removed.
 
 ## Colouring a surface
 

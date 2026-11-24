@@ -57,8 +57,12 @@ _Avoid_: Filter, image mode, theme
 ### Look
 
 **Theme**:
-The named look picked in Settings, such as Asciitron or Graphix: a stylesheet that can change the colour tokens and restyle the theme parts. Works with every appearance. Image style is not a theme. Set as `data-skin` on the root, since `data-theme` already holds the appearance.
+The named look picked in Settings, such as Asciitron or Graphix: a stylesheet on top of Base that can change the colour tokens and restyle the theme parts. Works with every appearance. Image style is not a theme. Set as `data-skin` on the root, since `data-theme` already holds the appearance.
 _Avoid_: Style
+
+**Base**:
+The unprefixed styles every theme builds on, built-in or custom: plain neutral greys, the system monospace font and text as written. Not a theme itself, and not picked in Settings.
+_Avoid_: Default theme, Asciitron
 
 **Custom theme**:
 A theme the user adds as a folder holding a `theme.css` in the config folder's `themes`, listed in Settings after the built-in themes. It applies on top of Base, or the built-in theme its `@extends` tag names, and sets only that theme's `data-skin`, never its own.

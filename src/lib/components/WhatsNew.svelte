@@ -112,16 +112,14 @@
 		--ink: white;
 		--paper: var(--info);
 		background: var(--paper);
-		/* White inside black in both modes, as a shadow so it stays clear of any focus outline */
 		border: 1px solid white;
-		box-shadow: 0 0 0 1px black;
 		color: var(--ink);
 	}
 
-	/* A row of `-` characters between the parts, as in the episode tables */
+	/* A line between the parts */
 	header,
 	.notes {
-		background: linear-gradient(to right, currentColor 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+		background: linear-gradient(currentColor, currentColor) left bottom / 100% 1px no-repeat;
 	}
 
 	header {

@@ -2,8 +2,8 @@ import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { errors } from './errors.svelte';
 
 /** The built-in themes by stored name, with their labels, in the menu's alphabetical order. Each has a stylesheet
- * imported in `+layout.ts`, except Asciitron, the unprefixed styles in app.css. The inline scripts in app.html keep
- * their own copy of the names, the default and the storage keys. */
+ * imported in `+layout.ts`, on top of Base, the unprefixed styles. The inline scripts in app.html keep their own copy
+ * of the names, the default and the storage keys. */
 export const themes = {
 	asciitron: 'Asciitron',
 	graphix: 'Graphix',
@@ -70,7 +70,7 @@ function linkStylesheet(href?: string) {
 
 const stored = localStorage.getItem(storageKey);
 
-/** The picked theme, set as `data-skin` on the root. Asciitron and custom themes set no attribute. */
+/** The picked theme, set as `data-skin` on the root. A custom theme sets the built-in theme it extends, or none. */
 class ThemeStore {
 	/** A built-in theme, or a custom theme's `value`. Nothing stored, or a theme removed in an update, loads as Graphix.
 	 * So does a custom theme whose folder is gone, once `load` finds it missing. */
@@ -110,7 +110,7 @@ class ThemeStore {
 		// A custom theme applies on top of the built-in theme it extends, or Base. Its folder name never becomes the
 		// attribute.
 		const skin = custom ? custom.extends : value;
-		const attribute = isTheme(skin) && skin !== 'asciitron' ? skin : undefined;
+		const attribute = isTheme(skin) ? skin : undefined;
 
 		this.current = value;
 		localStorage.setItem(storageKey, value);

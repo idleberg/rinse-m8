@@ -1,0 +1,59 @@
+/* Asciitron: Base in IBM Plex Mono and uppercase labels, on warm paper, with links and the focus ring in the red
+   accent, checkboxes and the dialogs' close button as `[ ]` / `[×]`, a row of `-` between the dialogs' parts, and a
+   black ring around What's New. */
+
+:root[data-skin="asciitron"] {
+	--case: uppercase;
+}
+
+:root[data-skin="asciitron"],
+:root[data-skin="asciitron"] .inverted {
+	--paper: light-dark(rgb(242 239 232), rgb(20 20 20));
+	--ink: light-dark(rgb(20 20 20), rgb(242 239 232));
+	--muted: light-dark(rgb(107 103 95), rgb(143 138 128));
+	--link: var(--accent);
+	--focus: var(--accent);
+}
+
+/* Form controls inherit the font from app.css */
+:root[data-skin="asciitron"] body {
+	font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* Exactly one line of text tall, so `[ ]` sits on the label's baseline */
+:root[data-skin="asciitron"] input[type="checkbox"] {
+	width: 3ch;
+	height: 1lh;
+	margin: 0;
+	border: none;
+	background: none;
+}
+
+:root[data-skin="asciitron"] input[type="checkbox"]::before {
+	content: "[ ]";
+	white-space: pre;
+}
+
+:root[data-skin="asciitron"] input[type="checkbox"]:checked::before {
+	content: "[×]";
+}
+
+/* The close button shows its `[×]` text instead of the X */
+:root[data-skin="asciitron"] button.dialog-close {
+	width: auto;
+	height: auto;
+	overflow: visible;
+	text-indent: 0;
+	background: none;
+}
+
+/* A row of `-` characters between the dialogs' parts, as in the episode tables */
+:root[data-skin="asciitron"] :is(.dialog-header, .dialog-body) {
+	background:
+		linear-gradient(to right, currentColor 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+}
+
+/* White inside black in both modes, as a shadow so it stays clear of any focus outline */
+:root[data-skin="asciitron"] .whats-new {
+	box-shadow: 0 0 0 1px black;
+}

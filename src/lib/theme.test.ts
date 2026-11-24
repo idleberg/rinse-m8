@@ -18,13 +18,14 @@ globalThis.localStorage = {
 	},
 } as unknown as Storage;
 
-/** A custom theme in a folder named like a built-in theme, two that extend one, the second with a typo, and one whose
+/** A custom theme in a folder named like a built-in theme, three that extend one, the second with a typo, and one whose
  * `theme.css` can't be read. */
 const customThemes = {
 	themes: [
 		{ id: 'dusk', name: 'Dusk', extends: 'graphix', path: '/config/themes/dusk/theme.css' },
 		{ id: 'graphix', name: 'Solarized', extends: null, path: '/config/themes/graphix/theme.css' },
 		{ id: 'typo', name: 'Typo', extends: 'grafix', path: '/config/themes/typo/theme.css' },
+		{ id: 'warm', name: 'Warm', extends: 'asciitron', path: '/config/themes/warm/theme.css' },
 	],
 	failures: ['Reading themes/broken/theme.css failed'],
 };
@@ -80,14 +81,14 @@ it('loads a stored custom theme missing from the list as Graphix', async () => {
 });
 
 it('lists the custom themes and reports the ones that cannot be read', () => {
-	expect(theme.custom.map((custom) => custom.name)).toEqual(['Dusk', 'Solarized', 'Typo']);
+	expect(theme.custom.map((custom) => custom.name)).toEqual(['Dusk', 'Solarized', 'Typo', 'Warm']);
 	expect(errors.message).toBe('Reading themes/broken/theme.css failed');
 });
 
-it('clears the root attribute and stores Asciitron', () => {
+it('sets the root attribute and stores Asciitron', () => {
 	theme.pick('asciitron');
 	expect(theme.current).toBe('asciitron');
-	expect(root.dataset.skin).toBeUndefined();
+	expect(root.dataset.skin).toBe('asciitron');
 	expect(local.get('skin')).toBe('asciitron');
 });
 
@@ -121,6 +122,12 @@ it('sets the extended theme as the root attribute and stores it', () => {
 	expect(body).toEqual([
 		expect.objectContaining({ href: 'asset://localhost/%2Fconfig/themes/dusk/theme.css' }),
 	]);
+});
+
+it('sets Asciitron as the root attribute for a theme that extends it', () => {
+	theme.pick('custom:warm');
+	expect(root.dataset.skin).toBe('asciitron');
+	expect(local.get('skin-extends')).toBe('asciitron');
 });
 
 it('ignores an @extends that is not a built-in theme', () => {

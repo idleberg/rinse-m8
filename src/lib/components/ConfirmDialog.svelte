@@ -72,10 +72,10 @@
 		color: var(--ink);
 	}
 
-	/* A row of `-` characters between the parts, as in the episode tables */
+	/* A line between the parts */
 	header,
 	p {
-		background: linear-gradient(to right, currentColor 60%, transparent 0) left bottom / 1ch 1px repeat-x;
+		background: linear-gradient(currentColor, currentColor) left bottom / 100% 1px no-repeat;
 	}
 
 	header {

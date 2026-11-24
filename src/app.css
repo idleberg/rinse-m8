@@ -1,20 +1,21 @@
 :root {
 	color-scheme: light dark;
 	/* Labels' text-transform. Only on the root: without light-dark() it resolves the same everywhere. */
-	--case: uppercase;
+	--case: none;
 }
 
 /* Declared again on .inverted, since WebKit resolves light-dark() where a custom property is declared, not where it's used */
 :root,
 .inverted {
-	--paper: light-dark(rgb(242 239 232), rgb(20 20 20));
-	/* Each theme's ink is the other's paper, so the active Settings tab meets the inverted page without a seam */
-	--ink: light-dark(rgb(20 20 20), rgb(242 239 232));
-	--muted: light-dark(rgb(107 103 95), rgb(143 138 128));
+	--paper: light-dark(rgb(216 216 216), rgb(20 20 20));
+	/* Each appearance's ink is the other's paper, so the active Settings tab meets the inverted page without a seam */
+	--ink: light-dark(rgb(20 20 20), rgb(216 216 216));
+	--muted: light-dark(rgb(104 104 104), rgb(140 140 140));
 	--accent: light-dark(rgb(217 56 30), rgb(255 90 60));
 	--info: light-dark(rgb(30 80 200), rgb(45 105 215));
-	--link: var(--accent);
-	--focus: var(--accent);
+	--link: var(--info);
+	/* The element's text colour, resolved where it's used: ink on most, but paper on idle tabs, where ink is the bar */
+	--focus: currentColor;
 }
 
 .inverted {
@@ -60,8 +61,7 @@ body {
 	background: var(--paper);
 	color: var(--ink);
 	font:
-		14px / 1.5 "IBM Plex Mono",
-		ui-monospace,
+		14px / 1.5 ui-monospace,
 		monospace;
 }
 
@@ -264,25 +264,48 @@ button.icon svg {
 	stroke-width: 1.5;
 }
 
-/* Still a native checkbox, drawn as `[ ]` / `[×]` */
-/* Exactly one line of text tall, so `[ ]` sits on the label's baseline */
+/* Still a native checkbox, drawn as a bordered square like the icon buttons, font-size tall. The margins fill the rest
+   of the line, so it's centred and nothing shifts. */
 input[type="checkbox"] {
 	appearance: none;
 	display: inline-block;
-	width: 3ch;
-	height: 1lh;
-	margin: 0;
+	box-sizing: border-box;
+	width: 1em;
+	height: 1em;
+	margin: calc((1lh - 1em) / 2) 0;
+	border: 1px solid currentColor;
 	vertical-align: top;
 	cursor: pointer;
 }
 
-input[type="checkbox"]::before {
-	content: "[ ]";
-	white-space: pre;
+/* The dialogs' close button is the same square without the border. Its `[×]` text moves out of the box but stays the
+   button's content; the accessible name is its aria-label anyway. */
+button.dialog-close {
+	box-sizing: border-box;
+	width: 1em;
+	height: 1em;
+	overflow: hidden;
+	white-space: nowrap;
+	text-indent: 1em;
 }
 
-input[type="checkbox"]:checked::before {
-	content: "[×]";
+/* A checked checkbox and the close button show an X running corner to corner, drawn from two diagonal strokes like the
+   select's `v`. On a square, a 45° gradient's middle stripe is the opposite diagonal. */
+input[type="checkbox"]:checked,
+button.dialog-close {
+	background:
+		linear-gradient(
+			45deg,
+			transparent calc(50% - 0.5px),
+			currentColor calc(50% - 0.5px) calc(50% + 0.5px),
+			transparent calc(50% + 0.5px)
+		),
+		linear-gradient(
+			-45deg,
+			transparent calc(50% - 0.5px),
+			currentColor calc(50% - 0.5px) calc(50% + 0.5px),
+			transparent calc(50% + 0.5px)
+		);
 }
 
 input[type="search"] {
