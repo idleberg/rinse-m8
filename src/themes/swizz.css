@@ -38,6 +38,15 @@
 		no-repeat;
 }
 
+/* A hovered tab's ring is its dark text colour, so the mint stands out from the light tab bar in dark mode. In light
+   mode that's the ink the ring already is. Not while focused, where the edge tabs draw their focus ring in it. Raised
+   like a focused button, so the next tab's ring doesn't cover its right side. */
+:root[data-skin="swizz"] nav button:hover:not([aria-current="page"], :focus-visible) {
+	position: relative;
+	z-index: 1;
+	box-shadow: 0 0 0 1px var(--on-highlight);
+}
+
 /* The pale surfaces below have fixed colours, so they look the same in both appearances and the inverted area. Each
    redefines --ink and --paper, so its lines, progress fill and hovered buttons follow. They come after the tokens above,
    since the toast is itself .inverted on Settings and ties with them. */
@@ -69,8 +78,10 @@
 	--paper: rgb(240 214 226);
 }
 
-/* The toast draws paper on ink, so its ink is the yellow */
+/* The toast draws paper on ink, so its ink is the yellow. Bordered in its text colour, so the yellow doesn't fade into a
+   light page. */
 :root[data-skin="swizz"] .toast {
 	--ink: rgb(242 232 188);
 	--paper: rgb(28 28 28);
+	border: 1px solid currentColor;
 }
