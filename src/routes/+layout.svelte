@@ -32,6 +32,9 @@
 	/** Settings swap light and dark, to stand apart from the other pages. */
 	const inverted = $derived(pathname === '/settings');
 
+	/** The update banner's height, 0 without one, so the nav and error banner stick below it */
+	let bannerHeight = $state(0);
+
 	const tabs = [
 		['/', 'My Shows'],
 		['/player', 'Player'],
@@ -117,10 +120,12 @@
 	}}
 />
 
-<UpdateBanner />
+<div class="update" bind:offsetHeight={bannerHeight}>
+	<UpdateBanner />
+</div>
 
 <!-- Inverted with Settings, so the whole bar flips and the active tab still meets the inverted page without a seam -->
-<nav class="tab-bar" class:inverted>
+<nav class="tab-bar" class:inverted style:top="{bannerHeight}px">
 	{#each tabs as [path, label] (path)}
 		<!-- Favs is a heart, labelled for screen readers and on hover -->
 		<button type="button" class="tab"
@@ -140,7 +145,7 @@
 	{/each}
 </nav>
 
-<main class:inverted>
+<main class:inverted style:--banner-height="{bannerHeight}px">
 	{#if errors.message}
 		<p class="error-banner" role="alert">
 			{errors.message}
@@ -180,7 +185,15 @@
 {/if}
 
 <style>
-	/* Pinned to the top of the window while the page scrolls under it */
+	/* Pinned to the top of the window, with the nav below it. Above the page's raised focused buttons, and level with the
+	   window frame, which comes later and so still draws its top line over the banner. */
+	.update {
+		position: sticky;
+		top: 0;
+		z-index: 2;
+	}
+
+	/* Pinned to the top of the window, or below the update banner, while the page scrolls under it */
 	nav {
 		position: sticky;
 		top: 0;
@@ -288,10 +301,11 @@
 		color: var(--ink);
 	}
 
-	/* Sticks below the nav, which is 40px tall. Above the page's raised focused buttons, below the nav. */
+	/* Sticks below the update banner and the nav, which is 40px tall. Above the page's raised focused buttons, below the
+	   nav. */
 	.error-banner {
 		position: sticky;
-		top: 40px;
+		top: calc(var(--banner-height) + 40px);
 		z-index: 2;
 		display: flex;
 		gap: 1rem;
