@@ -278,6 +278,16 @@ input[type="checkbox"] {
 	cursor: pointer;
 }
 
+/* The label toggles its checkbox too, so it shares the cursor, and disabled ones show the disabled button's */
+label:has(input[type="checkbox"]) {
+	cursor: pointer;
+}
+
+label:has(input[type="checkbox"]:disabled),
+input[type="checkbox"]:disabled {
+	cursor: not-allowed;
+}
+
 /* The dialogs' close button is the same square without the border. Its `[×]` text moves out of the box but stays the
    button's content; the accessible name is its aria-label anyway. */
 button.dialog-close {

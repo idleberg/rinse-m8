@@ -80,7 +80,6 @@
 
 	label {
 		display: block;
-		cursor: pointer;
 	}
 
 	/* Room for the checkbox's focus outline, which reaches 4px past the box */
