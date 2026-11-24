@@ -23,6 +23,7 @@ import {
 	sortShows,
 	stationsOf,
 	toggleSort,
+	unwrap,
 	webPage,
 	weeksAgo,
 } from './episodes';
@@ -277,4 +278,26 @@ it("picks each subscribed show's newest episode before hiding, so an older one n
 
 	expect(newestPerShow(list, ['a', 'b'], () => false)).toEqual([newestA, newestB]);
 	expect(newestPerShow(list, ['a', 'b'], (e) => e === newestB)).toEqual([newestA]);
+});
+
+it('a hard-wrapped description is joined back up, keeping the breaks that end a sentence', () => {
+	const wrapped = [
+		'Since 2003 Paul Rose – aka Scuba – has released productions covering the',
+		'entire spectrum of electronic music, revelling in the creative process,',
+		'and bucking expectations. He’s released five critically acclaimed artist',
+		'albums and crafted mixes for the DJ Kicks, fabric, and Ostgut Ton, winning',
+		'a DJ Mag Best Live Act award along the way.',
+		'He remains one of the industry’s most astute tastemakers.',
+	].join('\n');
+
+	expect(unwrap(wrapped)).toBe(
+		'Since 2003 Paul Rose – aka Scuba – has released productions covering the entire spectrum of electronic music, revelling in the creative process, and bucking expectations. He’s released five critically acclaimed artist albums and crafted mixes for the DJ Kicks, fabric, and Ostgut Ton, winning a DJ Mag Best Live Act award along the way.\nHe remains one of the industry’s most astute tastemakers.',
+	);
+});
+
+it('a list keeps its lines', () => {
+	const tracklist =
+		'Burial - Archangel\nScuba - Adrenalin\nMount Kimbie - Maybes (Extended Mix)\nPhotek - Ni Ten Ichi Ryu';
+
+	expect(unwrap(tracklist)).toBe(tracklist);
 });

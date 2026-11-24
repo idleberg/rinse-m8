@@ -52,6 +52,7 @@ export interface ShowPage {
 }
 
 const blankLine = /\n\s*\n/u;
+const sentenceEnd = /[.!?:]$/u;
 
 /** The text of each block in `html`, line breaks kept as `\n`. Parsed into an inert document, so nothing in it runs or loads. */
 export function paragraphs(html: string): string[] {
@@ -68,7 +69,30 @@ export function paragraphs(html: string): string[] {
 	return doc.body.textContent
 		.split(blankLine)
 		.map((text) => text.trim())
-		.filter(Boolean);
+		.filter(Boolean)
+		.map(unwrap);
+}
+
+/**
+ * `text` with the line breaks of a hard wrap joined back up. A break is a wrap when the next word wouldn't have fit on
+ * the line and the line doesn't end a sentence. Most breaks have to be wraps, so a list keeps its lines.
+ */
+// ponytail: a guess from line lengths alone; a list of long, unpunctuated lines can still read as wrapped
+export function unwrap(text: string): string {
+	const lines = text.split('\n').map((line) => line.trim());
+	const width = Math.max(...lines.map((line) => line.length));
+	const wraps = lines
+		.slice(1)
+		.map(
+			(line, i) =>
+				lines[i].length + 1 + line.split(' ')[0].length > width && !sentenceEnd.test(lines[i]),
+		);
+
+	if (wraps.length < 2 || wraps.filter(Boolean).length * 2 <= wraps.length) {
+		return text;
+	}
+
+	return lines.reduce((joined, line, i) => joined + (wraps[i - 1] ? ' ' : '\n') + line);
 }
 
 /** Whether the episode has an mp3 that wasn't missing at its last check. */
