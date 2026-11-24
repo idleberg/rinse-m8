@@ -347,7 +347,7 @@ class Player {
 		}
 	};
 
-	/** Whether the dashboard leaves the episode out: it was marked seen. Latest also leaves out `isOld` episodes. */
+	/** Whether Latest leaves the episode out: it was marked seen. Latest also leaves out `isOld` episodes. */
 	isSeen = (episode: Episode) => this.#seen.has(episode.id);
 
 	/** Whether the episode is as old as the Seen after setting. Only Latest treats that as seen. */

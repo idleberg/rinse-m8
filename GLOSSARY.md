@@ -23,7 +23,7 @@ Putting a subscribed show's new episodes in the download queue as they appear. S
 _Avoid_: Automatic subscription, sync
 
 **Seen**:
-An episode marked seen from its flyout. In Latest, also one as old as the Seen after setting; the show sections ignore that setting. The dashboard hides seen episodes unless "show seen" is ticked. Playing or downloading never marks an episode seen.
+An episode marked seen from its flyout in Latest, or one as old as the Seen after setting. Latest hides seen episodes unless "show seen" is ticked; the show sections list them regardless. Playing or downloading never marks an episode seen.
 _Avoid_: Read, dismissed, expired
 
 **Show directory**:

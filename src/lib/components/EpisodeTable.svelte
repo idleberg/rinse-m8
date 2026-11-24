@@ -32,7 +32,6 @@
 		linkShows = true,
 		markable = false,
 		plays,
-		seenByAge = false,
 		subscribable = false,
 	}: {
 		episodes: Episode[];
@@ -45,13 +44,12 @@
 		limit?: number;
 		/** Links each show name to its show view. Off where the table already is that view. */
 		linkShows?: boolean;
-		/** Adds "Mark as seen" / "Mark as unseen" to each row's flyout. */
+		/** Adds "Mark as seen" / "Mark as unseen" to each row's flyout, counting an episode as seen once it's as old as the
+		 * Seen after setting. */
 		markable?: boolean;
 		/** How often each episode has been played, by episode id. When given, the table has a Plays column and starts out
 		 * sorted by it. */
 		plays?: Record<string, number>;
-		/** With `markable`, also counts an episode as seen once it's as old as the Seen after setting. */
-		seenByAge?: boolean;
 		/** Adds "Subscribe" to each row's flyout. */
 		subscribable?: boolean;
 	} = $props();
@@ -101,7 +99,7 @@
 		await refocusTrigger(body, index);
 	}
 
-	/** Marking seen drops the row on the dashboard. */
+	/** Marking seen drops the row from Latest. */
 	async function toggleSeen(episode: Episode, index: number) {
 		await player.toggleSeen(episode);
 		await refocusTrigger(body, index);
@@ -192,7 +190,7 @@
 						{/if}
 						<Flyout {episode}>
 							{#if markable}
-								{@const old = seenByAge && player.isOld(episode)}
+								{@const old = player.isOld(episode)}
 								{@const seen = player.isSeen(episode) || old}
 								<!-- Disabled once old enough, since that keeps it seen either way -->
 								<button

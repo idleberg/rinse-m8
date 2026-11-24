@@ -22,7 +22,7 @@
 		<h2><button type="button" class="plain link" onclick={() => openShow(show.slug)}>{show.title}</button></h2>
 		<SubscribeButton {show} />
 	</header>
-	<EpisodeTable {episodes} limit={expanded ? undefined : limit} markable />
+	<EpisodeTable {episodes} limit={expanded ? undefined : limit} />
 	{#if episodes.length > limit}
 		<button type="button" aria-expanded={expanded} onclick={() => {
 			expanded = !expanded;

@@ -6,7 +6,6 @@
 	import { episodes } from '#lib/episodes.svelte';
 	import { filters } from '#lib/filters.svelte';
 	import { findLatest } from '#lib/latest.svelte';
-	import { player } from '#lib/player.svelte';
 	import { settings } from '#lib/settings.svelte';
 
 	let showSeen = $state(false);
@@ -20,10 +19,7 @@
 		orderSections(
 			settings.stored.subscriptions.map((show) => ({
 				show,
-				episodes: filteredEpisodes.filter(
-					(episode) =>
-						episode.showSlug === show.slug && (showSeen || !player.isSeen(episode)),
-				),
+				episodes: filteredEpisodes.filter((episode) => episode.showSlug === show.slug),
 			})),
 			settings.stored.showOrder,
 		),
@@ -47,7 +43,6 @@
 				episodes={latest}
 				limit={latestExpanded ? undefined : latestLimit}
 				markable
-				seenByAge
 				subscribable
 			/>
 			{#if latest.length > latestLimit}
