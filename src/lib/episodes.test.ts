@@ -23,6 +23,7 @@ import {
 	sortShows,
 	stationsOf,
 	toggleSort,
+	truncate,
 	unwrap,
 	webPage,
 	weeksAgo,
@@ -300,4 +301,12 @@ it('a list keeps its lines', () => {
 		'Burial - Archangel\nScuba - Adrenalin\nMount Kimbie - Maybes (Extended Mix)\nPhotek - Ni Ten Ichi Ryu';
 
 	expect(unwrap(tracklist)).toBe(tracklist);
+});
+
+it('a truncated description ends in an ellipsis with nothing but a letter or digit before it', () => {
+	const description = ['Since 2003 Paul Rose.', 'He immersed the UK-centric dubstep movement.'];
+
+	expect(truncate(description, 2)).toEqual(['Since 2003…']);
+	expect(truncate(description, 4)).toEqual(['Since 2003 Paul Rose…']);
+	expect(truncate(description, 8)).toEqual(['Since 2003 Paul Rose.', 'He immersed the UK…']);
 });

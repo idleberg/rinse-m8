@@ -53,6 +53,8 @@ export interface ShowPage {
 
 const blankLine = /\n\s*\n/u;
 const sentenceEnd = /[.!?:]$/u;
+const wordEnd = /(?<=[\s-])/u;
+const trailingNonWord = /[^\p{L}\p{N}]+$/u;
 
 /** The text of each block in `html`, line breaks kept as `\n`. Parsed into an inert document, so nothing in it runs or loads. */
 export function paragraphs(html: string): string[] {
@@ -93,6 +95,31 @@ export function unwrap(text: string): string {
 	}
 
 	return lines.reduce((joined, line, i) => joined + (wraps[i - 1] ? ' ' : '\n') + line);
+}
+
+/**
+ * The first `count` words of the paragraphs in `blocks`, the last one ending in an ellipsis. A word ends after
+ * whitespace or a hyphen, as a line can, and the ellipsis drops whatever isn't a letter or digit before it: `UK-centric`
+ * cuts to `UK…`.
+ */
+export function truncate(blocks: string[], count: number): string[] {
+	const shown: string[] = [];
+	let left = count;
+
+	for (const paragraph of blocks) {
+		const words = paragraph.split(wordEnd);
+
+		if (left <= words.length) {
+			shown.push(`${words.slice(0, left).join('').replace(trailingNonWord, '')}…`);
+
+			return shown;
+		}
+
+		shown.push(paragraph);
+		left -= words.length;
+	}
+
+	return shown;
 }
 
 /** Whether the episode has an mp3 that wasn't missing at its last check. */

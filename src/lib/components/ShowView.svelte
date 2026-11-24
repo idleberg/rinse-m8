@@ -4,7 +4,7 @@
 	import EpisodeTable from '#lib/components/EpisodeTable.svelte';
 	import Recommendations from '#lib/components/Recommendations.svelte';
 	import SubscribeButton from '#lib/components/SubscribeButton.svelte';
-	import { paragraphs, passesCheckboxes, type Show, type ShowDetails } from '#lib/episodes';
+	import { paragraphs, passesCheckboxes, type Show, type ShowDetails, truncate } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { goto } from '$app/navigation';
 
@@ -39,20 +39,83 @@
 	const description = $derived(details?.description ? paragraphs(details.description) : []);
 
 	let expanded = $state(false);
-	let overflowing = $state(false);
 	let imageHeight = $state(0);
+	let buttonHeight = $state(0);
+	let clipWidth = $state(0);
 	let clip: HTMLDivElement | undefined = $state();
 
-	$effect(() => {
-		// Read so the clip is measured again when either changes
-		// biome-ignore lint/suspicious/noUnusedExpressions: Svelte tracks reads as dependencies
-		description;
-		// biome-ignore lint/suspicious/noUnusedExpressions: as above
-		imageHeight;
+	/** The description cut to end above the button, or null when it all fits beside the image. */
+	let shown: string[] | null = $state(null);
+	const overflowing = $derived(shown !== null);
+	const visible = $derived(expanded || !shown ? description : shown);
 
-		if (clip && !expanded) {
-			overflowing = clip.scrollHeight > clip.clientHeight;
+	$effect(() => {
+		if (clip && imageHeight && clipWidth) {
+			shown = shortened(clip, clipWidth, imageHeight, buttonHeight);
 		}
+	});
+
+	/**
+	 * Lays the description out in a hidden copy of `element`, `width` wide. Null when it fits in `height`, else the most
+	 * words that fit once the button and its gap are taken off it, found by binary search.
+	 */
+	function shortened(element: HTMLDivElement, width: number, height: number, button: number): string[] | null {
+		const blocks = description;
+		const probe = element.cloneNode() as HTMLDivElement;
+		// Scoped styles match by class, so new paragraphs take their sibling's
+		const className = element.firstElementChild?.className ?? '';
+
+		const fits = (texts: string[], limit: string) => {
+			probe.style.maxHeight = limit;
+			probe.replaceChildren(
+				...texts.map((textContent) => Object.assign(document.createElement('p'), { className, textContent })),
+			);
+
+			return probe.scrollHeight <= probe.clientHeight;
+		};
+
+		Object.assign(probe.style, { position: 'absolute', visibility: 'hidden', width: `${width}px` });
+		element.after(probe);
+
+		try {
+			if (fits(blocks, `${height}px`)) {
+				return null;
+			}
+
+			const limit = `round(down, ${height}px - ${button}px - var(--gap), 1lh)`;
+			// No block has more words than characters
+			let low = 1;
+			let high = blocks.join('').length;
+
+			while (low < high) {
+				const middle = Math.ceil((low + high) / 2);
+
+				if (fits(truncate(blocks, middle), limit)) {
+					low = middle;
+				} else {
+					high = middle - 1;
+				}
+			}
+
+			return truncate(blocks, low);
+		} finally {
+			probe.remove();
+		}
+	}
+
+	/** The image's height, less the button and its gap when it shows, so the two together end with the image. */
+	const maxHeight = $derived.by(() => {
+		if (expanded) {
+			return null;
+		}
+
+		if (!imageHeight) {
+			return '12rem';
+		}
+
+		const button = overflowing ? ` - ${buttonHeight}px - var(--gap)` : '';
+
+		return `round(down, ${imageHeight}px${button}, 1lh)`;
 	});
 </script>
 
@@ -69,17 +132,13 @@
 		{#if description.length}
 			<!-- On the clip itself: WebKit doesn't shrink a flex item to a column container's max-height.
 			     Rounded down to whole lines, so no half-cut line sits above the button. -->
-			<div
-				class="clip"
-				bind:this={clip}
-				style:max-height={expanded ? null : `round(down, ${imageHeight ? `${imageHeight}px` : '12rem'}, 1lh)`}
-			>
-				{#each description as paragraph}
+			<div class="clip" bind:this={clip} bind:clientWidth={clipWidth} style:max-height={maxHeight}>
+				{#each visible as paragraph}
 					<p>{paragraph}</p>
 				{/each}
 			</div>
 			{#if expanded || overflowing}
-				<button type="button" onclick={() => {
+				<button type="button" bind:offsetHeight={buttonHeight} onclick={() => {
 						expanded = !expanded;
 					}}>{expanded ? 'Show less' : 'Show more'}</button>
 			{/if}
@@ -148,7 +207,9 @@
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 0.5rem;
+		/* Also taken off the clip's height when the button shows */
+		--gap: 0.5rem;
+		gap: var(--gap);
 	}
 
 	.clip {
