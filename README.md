@@ -18,10 +18,17 @@ A desktop app for browsing, downloading and listening to on-demand episodes from
 
 Download the latest version for macOS, Windows or Linux from the [releases page](https://github.com/idleberg/rinse-m8/releases/latest).
 
-On macOS, you can also install it with Homebrew:
+On macOS, you can install using Homebrew:
 
 ```sh
 brew install --cask idleberg/asahi/rinse-m8
+```
+
+On Windows, you can install using Scoop:
+
+```sh
+scoop bucket add idleberg https://github.com/idleberg/bucket
+scoop install idleberg/rinse-m8
 ```
 
 ## License
