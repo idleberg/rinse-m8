@@ -269,7 +269,7 @@
 
 {#if version}
 	<footer>
-		VERSION {version}
+		Version {version}
 		<!-- Opens in the browser, since the webview would navigate away from the app -->
 		<a
 			href="https://github.com/idleberg/rinse-m8"
@@ -347,6 +347,7 @@
 		margin: auto -1rem -1rem;
 		padding: 0 1rem;
 		border-top: 1px solid currentColor;
+		text-transform: var(--case);
 	}
 
 	/* Sized like an icon button (plus its border), so it lines up with the heart in the nav below. Red in every theme,

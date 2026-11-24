@@ -288,7 +288,11 @@
 		color: var(--ink);
 	}
 
+	/* Sticks below the nav, which is 40px tall. Above the page's raised focused buttons, below the nav. */
 	.error-banner {
+		position: sticky;
+		top: 40px;
+		z-index: 2;
 		display: flex;
 		gap: 1rem;
 		align-items: center;
