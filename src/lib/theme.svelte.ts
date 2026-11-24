@@ -15,6 +15,8 @@ export type Theme = keyof typeof themes;
 interface CustomTheme {
 	id: string;
 	name: string;
+	/** The `@extends` tag, unvalidated: only a built-in theme counts. */
+	extends: string | null;
 	path: string;
 }
 
@@ -23,6 +25,9 @@ const storageKey = 'skin';
 
 /** The picked custom theme's stylesheet URL, so app.html can link it before the app starts, without the backend. */
 const hrefKey = 'skin-href';
+
+/** The built-in theme the picked custom theme extends, so app.html can set its attribute at first paint. */
+const extendsKey = 'skin-extends';
 
 /** The link that loads the picked custom theme, in the body, so it comes after every style in the head and wins ties. */
 const linkId = 'custom-theme';
@@ -84,9 +89,9 @@ class ThemeStore {
 
 			this.custom = listed.themes.map((custom) => ({ ...custom, value: `custom:${custom.id}` }));
 
-			// Its folder was deleted or renamed since it was picked
-			if (isCustom(this.current) && !this.custom.some((c) => c.value === this.current)) {
-				this.pick('graphix');
+			// Picked again, since its header may have changed since. If its folder was deleted or renamed, Graphix.
+			if (isCustom(this.current)) {
+				this.pick(this.custom.some((c) => c.value === this.current) ? this.current : 'graphix');
 			}
 
 			if (listed.failures.length > 0) {
@@ -102,14 +107,24 @@ class ThemeStore {
 		const root = document.documentElement;
 		const custom = this.custom.find((c) => c.value === value);
 
+		// A custom theme applies on top of the built-in theme it extends, or Base. Its folder name never becomes the
+		// attribute.
+		const skin = custom ? custom.extends : value;
+		const attribute = isTheme(skin) && skin !== 'asciitron' ? skin : undefined;
+
 		this.current = value;
 		localStorage.setItem(storageKey, value);
 
-		// A custom theme applies on top of Base, and its folder name never becomes the attribute
-		if (custom || value === 'asciitron') {
-			delete root.dataset.skin;
+		if (attribute) {
+			root.dataset.skin = attribute;
 		} else {
-			root.dataset.skin = value;
+			delete root.dataset.skin;
+		}
+
+		if (custom && attribute) {
+			localStorage.setItem(extendsKey, attribute);
+		} else {
+			localStorage.removeItem(extendsKey);
 		}
 
 		const href = custom && stylesheetUrl(custom.path);

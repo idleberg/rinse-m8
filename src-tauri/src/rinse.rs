@@ -1105,6 +1105,8 @@ pub struct CustomTheme {
     pub id: String,
     /// From the `@name` tag in the header, or the folder name without one.
     pub name: String,
+    /// The `@extends` tag: a built-in theme to build on. Not validated, since the frontend owns the built-in list.
+    pub extends: Option<String>,
     pub path: PathBuf,
 }
 
@@ -1132,7 +1134,8 @@ pub fn read_custom_themes(config: &Path) -> Result<CustomThemes, String> {
 
         match std::fs::read_to_string(&path) {
             Ok(css) => listed.themes.push(CustomTheme {
-                name: theme_name(&css).unwrap_or_else(|| id.clone()),
+                name: theme_tag(&css, "@name").unwrap_or_else(|| id.clone()),
+                extends: theme_tag(&css, "@extends"),
                 id,
                 path,
             }),
@@ -1148,8 +1151,8 @@ pub fn read_custom_themes(config: &Path) -> Result<CustomThemes, String> {
     Ok(listed)
 }
 
-/// The `@name` tag in a WordPress-style `/* … */` comment at the start of `css`. Other tags are ignored.
-fn theme_name(css: &str) -> Option<String> {
+/// The value of `tag`, such as `@name`, in a WordPress-style `/* … */` comment at the start of `css`.
+fn theme_tag(css: &str, tag: &str) -> Option<String> {
     let header = css
         .trim_start_matches('\u{feff}')
         .trim_start()
@@ -1161,7 +1164,7 @@ fn theme_name(css: &str) -> Option<String> {
             .trim()
             .trim_start_matches('*')
             .trim()
-            .strip_prefix("@name")?;
+            .strip_prefix(tag)?;
 
         (value.starts_with(char::is_whitespace) && !value.trim().is_empty())
             .then(|| value.trim().to_string())
@@ -1887,7 +1890,7 @@ mod tests {
 
         theme(
             "solarized",
-            "/**\n * @name Solarized\n * @author Someone\n */\n:root { --paper: #fdf6e3 }",
+            "/**\n * @name Solarized\n * @author Someone\n * @extends graphix\n */\n:root { --paper: #fdf6e3 }",
         );
         theme("blank", ":root { --paper: white }");
         theme("zen", "/* @name  alpine  */");
@@ -1896,18 +1899,19 @@ mod tests {
         std::fs::create_dir_all(themes.join("broken").join(THEME_CSS)).unwrap();
 
         let listed = read_custom_themes(&config.0).unwrap();
-        let entry = |id: &str, name: &str| CustomTheme {
+        let entry = |id: &str, name: &str, extends: Option<&str>| CustomTheme {
             id: id.into(),
             name: name.into(),
+            extends: extends.map(Into::into),
             path: themes.join(id).join(THEME_CSS),
         };
 
         assert_eq!(
             listed.themes,
             [
-                entry("zen", "alpine"),
-                entry("blank", "blank"),
-                entry("solarized", "Solarized"),
+                entry("zen", "alpine", None),
+                entry("blank", "blank", None),
+                entry("solarized", "Solarized", Some("graphix")),
             ]
         );
         assert_eq!(listed.failures.len(), 1);

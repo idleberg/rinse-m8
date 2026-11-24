@@ -18,9 +18,14 @@ globalThis.localStorage = {
 	},
 } as unknown as Storage;
 
-/** A custom theme in a folder named like a built-in theme, and one whose `theme.css` can't be read. */
+/** A custom theme in a folder named like a built-in theme, two that extend one, the second with a typo, and one whose
+ * `theme.css` can't be read. */
 const customThemes = {
-	themes: [{ id: 'graphix', name: 'Solarized', path: '/config/themes/graphix/theme.css' }],
+	themes: [
+		{ id: 'dusk', name: 'Dusk', extends: 'graphix', path: '/config/themes/dusk/theme.css' },
+		{ id: 'graphix', name: 'Solarized', extends: null, path: '/config/themes/graphix/theme.css' },
+		{ id: 'typo', name: 'Typo', extends: 'grafix', path: '/config/themes/typo/theme.css' },
+	],
 	failures: ['Reading themes/broken/theme.css failed'],
 };
 
@@ -75,7 +80,7 @@ it('loads a stored custom theme missing from the list as Graphix', async () => {
 });
 
 it('lists the custom themes and reports the ones that cannot be read', () => {
-	expect(theme.custom.map((custom) => custom.name)).toEqual(['Solarized']);
+	expect(theme.custom.map((custom) => custom.name)).toEqual(['Dusk', 'Solarized', 'Typo']);
 	expect(errors.message).toBe('Reading themes/broken/theme.css failed');
 });
 
@@ -95,7 +100,7 @@ it('sets the root attribute and stores Graphix, though it is the default', () =>
 });
 
 it('clears the root attribute for a custom theme, links its stylesheet and stores the pick', () => {
-	const [custom] = theme.custom;
+	const [, custom] = theme.custom;
 
 	theme.pick(custom.value);
 	expect(theme.current).toBe(custom.value);
@@ -109,10 +114,27 @@ it('clears the root attribute for a custom theme, links its stylesheet and store
 	]);
 });
 
+it('sets the extended theme as the root attribute and stores it', () => {
+	theme.pick('custom:dusk');
+	expect(root.dataset.skin).toBe('graphix');
+	expect(local.get('skin-extends')).toBe('graphix');
+	expect(body).toEqual([
+		expect.objectContaining({ href: 'asset://localhost/%2Fconfig/themes/dusk/theme.css' }),
+	]);
+});
+
+it('ignores an @extends that is not a built-in theme', () => {
+	theme.pick('custom:dusk');
+	theme.pick('custom:typo');
+	expect(root.dataset.skin).toBeUndefined();
+	expect(local.has('skin-extends')).toBe(false);
+});
+
 it('removes the custom theme link when a built-in theme is picked', () => {
-	theme.pick(theme.custom[0].value);
+	theme.pick('custom:dusk');
 	theme.pick('graphix');
 	expect(root.dataset.skin).toBe('graphix');
 	expect(local.has('skin-href')).toBe(false);
+	expect(local.has('skin-extends')).toBe(false);
 	expect(body).toEqual([]);
 });

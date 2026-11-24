@@ -13,7 +13,7 @@ This list is the public contract. Renaming or removing a part, a state hook or a
 
 ## Custom themes
 
-A custom theme is a folder in `themes`, in the app's config folder (Settings, Custom themes, Open folder), holding a `theme.css`. Each one is listed in the Theme menu after the built-in themes, and applies on top of Base as soon as it's picked. A folder without `theme.css` is skipped.
+A custom theme is a folder in `themes`, in the app's config folder (Settings, Custom themes, Open folder), holding a `theme.css`. Each one is listed in the Theme menu after the built-in themes, and applies on top of Base, or the built-in theme it extends, as soon as it's picked. A folder without `theme.css` is skipped.
 
 ```text
 themes/
@@ -32,9 +32,25 @@ themes/
    */
   ```
 
-- **Prefix.** Prefix every rule with `:root`. Without a prefix, `.player-bar` loses to the component's own scoped styles. The theme loads after every other style, so it wins ties.
+- **Extends.** An `@extends` tag names a built-in theme to build on, such as `graphix`, instead of Base alone. Its rules apply, and the custom theme overrides them. An id that isn't a built-in theme, whether a typo or a theme removed in an update, is ignored, and the theme builds on Base. Only built-in themes can be extended.
+- **Prefix.** Prefix every rule with `:root`, or with the extended theme's prefix, `:root[data-skin="<name>"]`, when the theme has `@extends`. Without a prefix, `.player-bar` loses to the component's own scoped styles. The theme loads after every other style, so with the same prefix it wins ties with the theme it extends.
 - **Relative URLs.** `url()` resolves against the theme's folder, so `url("fonts/body.woff2")` loads the font above.
 - The folder name is never set as `data-skin`, so a folder named after a built-in theme doesn't turn on its rules.
+
+This theme keeps everything of Graphix but its colours, including in the inverted area:
+
+```css
+/**
+ * @name Graphix Dusk
+ * @extends graphix
+ */
+:root[data-skin="graphix"],
+:root[data-skin="graphix"] .inverted {
+	--paper: light-dark(rgb(232 222 210), rgb(34 28 40));
+	--ink: light-dark(rgb(34 28 40), rgb(232 222 210));
+	--muted: light-dark(rgb(120 108 112), rgb(150 138 150));
+}
+```
 
 ## Colour tokens
 

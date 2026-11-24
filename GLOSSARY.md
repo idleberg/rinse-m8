@@ -61,7 +61,7 @@ The named look picked in Settings, such as Asciitron or Graphix: a stylesheet th
 _Avoid_: Style
 
 **Custom theme**:
-A theme the user adds as a folder holding a `theme.css` in the config folder's `themes`, listed in Settings after the built-in themes. It applies on top of Base and sets no `data-skin`.
+A theme the user adds as a folder holding a `theme.css` in the config folder's `themes`, listed in Settings after the built-in themes. It applies on top of Base, or the built-in theme its `@extends` tag names, and sets only that theme's `data-skin`, never its own.
 _Avoid_: Custom stylesheet, custom CSS, user theme
 
 **Appearance**:
