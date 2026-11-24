@@ -1,0 +1,32 @@
+/* M8PL8: Base in IBM Plex Mono and uppercase labels, in the app icon's two colours only: black on yellow, and yellow
+   on black in the dark appearance. Accent and info fold into ink, so repeat-one looks like repeat-all and failed rows
+   like normal ones. */
+
+:root[data-skin="m8pl8"] {
+	--case: uppercase;
+}
+
+:root[data-skin="m8pl8"],
+:root[data-skin="m8pl8"] .inverted {
+	--paper: light-dark(rgb(255 193 49), rgb(0 0 0));
+	--ink: light-dark(rgb(0 0 0), rgb(255 193 49));
+	/* Half of each, the same in both appearances: 3.6:1 on either paper */
+	--muted: color-mix(in srgb, rgb(255 193 49), rgb(0 0 0));
+	--accent: var(--ink);
+	--info: var(--ink);
+}
+
+/* Form controls inherit the font from app.css */
+:root[data-skin="m8pl8"] body {
+	font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* The artwork placeholder's text, white on Base's black square, in the yellow instead */
+:root[data-skin="m8pl8"] .artwork {
+	color: rgb(255 193 49);
+}
+
+/* The GitHub icon's face, Asciitron's paper in Base, in the yellow instead */
+:root[data-skin="m8pl8"] [data-icon="github"] .face {
+	fill: rgb(255 193 49);
+}

@@ -7,6 +7,7 @@ import { errors } from './errors.svelte';
 export const themes = {
 	asciitron: 'Asciitron',
 	graphix: 'Graphix',
+	m8pl8: 'M8PL8',
 } as const;
 
 export type Theme = keyof typeof themes;

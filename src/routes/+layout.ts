@@ -5,6 +5,7 @@ import '@fontsource/space-mono/700.css';
 import '../app.css';
 import '../themes/asciitron.css';
 import '../themes/graphix.css';
+import '../themes/m8pl8.css';
 
 // Tauri doesn't have a Node.js server to do proper SSR, so adapter-static serves an SPA fallback instead
 // See: https://v2.tauri.app/start/frontend/sveltekit/ for more info

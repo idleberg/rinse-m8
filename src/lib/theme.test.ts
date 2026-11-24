@@ -66,7 +66,7 @@ startup.id = 'custom-theme';
 startup.href = local.get('skin-href') ?? '';
 document.body.append(startup);
 
-const { theme } = await import('./theme.svelte');
+const { theme, themes } = await import('./theme.svelte');
 const { errors } = await import('./errors.svelte');
 
 it('loads a stored custom theme missing from the list as Graphix', async () => {
@@ -90,6 +90,15 @@ it('sets the root attribute and stores Asciitron', () => {
 	expect(theme.current).toBe('asciitron');
 	expect(root.dataset.skin).toBe('asciitron');
 	expect(local.get('skin')).toBe('asciitron');
+});
+
+it('lists M8PL8 after Graphix, and sets its root attribute and stores it', () => {
+	expect(Object.keys(themes)).toEqual(['asciitron', 'graphix', 'm8pl8']);
+
+	theme.pick('m8pl8');
+	expect(theme.current).toBe('m8pl8');
+	expect(root.dataset.skin).toBe('m8pl8');
+	expect(local.get('skin')).toBe('m8pl8');
 });
 
 it('sets the root attribute and stores Graphix, though it is the default', () => {
