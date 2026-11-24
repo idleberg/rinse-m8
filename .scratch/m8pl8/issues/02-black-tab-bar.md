@@ -1,6 +1,8 @@
 # 02: Black tab bar with yellow tabs
 
-Status: ready-for-agent
+Status: wontfix
+
+Dropped after building it: in the dark appearance the black bar sat on a black page, so the yellow active tab floated with no edge and didn't open into the page. The nav's defaults reverse the bar with the appearance, as in the other themes, and need no rule.
 
 **What to build:** In M8PL8, the tab bar is black in both appearances, with yellow active and hovered tabs and black text on them. Idle tabs show yellow text on the black bar. This holds on Settings too, where the tab bar is part of the inverted area.
 

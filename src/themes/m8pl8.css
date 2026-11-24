@@ -16,13 +16,6 @@
 	--info: var(--ink);
 }
 
-/* A black bar with yellow idle-tab text, and yellow active and hovered tabs, in both appearances. Fixed values, not
-   light-dark(), so Settings' inverted bar looks the same. After the .inverted tokens, which it ties with there. */
-:root[data-skin="m8pl8"] .tab-bar {
-	--ink: rgb(0 0 0);
-	--paper: rgb(255 193 49);
-}
-
 /* Both dialogs in the page's colours reversed, lines and close X included. The prefix outranks What's New's own blue. */
 :root[data-skin="m8pl8"] dialog {
 	--paper: light-dark(rgb(0 0 0), rgb(255 193 49));
