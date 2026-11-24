@@ -16,6 +16,13 @@
 	--info: var(--ink);
 }
 
+/* A black bar with yellow idle-tab text, and yellow active and hovered tabs, in both appearances. Fixed values, not
+   light-dark(), so Settings' inverted bar looks the same. After the .inverted tokens, which it ties with there. */
+:root[data-skin="m8pl8"] .tab-bar {
+	--ink: rgb(0 0 0);
+	--paper: rgb(255 193 49);
+}
+
 /* Form controls inherit the font from app.css */
 :root[data-skin="m8pl8"] body {
 	font-family: "IBM Plex Mono", ui-monospace, monospace;
