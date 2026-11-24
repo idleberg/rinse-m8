@@ -1,6 +1,6 @@
-/* M8PL8: Base in IBM Plex Mono and uppercase labels, in the app icon's two colours only: black on yellow, and yellow
-   on black in the dark appearance. Accent and info fold into ink, so repeat-one looks like repeat-all and failed rows
-   like normal ones. */
+/* M8PL8: Base in bold IBM Plex Mono and uppercase labels, in the app icon's two colours only: black on yellow, and
+   yellow on black in the dark appearance. Accent and info fold into ink, so repeat-one looks like repeat-all and failed
+   rows like normal ones. */
 
 :root[data-skin="m8pl8"] {
 	--case: uppercase;
@@ -23,9 +23,37 @@
 	--paper: rgb(255 193 49);
 }
 
-/* Form controls inherit the font from app.css */
+/* Both dialogs in the page's colours reversed, lines and close X included. The prefix outranks What's New's own blue. */
+:root[data-skin="m8pl8"] dialog {
+	--paper: light-dark(rgb(0 0 0), rgb(255 193 49));
+	--ink: light-dark(rgb(255 193 49), rgb(0 0 0));
+}
+
+/* The update banner stays Base's white on blue. Its paper is --info, which this theme folds into ink. */
+:root[data-skin="m8pl8"] .update-banner {
+	--paper: light-dark(rgb(30 80 200), rgb(45 105 215));
+}
+
+/* In the text colour, like the confirm dialog's, rather than What's New's white */
+:root[data-skin="m8pl8"] dialog.whats-new {
+	border-color: currentColor;
+}
+
+/* Plain red, with white text. Fixed values, so Settings shows the same. */
+:root[data-skin="m8pl8"] .error-banner {
+	--ink: white;
+	--paper: rgb(255 0 0);
+}
+
+/* Bold throughout. Form controls inherit the font from app.css. */
 :root[data-skin="m8pl8"] body {
 	font-family: "IBM Plex Mono", ui-monospace, monospace;
+	font-weight: bold;
+}
+
+/* Muted like the tables' subtitles, rather than the browser's grey */
+:root[data-skin="m8pl8"] ::placeholder {
+	color: var(--muted);
 }
 
 /* The artwork placeholder's text, white on Base's black square, in the yellow instead */
