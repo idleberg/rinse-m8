@@ -8,6 +8,7 @@ export const themes = {
 	asciitron: 'Asciitron',
 	graphix: 'Graphix',
 	m8pl8: 'M8PL8',
+	swizz: 'Swizz',
 } as const;
 
 export type Theme = keyof typeof themes;

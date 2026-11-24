@@ -1,0 +1,76 @@
+/* Swizz: Base in Helvetica, set flush left on off-white and grey, after mid-century Swiss pharma packaging. Tables are
+   ruled, Base's red and blue turn magenta and petrol, and colour otherwise only comes as pale, flat surfaces with dark
+   text: mint, pink and yellow. Labels keep Base's text as written. */
+
+:root[data-skin="swizz"],
+:root[data-skin="swizz"] .inverted {
+	--paper: light-dark(rgb(246 245 242), rgb(30 30 30));
+	--ink: light-dark(rgb(28 28 28), rgb(232 230 226));
+	--muted: light-dark(rgb(112 112 108), rgb(150 150 146));
+	/* Magenta, after Geigy's "magenta on yellow", and petrol, which links follow. 5.4:1 or more on either paper, and
+	   paper on the magenta fill too. */
+	--accent: light-dark(rgb(168 52 112), rgb(225 130 180));
+	--info: light-dark(rgb(40 110 110), rgb(120 190 185));
+	/* Mint, with dark text in both appearances */
+	--highlight: rgb(206 228 224);
+	--on-highlight: rgb(28 28 28);
+}
+
+/* Inter only where no Helvetica is installed, as on Windows and Linux. Tabular figures keep dates, times and counts in
+   line, and keep `ch`-sized columns as wide as their digits. Form controls inherit the font from app.css. */
+:root[data-skin="swizz"] body {
+	font-family: "Neue Helvetica", "Helvetica Neue", Helvetica, Inter, sans-serif;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Ruled like a Swiss table: a thick line below the header row, a pixel of padding less so the row keeps its height. The
+   prefix outranks the tables' scoped styles. */
+:root[data-skin="swizz"] th {
+	padding-bottom: calc(0.25rem + 2px);
+	border-bottom-width: 2px;
+}
+
+/* And a light grey hairline below each row, in place of Base's row of `-`. Still a background, so the drop line, an
+   inset shadow, sits over it. */
+:root[data-skin="swizz"] td {
+	background:
+		linear-gradient(color-mix(in srgb, currentColor 30%, transparent) 0 0) left bottom / 100% 1px
+		no-repeat;
+}
+
+/* The pale surfaces below have fixed colours, so they look the same in both appearances and the inverted area. Each
+   redefines --ink and --paper, so its lines, progress fill and hovered buttons follow. They come after the tokens above,
+   since the toast is itself .inverted on Settings and ties with them. */
+
+/* The confirm dialog's header is a yellow stripe, so it needs no line below it, nor the pixel of padding the line sat
+   in. The close button is .plain, so its hover doesn't invert it. */
+:root[data-skin="swizz"] dialog:not(.whats-new) .dialog-header {
+	padding-bottom: 0.25rem;
+	background: rgb(242 232 188);
+	color: rgb(28 28 28);
+}
+
+/* Pink, with its border in the text colour rather than Base's white */
+:root[data-skin="swizz"] dialog.whats-new {
+	--ink: rgb(28 28 28);
+	--paper: rgb(240 214 226);
+	border-color: currentColor;
+}
+
+/* The download bar only inherits its colour, already resolved from the old ink, so it's set too */
+:root[data-skin="swizz"] :is(.update-banner, .download-bar) {
+	--ink: rgb(28 28 28);
+	--paper: rgb(206 228 224);
+	color: var(--ink);
+}
+
+:root[data-skin="swizz"] .error-banner {
+	--ink: rgb(28 28 28);
+	--paper: rgb(240 214 226);
+}
+
+/* The toast draws paper on ink, so its ink is the yellow */
+:root[data-skin="swizz"] .toast {
+	--ink: rgb(242 232 188);
+	--paper: rgb(28 28 28);
+}

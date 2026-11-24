@@ -2,7 +2,7 @@
 
 A **theme** is a stylesheet. It can change the tokens, and it can restyle, re-lay-out and realign the **theme parts** listed below. **Appearance** (light, system or dark) is separate: every theme works in all three.
 
-Every theme builds on **Base**: the unprefixed styles in `app.css` and the components. Base looks plain on its own: neutral greys, the system monospace font, text as written, links in `--info`, a focus ring in the text colour, square checkboxes with an X, the dialogs' close button as an X and a solid line between their parts. The built-in themes, Asciitron, Graphix and M8PL8, are stylesheets on top of it, as is a custom theme.
+Every theme builds on **Base**: the unprefixed styles in `app.css` and the components. Base looks plain on its own: neutral greys, the system monospace font, text as written, links in `--info`, a focus ring in the text colour, square checkboxes with an X, the dialogs' close button as an X and a solid line between their parts. The built-in themes, Asciitron, Graphix, M8PL8 and Swizz, are stylesheets on top of it, as is a custom theme.
 
 This list is the public contract. Renaming or removing a part, a state hook or an icon name is a breaking change, since it breaks users' custom themes. Anything not listed here, such as table internals, may change without notice.
 

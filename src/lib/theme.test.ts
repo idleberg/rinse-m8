@@ -93,12 +93,21 @@ it('sets the root attribute and stores Asciitron', () => {
 });
 
 it('lists M8PL8 after Graphix, and sets its root attribute and stores it', () => {
-	expect(Object.keys(themes)).toEqual(['asciitron', 'graphix', 'm8pl8']);
+	expect(Object.keys(themes).slice(0, 3)).toEqual(['asciitron', 'graphix', 'm8pl8']);
 
 	theme.pick('m8pl8');
 	expect(theme.current).toBe('m8pl8');
 	expect(root.dataset.skin).toBe('m8pl8');
 	expect(local.get('skin')).toBe('m8pl8');
+});
+
+it('lists Swizz after M8PL8, and sets its root attribute and stores it', () => {
+	expect(Object.keys(themes)).toEqual(['asciitron', 'graphix', 'm8pl8', 'swizz']);
+
+	theme.pick('swizz');
+	expect(theme.current).toBe('swizz');
+	expect(root.dataset.skin).toBe('swizz');
+	expect(local.get('skin')).toBe('swizz');
 });
 
 it('sets the root attribute and stores Graphix, though it is the default', () => {
