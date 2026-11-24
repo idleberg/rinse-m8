@@ -9,10 +9,13 @@
 		enabledStations,
 		mp3Only = $bindable(),
 		hideRebroadcasts = $bindable(),
+		search = $bindable(),
 		children,
 	}: {
 		/** Adds the search and station checkboxes, which every view shares. */
 		shared?: boolean;
+		/** A view's own search, rendered when bound and not `shared`. */
+		search?: string;
 		/** The stations whose checkbox can be changed. Every one can when unset. */
 		enabledStations?: string[];
 		mp3Only?: boolean;
@@ -25,6 +28,8 @@
 <!-- Outside the fieldset, so it scrolls away while the checkboxes stay pinned -->
 {#if shared}
 	<input type="search" bind:value={filters.search} placeholder="Filter title, show, genres" aria-label="Search" />
+{:else if search !== undefined}
+	<input type="search" bind:value={search} placeholder="Filter title, genres" aria-label="Search" />
 {/if}
 
 <fieldset aria-label="Filters">

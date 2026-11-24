@@ -21,10 +21,20 @@
 
 	/** Its own, not the shared filters, so each show opens with fresh ones. */
 	const checkboxes = $state({ mp3Only: true, hideRebroadcasts: false });
+	let search = $state('');
 
-	const visibleEpisodes = $derived(
-		episodes.list.filter((episode) => episode.showSlug === show.slug && passesCheckboxes(episode, checkboxes)),
-	);
+	const visibleEpisodes = $derived.by(() => {
+		const query = search.trim().toLowerCase();
+
+		return episodes.list.filter(
+			(episode) =>
+				episode.showSlug === show.slug &&
+				passesCheckboxes(episode, checkboxes) &&
+				[episode.title, episode.displayTitle ?? '', ...episode.genres].some((text) =>
+					text.toLowerCase().includes(query),
+				),
+		);
+	});
 
 	const description = $derived(details?.description ? paragraphs(details.description) : []);
 
@@ -79,7 +89,11 @@
 	</div>
 </section>
 
-<EpisodeFilters bind:mp3Only={checkboxes.mp3Only} bind:hideRebroadcasts={checkboxes.hideRebroadcasts} />
+<EpisodeFilters
+	bind:search
+	bind:mp3Only={checkboxes.mp3Only}
+	bind:hideRebroadcasts={checkboxes.hideRebroadcasts}
+/>
 
 {#if visibleEpisodes.length}
 	<EpisodeTable episodes={visibleEpisodes} linkShows={false} subscribable />
