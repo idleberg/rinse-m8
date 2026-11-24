@@ -199,7 +199,7 @@ impl Default for Settings {
             auto_download_shows: BTreeSet::new(),
             group_by_show: false,
             keep_running: true,
-            unseen_badge: false,
+            unseen_badge: true,
             clear_player: false,
             update_interval: 6,
             app_update_interval: 24,

@@ -54,7 +54,7 @@ class Settings {
 		autoDownloadShows: [],
 		groupByShow: false,
 		keepRunning: true,
-		unseenBadge: false,
+		unseenBadge: true,
 		clearPlayer: false,
 		updateInterval: 6,
 		appUpdateInterval: 24,
