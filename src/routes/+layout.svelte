@@ -205,13 +205,17 @@
 		box-shadow: 0 0 0 1px var(--ink);
 	}
 
-	nav button:where([aria-current="page"], :hover) {
-		background: var(--paper);
-		color: var(--ink);
+	/* Hovered tabs are paper too, unless the theme sets a highlight. The active one keeps its paper fill either way, so
+	   it still opens into the page. */
+	nav button:where(:hover:not([aria-current="page"])) {
+		background: var(--highlight, var(--paper));
+		color: var(--on-highlight, var(--ink));
 	}
 
 	/* A paper strip over the ring's bottom edge, so the active tab opens into the page below */
 	nav button:where([aria-current="page"]) {
+		background: var(--paper);
+		color: var(--ink);
 		box-shadow:
 			0 1px var(--paper),
 			0 0 0 1px var(--ink);

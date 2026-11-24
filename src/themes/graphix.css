@@ -8,8 +8,10 @@
 	--paper: light-dark(rgb(216 216 216), rgb(20 20 20));
 	--ink: light-dark(rgb(20 20 20), rgb(216 216 216));
 	--muted: light-dark(rgb(104 104 104), rgb(140 140 140));
-	/* Graphix's own, for the tab and flyout hover and the volume bar's fill. The red accent is left for errors. */
-	--orange: light-dark(rgb(222 104 16), rgb(255 140 50));
+	/* Orange, which also fills the volume bar, since the red accent is left for errors. The text is dark in both
+	   appearances: light grey on the light orange is only 2.4:1, dark is 5.3:1 and 7.9:1. */
+	--highlight: light-dark(rgb(222 104 16), rgb(255 140 50));
+	--on-highlight: rgb(20 20 20);
 	/* Links in the update banner's blue, since red is left for errors */
 	--link: var(--info);
 	/* The element's text colour, resolved where it's used: ink on most, but paper on idle tabs, where ink is the bar */
@@ -69,19 +71,9 @@
 		);
 }
 
-/* Hovered tabs, flyout entries and select options, but not the active tab, which keeps its paper fill so it still
-   opens into the page. The text is dark in both appearances: light grey on the light orange is only 2.4:1, dark is
-   5.3:1 and 7.9:1. */
-:root[data-skin="graphix"] .tab:hover:not([aria-current="page"]),
-:root[data-skin="graphix"] [role="menu"] button:hover:not(:disabled),
-:root[data-skin="graphix"] option:hover {
-	background: var(--orange);
-	color: rgb(20 20 20);
-}
-
 /* Destructive buttons, like Clear Queue or Unsubscribe, turn red on hover, keeping their usual border. The light
    appearance's accent in both, since white on the dark appearance's brighter red is only 3.1:1, and 4.6:1 on this
-   one. After the flyout hover above, which it ties with. */
+   one. */
 :root[data-skin="graphix"] button.destructive:hover:not(:disabled) {
 	background: rgb(217 56 30);
 	color: white;
@@ -106,7 +98,7 @@
 
 /* The player's volume bar fills in orange, thumb included, and the seek bar is all ink */
 :root[data-skin="graphix"] .volume-bar {
-	--fill: var(--orange);
+	--fill: var(--highlight);
 }
 
 /* Only the component's paper ring edges the volume bar: a border inside it reads as a pixel too narrow on each side.

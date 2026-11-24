@@ -157,11 +157,18 @@
 		border-top: 1px solid currentColor;
 	}
 
-	/* Each entry is a full-width line of text, inverted while hovered like any button */
+	/* Each entry is a full-width line of text */
 	[popover] :global(button) {
 		border: none;
 		padding: 0 1ch;
 		text-align: left;
 		white-space: nowrap;
+	}
+
+	/* Inverted while hovered like any button, unless the theme sets a highlight. The state is in :where(), so themes can
+	   override it. */
+	[popover] :global(button:where(:hover:not(:disabled))) {
+		background: var(--highlight, var(--ink));
+		color: var(--on-highlight, var(--paper));
 	}
 </style>

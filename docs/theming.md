@@ -54,17 +54,19 @@ This theme keeps everything of Graphix but its colours, including in the inverte
 
 ## Tokens
 
-| Token      | Use                                                                         |
-| ---------- | --------------------------------------------------------------------------- |
-| `--paper`  | Background                                                                  |
-| `--ink`    | Text, borders and the hover and pressed fill                                |
-| `--muted`  | Secondary and disabled text                                                 |
-| `--accent` | Loved heart, repeat one, error banner                                       |
-| `--info`   | Update banner                                                               |
-| `--link`   | Links. Unset, it uses `--accent`.                                           |
-| `--focus`  | Focus ring. Unset, it uses `--accent`.                                      |
-| `--fill`   | Fill of progress bars and the seek and volume bars. Unset, it uses `--ink`. |
-| `--case`   | Labels' `text-transform`: `uppercase`, or `none` for text as written        |
+| Token            | Use                                                                                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `--paper`        | Background                                                                                                                                |
+| `--ink`          | Text, borders and the hover and pressed fill                                                                                              |
+| `--muted`        | Secondary and disabled text                                                                                                               |
+| `--accent`       | Loved heart, repeat one, error banner                                                                                                     |
+| `--info`         | Update banner                                                                                                                             |
+| `--link`         | Links. Unset, it uses `--accent`.                                                                                                         |
+| `--focus`        | Focus ring. Unset, it uses `--accent`.                                                                                                    |
+| `--fill`         | Fill of progress bars and the seek and volume bars. Unset, it uses `--ink`.                                                               |
+| `--highlight`    | Background of hovered tabs (but not the active one), flyout entries and select options. Unset, tabs use `--paper` and the others `--ink`. |
+| `--on-highlight` | Text on `--highlight`. Unset, tabs use `--ink` and the others `--paper`.                                                                  |
+| `--case`         | Labels' `text-transform`: `uppercase`, or `none` for text as written                                                                      |
 
 ## Theme parts
 

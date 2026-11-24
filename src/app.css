@@ -204,9 +204,10 @@ select {
 		padding: 0 0.5ch;
 	}
 
+	/* --highlight and --on-highlight are unset by default, so the fallbacks follow the tokens where they're used */
 	option:hover {
-		background: var(--ink);
-		color: var(--paper);
+		background: var(--highlight, var(--ink));
+		color: var(--on-highlight, var(--paper));
 	}
 
 	/* Inside the entry, since the menu would clip a ring around it */
