@@ -754,17 +754,23 @@ fn clear_image_cache(app: tauri::AppHandle) -> Result<(), String> {
     rinse::clear_image_cache(&image_cache(&app)?)
 }
 
-/// The user's custom stylesheet, which the page loads after its own styles. Read once at launch.
+/// The custom themes, read at launch and whenever Settings opens. The page loads a picked one's stylesheet through the
+/// asset protocol, so the whole themes folder is readable, fonts and images included.
 #[tauri::command]
-fn get_custom_css(app: tauri::AppHandle) -> Result<Option<String>, String> {
-    rinse::read_custom_css(&app.path().app_config_dir().map_err(|e| e.to_string())?)
+fn get_custom_themes(app: tauri::AppHandle) -> Result<rinse::CustomThemes, String> {
+    let config = app.path().app_config_dir().map_err(|e| e.to_string())?;
+
+    app.asset_protocol_scope()
+        .allow_directory(rinse::themes_dir(&config), true)
+        .map_err(|e| e.to_string())?;
+
+    rinse::read_custom_themes(&config)
 }
 
-/// The config folder, which holds the custom stylesheet. Created if needed, so Settings can reveal it: on Linux it
-/// isn't the data folder, which the app creates anyway.
+/// The custom themes folder. Created if needed, so Settings can reveal it.
 #[tauri::command]
-fn get_config_dir(app: tauri::AppHandle) -> Result<PathBuf, String> {
-    let dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
+fn get_themes_dir(app: tauri::AppHandle) -> Result<PathBuf, String> {
+    let dir = rinse::themes_dir(&app.path().app_config_dir().map_err(|e| e.to_string())?);
 
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
@@ -1415,8 +1421,8 @@ pub fn run() {
             scrobble,
             love,
             get_image_cache_size,
-            get_custom_css,
-            get_config_dir,
+            get_custom_themes,
+            get_themes_dir,
             clear_image_cache,
             set_tray_playing,
             subscribe,

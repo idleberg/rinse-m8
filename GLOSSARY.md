@@ -60,12 +60,16 @@ _Avoid_: Filter, image mode, theme
 The named look picked in Settings, such as Asciitron or Graphix: a stylesheet that can change the colour tokens and restyle the theme parts. Works with every appearance. Image style is not a theme. Set as `data-skin` on the root, since `data-theme` already holds the appearance.
 _Avoid_: Style
 
+**Custom theme**:
+A theme the user adds as a folder holding a `theme.css` in the config folder's `themes`, listed in Settings after the built-in themes. It applies on top of Base and sets no `data-skin`.
+_Avoid_: Custom stylesheet, custom CSS, user theme
+
 **Appearance**:
 Light, dark, or following the system, as set by the toggle in Settings. Independent of the theme.
 _Avoid_: Theme, colour scheme, mode
 
 **Theme part**:
-An element a theme may restyle, from the fixed list in `docs/theming.md`, such as the tab bar, a tab or the player bar. Renaming one breaks custom stylesheets.
+An element a theme may restyle, from the fixed list in `docs/theming.md`, such as the tab bar, a tab or the player bar. Renaming one breaks custom themes.
 _Avoid_: Component, slot
 
 ### Queues

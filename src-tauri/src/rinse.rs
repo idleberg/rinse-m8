@@ -1088,16 +1088,84 @@ pub fn clear_image_cache(cache: &Path) -> Result<(), String> {
     }
 }
 
-/// The user's own stylesheet, in the app's config folder.
-const CUSTOM_CSS: &str = "custom.css";
+/// The folder of custom themes, in the app's config folder.
+const THEMES: &str = "themes";
 
-/// The text of the custom stylesheet in the config folder `config`, or None when there is none.
-pub fn read_custom_css(config: &Path) -> Result<Option<String>, String> {
-    match std::fs::read_to_string(config.join(CUSTOM_CSS)) {
-        Ok(css) => Ok(Some(css)),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(format!("Reading {CUSTOM_CSS} failed: {e}")),
+/// The stylesheet that makes a folder in `themes` a custom theme.
+const THEME_CSS: &str = "theme.css";
+
+/// The custom themes folder in the config folder `config`.
+pub fn themes_dir(config: &Path) -> PathBuf {
+    config.join(THEMES)
+}
+
+#[derive(Debug, PartialEq, Serialize)]
+pub struct CustomTheme {
+    /// The folder name. Never used as `data-skin`, so a folder can't turn on a built-in theme's rules.
+    pub id: String,
+    /// From the `@name` tag in the header, or the folder name without one.
+    pub name: String,
+    pub path: PathBuf,
+}
+
+#[derive(Debug, Default, PartialEq, Serialize)]
+pub struct CustomThemes {
+    pub themes: Vec<CustomTheme>,
+    /// One message per `theme.css` that couldn't be read. The other themes still load.
+    pub failures: Vec<String>,
+}
+
+/// The custom themes in the config folder `config`, sorted by name case-insensitively. Folders without `theme.css` are
+/// skipped, and a missing themes folder has none.
+pub fn read_custom_themes(config: &Path) -> Result<CustomThemes, String> {
+    let entries = match std::fs::read_dir(themes_dir(config)) {
+        Ok(entries) => entries,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(CustomThemes::default()),
+        Err(e) => return Err(format!("Reading the {THEMES} folder failed: {e}")),
+    };
+    let mut listed = CustomThemes::default();
+
+    // Stray files, such as .DS_Store, are skipped like folders without theme.css
+    for entry in entries.flatten().filter(|entry| entry.path().is_dir()) {
+        let id = entry.file_name().to_string_lossy().into_owned();
+        let path = entry.path().join(THEME_CSS);
+
+        match std::fs::read_to_string(&path) {
+            Ok(css) => listed.themes.push(CustomTheme {
+                name: theme_name(&css).unwrap_or_else(|| id.clone()),
+                id,
+                path,
+            }),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => listed
+                .failures
+                .push(format!("Reading {THEMES}/{id}/{THEME_CSS} failed: {e}")),
+        }
     }
+
+    listed.themes.sort_by_key(|theme| theme.name.to_lowercase());
+
+    Ok(listed)
+}
+
+/// The `@name` tag in a WordPress-style `/* … */` comment at the start of `css`. Other tags are ignored.
+fn theme_name(css: &str) -> Option<String> {
+    let header = css
+        .trim_start_matches('\u{feff}')
+        .trim_start()
+        .strip_prefix("/*")?;
+    let header = &header[..header.find("*/")?];
+
+    header.lines().find_map(|line| {
+        let value = line
+            .trim()
+            .trim_start_matches('*')
+            .trim()
+            .strip_prefix("@name")?;
+
+        (value.starts_with(char::is_whitespace) && !value.trim().is_empty())
+            .then(|| value.trim().to_string())
+    })
 }
 
 async fn fetch_episodes(url: &str) -> Result<Vec<Episode>, String> {
@@ -1802,23 +1870,48 @@ mod tests {
     }
 
     #[test]
-    fn reads_the_custom_stylesheet_if_there_is_one() {
-        let config = TempDir::new("rinse-custom-css");
+    fn lists_the_custom_themes_by_name() {
+        let config = TempDir::new("rinse-custom-themes");
+        let themes = config.0.join(THEMES);
+        let theme = |id: &str, css: &str| {
+            std::fs::create_dir_all(themes.join(id)).unwrap();
+            std::fs::write(themes.join(id).join(THEME_CSS), css).unwrap();
+        };
 
-        assert_eq!(read_custom_css(&config.0), Ok(None));
+        // No themes folder
+        assert_eq!(read_custom_themes(&config.0), Ok(CustomThemes::default()));
 
-        std::fs::write(config.0.join(CUSTOM_CSS), "nav { gap: 0 }").unwrap();
+        // A folder without theme.css, and a stray file
+        std::fs::create_dir_all(themes.join("empty")).unwrap();
+        std::fs::write(themes.join(".DS_Store"), "").unwrap();
+
+        theme(
+            "solarized",
+            "/**\n * @name Solarized\n * @author Someone\n */\n:root { --paper: #fdf6e3 }",
+        );
+        theme("blank", ":root { --paper: white }");
+        theme("zen", "/* @name  alpine  */");
+
+        // A folder where theme.css should be can't be read
+        std::fs::create_dir_all(themes.join("broken").join(THEME_CSS)).unwrap();
+
+        let listed = read_custom_themes(&config.0).unwrap();
+        let entry = |id: &str, name: &str| CustomTheme {
+            id: id.into(),
+            name: name.into(),
+            path: themes.join(id).join(THEME_CSS),
+        };
 
         assert_eq!(
-            read_custom_css(&config.0),
-            Ok(Some("nav { gap: 0 }".into()))
+            listed.themes,
+            [
+                entry("zen", "alpine"),
+                entry("blank", "blank"),
+                entry("solarized", "Solarized"),
+            ]
         );
-
-        // A folder where the file should be can't be read
-        std::fs::remove_file(config.0.join(CUSTOM_CSS)).unwrap();
-        std::fs::create_dir(config.0.join(CUSTOM_CSS)).unwrap();
-
-        assert!(read_custom_css(&config.0).is_err());
+        assert_eq!(listed.failures.len(), 1);
+        assert!(listed.failures[0].contains("broken"));
     }
 
     #[test]

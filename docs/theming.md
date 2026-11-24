@@ -2,15 +2,39 @@
 
 A **theme** is a stylesheet. It can change the colour tokens, and it can restyle, re-lay-out and realign the **theme parts** listed below. **Appearance** (light, system or dark) is separate: every theme works in all three.
 
-This list is the public contract. Renaming or removing a part, a state hook or an icon name is a breaking change, since it breaks users' custom stylesheets. Anything not listed here, such as table internals or the flyout, may change without notice.
+This list is the public contract. Renaming or removing a part, a state hook or an icon name is a breaking change, since it breaks users' custom themes. Anything not listed here, such as table internals or the flyout, may change without notice.
 
 ## Writing a theme
 
 - Prefix every rule of a built-in theme with `:root[data-skin="<name>"]`. The prefix beats the global element rules and the components' own state rules, so no `!important` is needed.
-- A custom stylesheet is `custom.css` in the app's config folder (Settings, Custom style, Open folder), read at launch. Prefix its rules with `:root`, or with `:root[data-skin="<name>"]` to tweak one theme. Without a prefix, `.player-bar` loses to the component's own scoped styles. It loads last, so it wins ties with the built-in themes.
 - The app sets `data-theme="light"` or `data-theme="dark"` on the root for a forced appearance, and no attribute for system. Use `light-dark()` in tokens rather than targeting it.
 - Redefine tokens on both `:root` and `.inverted`. WebKit resolves `light-dark()` where a custom property is declared, not where it's used, so a token declared only on the root keeps the root's appearance inside `.inverted`.
 - A tab is a `button`, so it gets the button's look unless a theme restyles `.tab` on its own.
+
+## Custom themes
+
+A custom theme is a folder in `themes`, in the app's config folder (Settings, Custom themes, Open folder), holding a `theme.css`. Each one is listed in the Theme menu after the built-in themes, and applies on top of Base as soon as it's picked. A folder without `theme.css` is skipped.
+
+```text
+themes/
+└── solarized/
+    ├── theme.css
+    └── fonts/
+        └── body.woff2
+```
+
+- **Header.** The menu label comes from the `@name` tag in a `/* … */` comment at the start of `theme.css`. Without one, the folder name is used. Other tags, such as `@author` or `@version`, are ignored.
+
+  ```css
+  /**
+   * @name Solarized
+   * @author Jane Doe
+   */
+  ```
+
+- **Prefix.** Prefix every rule with `:root`. Without a prefix, `.player-bar` loses to the component's own scoped styles. The theme loads after every other style, so it wins ties.
+- **Relative URLs.** `url()` resolves against the theme's folder, so `url("fonts/body.woff2")` loads the font above.
+- The folder name is never set as `data-skin`, so a folder named after a built-in theme doesn't turn on its rules.
 
 ## Colour tokens
 

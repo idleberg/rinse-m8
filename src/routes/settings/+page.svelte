@@ -8,7 +8,7 @@
 	import { errors } from '#lib/errors.svelte';
 	import { lastfm } from '#lib/lastfm.svelte';
 	import { type AutoDownloads, type ImageStyle, type PlayBehaviour, settings } from '#lib/settings.svelte';
-	import { type Theme, theme, themes } from '#lib/theme.svelte';
+	import { theme, themes } from '#lib/theme.svelte';
 	import { updates } from '#lib/updates.svelte';
 
 	/** In hours. */
@@ -69,6 +69,9 @@
 		}
 	}
 
+	// Listed afresh each time the view opens, so a theme folder added since shows up
+	theme.load();
+
 	let version = $state('');
 
 	getVersion().then((v) => {
@@ -87,17 +90,23 @@
 			</dd>
 			<dt>Theme</dt>
 			<dd>
-				<select aria-label="Theme" value={theme.current} onchange={(e) => theme.pick(e.currentTarget.value as Theme)}>
+				<select aria-label="Theme" value={theme.current} onchange={(e) => theme.pick(e.currentTarget.value)}>
 					{#each Object.entries(themes) as [value, label] (value)}
 						<option {value}>{label}</option>
 					{/each}
+					{#if theme.custom.length > 0}
+						<hr />
+					{/if}
+					{#each theme.custom as custom (custom.value)}
+						<option value={custom.value}>{custom.name}</option>
+					{/each}
 				</select>
 			</dd>
-			<dt>Custom style</dt>
+			<dt>Custom themes</dt>
 			<dd>
-				<button type="button" onclick={() => invoke<string>('get_config_dir').then(revealItemInDir).catch(errors.report)}>Open folder</button>
+				<button type="button" onclick={() => invoke<string>('get_themes_dir').then(revealItemInDir).catch(errors.report)}>Open folder</button>
 				<span class="muted">
-					put a custom.css there, read at launch, styling the
+					add a folder with a theme.css, styling the
 					<!-- Opens in the browser, since the webview would navigate away from the app -->
 					<a
 						href="https://github.com/idleberg/rinse-m8/blob/main/docs/theming.md"

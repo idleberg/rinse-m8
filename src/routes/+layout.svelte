@@ -7,7 +7,6 @@
 	import Player from '#lib/components/Player.svelte';
 	import UpdateBanner from '#lib/components/UpdateBanner.svelte';
 	import WhatsNew from '#lib/components/WhatsNew.svelte';
-	import { loadCustomCss } from '#lib/custom-css';
 	import { directory } from '#lib/directory.svelte';
 	import { downloads } from '#lib/downloads.svelte';
 	import { available, type Show, type ShowPage } from '#lib/episodes';
@@ -19,6 +18,7 @@
 	import { openShow } from '#lib/navigation';
 	import { player } from '#lib/player.svelte';
 	import { settings } from '#lib/settings.svelte';
+	import { theme } from '#lib/theme.svelte';
 	import { toast } from '#lib/toast.svelte';
 	import { updates } from '#lib/updates.svelte';
 	import { goto } from '$app/navigation';
@@ -43,7 +43,7 @@
 	] as const;
 
 	errors.init();
-	loadCustomCss();
+	theme.load();
 	settings.init();
 	lastfm.init();
 	updates.init();
