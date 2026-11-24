@@ -186,9 +186,10 @@ async fn check_mp3s(
     save_episodes(app, current)
 }
 
-/// Checks the cached episode's mp3 again after a download or playback of it failed, and sends the whole cache to the views.
+/// Checks the cached episode's mp3 again after a download or playback of it failed, or a share link found it missing,
+/// sends the whole cache to the views and returns it. Without a cached copy, nothing is checked and the cache is empty.
 #[tauri::command]
-async fn recheck_mp3(app: tauri::AppHandle, id: String) -> Result<(), String> {
+async fn recheck_mp3(app: tauri::AppHandle, id: String) -> Result<Vec<rinse::Episode>, String> {
     let cached = app
         .store("episodes.json")
         .map_err(|e| e.to_string())?
@@ -196,13 +197,15 @@ async fn recheck_mp3(app: tauri::AppHandle, id: String) -> Result<(), String> {
         .and_then(|v| serde_json::from_value(v).ok());
 
     let Some(episode) = cached else {
-        return Ok(());
+        return Ok(Vec::new());
     };
 
     let cache = check_mp3s(&app, vec![episode]).await?;
 
-    app.emit("episodes-updated", cache)
-        .map_err(|e| e.to_string())
+    app.emit("episodes-updated", &cache)
+        .map_err(|e| e.to_string())?;
+
+    Ok(cache)
 }
 
 /// Adds the episode to the download queue with the folder the current settings save it to, unless it's already in it.

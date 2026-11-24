@@ -9,7 +9,7 @@
 	import WhatsNew from '#lib/components/WhatsNew.svelte';
 	import { directory } from '#lib/directory.svelte';
 	import { downloads } from '#lib/downloads.svelte';
-	import { available, type Show, type ShowPage } from '#lib/episodes';
+	import { available, type Episode, type Show, type ShowPage } from '#lib/episodes';
 	import { episodes } from '#lib/episodes.svelte';
 	import { errors } from '#lib/errors.svelte';
 	import { filters } from '#lib/filters.svelte';
@@ -77,7 +77,13 @@
 		const fetched = await invoke<ShowPage>('refresh_show', { slug });
 		episodes.replace(fetched.episodes);
 
-		const episode = fetched.episodes.find((e) => e.id === id);
+		let episode = fetched.episodes.find((e) => e.id === id);
+
+		// A 404 stays cached until the next update checks again, but Rinse often uploads a new episode's mp3 days late
+		if (episode?.mp3 && episode.mp3Found === false) {
+			const cache = await invoke<Episode[]>('recheck_mp3', { id });
+			episode = cache.find((e) => e.id === id);
+		}
 
 		if (!(episode && available(episode))) {
 			throw new Error("The shared episode can't be played.");
