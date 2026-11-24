@@ -75,11 +75,11 @@
 <!-- A modal like the confirm dialog, in the update bar's colours -->
 <dialog class="whats-new" bind:this={dialog} aria-labelledby="{id}-title">
 	<form method="dialog">
-		<header>
+		<header class="dialog-header">
 			<h2 id="{id}-title">What's new in {page?.version}</h2>
-			<button type="submit" class="plain" aria-label="Close">[×]</button>
+			<button type="submit" class="plain dialog-close" aria-label="Close">[×]</button>
 		</header>
-		<div class="notes">{@html page?.html}</div>
+		<div class="notes dialog-body">{@html page?.html}</div>
 		<footer>
 			<!-- Newest first, so Newer goes back and Older goes on -->
 			{#if pages.length > 1}

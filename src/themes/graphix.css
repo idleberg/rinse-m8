@@ -30,7 +30,7 @@
    running corner to corner inside the border,
    drawn from two diagonal strokes like the select's `v`. On a square, a 45° gradient's middle stripe is the opposite
    diagonal. */
-:root[data-skin="graphix"] :is(input[type="checkbox"], dialog button[aria-label="Close"]) {
+:root[data-skin="graphix"] :is(input[type="checkbox"], button.dialog-close) {
 	box-sizing: border-box;
 	width: 1em;
 	height: 1em;
@@ -48,14 +48,14 @@
 
 /* Just the X, no border. The `[×]` text moves out of the box but stays the button's content. The accessible name is
    its aria-label anyway. */
-:root[data-skin="graphix"] dialog button[aria-label="Close"] {
+:root[data-skin="graphix"] button.dialog-close {
 	border: none;
 	overflow: hidden;
 	white-space: nowrap;
 	text-indent: 1em;
 }
 
-:root[data-skin="graphix"] :is(input[type="checkbox"]:checked, dialog button[aria-label="Close"]) {
+:root[data-skin="graphix"] :is(input[type="checkbox"]:checked, button.dialog-close) {
 	background:
 		linear-gradient(
 			45deg,
@@ -118,20 +118,20 @@
 }
 
 /* The dialogs' line between body and footer is solid rather than a row of `-` */
-:root[data-skin="graphix"] dialog > form > :is(p, .notes) {
+:root[data-skin="graphix"] .dialog-body {
 	background: linear-gradient(currentColor, currentColor) left bottom / 100% 1px no-repeat;
 }
 
 /* The title bar is inverted, so it needs no line below it, nor the pixel of padding the line sat in. The close button
    is .plain, so its hover doesn't invert back into the bar. */
-:root[data-skin="graphix"] dialog > form > header {
+:root[data-skin="graphix"] .dialog-header {
 	padding-bottom: 0.25rem;
 	background: var(--ink);
 	color: var(--paper);
 }
 
 /* What's New's title bar is white on dark, the dark of the orange hovers */
-:root[data-skin="graphix"] .whats-new > form > header {
+:root[data-skin="graphix"] .whats-new .dialog-header {
 	background: rgb(20 20 20);
 	color: white;
 }

@@ -50,11 +50,11 @@
 	}}
 >
 	<form method="dialog">
-		<header>
+		<header class="dialog-header">
 			<h2 id="{id}-title">{confirmation.question?.title}</h2>
-			<button type="submit" class="plain" value="cancel" aria-label="Close">[×]</button>
+			<button type="submit" class="plain dialog-close" value="cancel" aria-label="Close">[×]</button>
 		</header>
-		<p>{confirmation.question?.message}</p>
+		<p class="dialog-body">{confirmation.question?.message}</p>
 		<footer>
 			<button type="submit" value="secondary" bind:this={secondary}>{confirmation.question?.secondaryAction}</button>
 			<button type="submit" value="primary" aria-label={confirmation.question?.primaryName}>
