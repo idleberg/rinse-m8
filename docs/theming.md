@@ -59,8 +59,10 @@ This theme keeps everything of Graphix but its colours, including in the inverte
 | `--paper`  | Background                                                                  |
 | `--ink`    | Text, borders and the hover and pressed fill                                |
 | `--muted`  | Secondary and disabled text                                                 |
-| `--accent` | Links, focus ring, loved heart, repeat one, error banner                    |
+| `--accent` | Loved heart, repeat one, error banner                                       |
 | `--info`   | Update banner                                                               |
+| `--link`   | Links. Unset, it uses `--accent`.                                           |
+| `--focus`  | Focus ring. Unset, it uses `--accent`.                                      |
 | `--fill`   | Fill of progress bars and the seek and volume bars. Unset, it uses `--ink`. |
 
 ## Theme parts

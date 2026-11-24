@@ -11,6 +11,8 @@
 	--muted: light-dark(rgb(107 103 95), rgb(143 138 128));
 	--accent: light-dark(rgb(217 56 30), rgb(255 90 60));
 	--info: light-dark(rgb(30 80 200), rgb(45 105 215));
+	--link: var(--accent);
+	--focus: var(--accent);
 }
 
 .inverted {
@@ -106,7 +108,7 @@ body > div {
 }
 
 a {
-	color: var(--accent);
+	color: var(--link);
 }
 
 button,
@@ -288,7 +290,7 @@ input[type="search"] {
 }
 
 :focus-visible {
-	outline: 2px solid var(--accent);
+	outline: 2px solid var(--focus);
 	outline-offset: 2px;
 }
 

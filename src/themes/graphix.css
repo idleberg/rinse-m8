@@ -10,6 +10,10 @@
 	--muted: light-dark(rgb(104 104 104), rgb(140 140 140));
 	/* Graphix's own, for the tab and flyout hover and the volume bar's fill. The red accent is left for errors. */
 	--orange: light-dark(rgb(222 104 16), rgb(255 140 50));
+	/* Links in the update banner's blue, since red is left for errors */
+	--link: var(--info);
+	/* The element's text colour, resolved where it's used: ink on most, but paper on idle tabs, where ink is the bar */
+	--focus: currentColor;
 }
 
 /* Form controls inherit the font from app.css */
@@ -21,20 +25,6 @@
 :root[data-skin="graphix"] :is(*, ::before, ::after) {
 	/* biome-ignore lint/complexity/noImportantStyles: the components' scoped uppercase rules outrank this selector */
 	text-transform: none !important;
-}
-
-/* The focus ring is the element's text colour: ink on most, but paper on idle tabs, where ink is the bar itself */
-:root[data-skin="graphix"] :focus-visible {
-	outline-color: currentColor;
-}
-
-/* The edge tabs draw the ring's offscreen half as an inset shadow */
-:root[data-skin="graphix"] .tab:first-child:focus-visible {
-	box-shadow: inset 2px 0 currentColor;
-}
-
-:root[data-skin="graphix"] .tab:last-child:focus-visible {
-	box-shadow: inset -2px 0 currentColor;
 }
 
 /* Checkboxes are a bordered square like the icon buttons instead of `[ ]`, and the dialogs' close button the same
@@ -156,11 +146,4 @@
 :root[data-skin="graphix"] .whats-new > form > header {
 	background: rgb(20 20 20);
 	color: white;
-}
-
-/* Links in the update banner's blue, since red is left for errors. The prefix sits in :where() so the rule only
-   replaces app.css's link colour, which it follows, and components that set their own, like What's New's white on
-   blue, still win. */
-:where(:root[data-skin="graphix"]) a {
-	color: var(--info);
 }

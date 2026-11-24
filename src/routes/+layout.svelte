@@ -235,11 +235,11 @@
 	/* The ring at the window's edge is offscreen, so the outline's outer pixel is too. The shadow restores the 2px there.
 	   States go in :where(), here and below, so themes can override them. */
 	nav button:first-child:where(:focus-visible) {
-		box-shadow: inset 2px 0 var(--accent);
+		box-shadow: inset 2px 0 var(--focus);
 	}
 
 	nav button:last-child:where(:focus-visible) {
-		box-shadow: inset -2px 0 var(--accent);
+		box-shadow: inset -2px 0 var(--focus);
 	}
 
 	main {
