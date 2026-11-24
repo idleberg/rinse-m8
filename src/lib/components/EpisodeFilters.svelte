@@ -63,7 +63,7 @@
 		margin: 0 0 0.5rem;
 		border: none;
 		padding: 0.5rem 0;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	.row {
@@ -74,7 +74,7 @@
 
 	input[type='search'] {
 		width: 100%;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	/* Form controls don't inherit text-transform */

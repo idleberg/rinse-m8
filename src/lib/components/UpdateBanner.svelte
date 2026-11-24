@@ -33,7 +33,7 @@
 		--paper: var(--info);
 		background: var(--paper);
 		color: var(--ink);
-		text-transform: uppercase;
+		text-transform: var(--case);
 		font-variant-numeric: tabular-nums;
 	}
 

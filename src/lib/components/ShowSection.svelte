@@ -47,7 +47,7 @@
 	h2 {
 		margin: 0;
 		font-size: 1.25rem;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	.link {

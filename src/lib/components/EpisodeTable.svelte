@@ -224,7 +224,7 @@
 	table {
 		width: 100%;
 		border-collapse: collapse;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	th,

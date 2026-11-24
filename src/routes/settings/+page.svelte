@@ -314,7 +314,7 @@
 		grid-column: 1 / -1;
 		margin: 0;
 		font-size: 1.25rem;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	section:not(:first-child) h2 {
@@ -322,7 +322,7 @@
 	}
 
 	dt {
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	dd {

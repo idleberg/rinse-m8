@@ -289,7 +289,7 @@
 	.row,
 	h2,
 	.label {
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	h2 {

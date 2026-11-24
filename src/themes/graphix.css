@@ -14,17 +14,13 @@
 	--link: var(--info);
 	/* The element's text colour, resolved where it's used: ink on most, but paper on idle tabs, where ink is the bar */
 	--focus: currentColor;
+	/* Text shows as written */
+	--case: none;
 }
 
 /* Form controls inherit the font from app.css */
 :root[data-skin="graphix"] body {
 	font-family: "Space Mono", monospace;
-}
-
-/* Text shows as written */
-:root[data-skin="graphix"] :is(*, ::before, ::after) {
-	/* biome-ignore lint/complexity/noImportantStyles: the components' scoped uppercase rules outrank this selector */
-	text-transform: none !important;
 }
 
 /* Checkboxes are a bordered square like the icon buttons instead of `[ ]`, and the dialogs' close button the same

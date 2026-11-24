@@ -76,7 +76,7 @@
 		border-collapse: collapse;
 		/* Column widths come from the header alone, so filtering never moves them */
 		table-layout: fixed;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	th,
@@ -157,7 +157,7 @@
 	}
 
 	p {
-		text-transform: uppercase;
+		text-transform: var(--case);
 		color: var(--muted);
 	}
 </style>

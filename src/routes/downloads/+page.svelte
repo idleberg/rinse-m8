@@ -292,7 +292,7 @@
 	h2 {
 		margin: 0 0 0.5rem;
 		font-size: 1.25rem;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	/* Spaces the sections like the dashboard's, with the clear button on the right edge as the actions are */
@@ -315,7 +315,7 @@
 	table {
 		width: 100%;
 		border-collapse: collapse;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	th,
@@ -378,7 +378,7 @@
 	}
 
 	p {
-		text-transform: uppercase;
+		text-transform: var(--case);
 		color: var(--muted);
 	}
 

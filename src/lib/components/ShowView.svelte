@@ -105,13 +105,13 @@
 	h1 {
 		margin: 0;
 		font-size: 1.5rem;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	h2 {
 		margin: 2rem 0 0.5rem;
 		font-size: 1.25rem;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	section {
@@ -122,11 +122,11 @@
 	}
 
 	[role='status'] {
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	.empty {
-		text-transform: uppercase;
+		text-transform: var(--case);
 		color: var(--muted);
 	}
 

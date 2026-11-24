@@ -264,7 +264,7 @@
 
 	.empty {
 		margin: 0;
-		text-transform: uppercase;
+		text-transform: var(--case);
 		color: var(--muted);
 	}
 
@@ -279,14 +279,14 @@
 	h2 {
 		margin: 0;
 		font-size: 1.25rem;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	/* The table styles follow the queue view's */
 	table {
 		width: 100%;
 		border-collapse: collapse;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	th,

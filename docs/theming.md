@@ -1,6 +1,6 @@
 # Theming
 
-A **theme** is a stylesheet. It can change the colour tokens, and it can restyle, re-lay-out and realign the **theme parts** listed below. **Appearance** (light, system or dark) is separate: every theme works in all three.
+A **theme** is a stylesheet. It can change the tokens, and it can restyle, re-lay-out and realign the **theme parts** listed below. **Appearance** (light, system or dark) is separate: every theme works in all three.
 
 This list is the public contract. Renaming or removing a part, a state hook or an icon name is a breaking change, since it breaks users' custom themes. Anything not listed here, such as table internals or the flyout, may change without notice.
 
@@ -52,7 +52,7 @@ This theme keeps everything of Graphix but its colours, including in the inverte
 }
 ```
 
-## Colour tokens
+## Tokens
 
 | Token      | Use                                                                         |
 | ---------- | --------------------------------------------------------------------------- |
@@ -64,6 +64,7 @@ This theme keeps everything of Graphix but its colours, including in the inverte
 | `--link`   | Links. Unset, it uses `--accent`.                                           |
 | `--focus`  | Focus ring. Unset, it uses `--accent`.                                      |
 | `--fill`   | Fill of progress bars and the seek and volume bars. Unset, it uses `--ink`. |
+| `--case`   | Labels' `text-transform`: `uppercase`, or `none` for text as written        |
 
 ## Theme parts
 

@@ -269,7 +269,7 @@
 		padding: 0.5rem 1rem;
 		background: var(--ink);
 		color: var(--paper);
-		text-transform: uppercase;
+		text-transform: var(--case);
 		white-space: nowrap;
 	}
 

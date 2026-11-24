@@ -85,7 +85,7 @@
 <style>
 	.intro {
 		margin: 0 0 1rem;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	/* One row, scrolling sideways when the window is too narrow for every show */
@@ -109,7 +109,7 @@
 		gap: 0.5rem;
 		width: 100%;
 		text-align: left;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	.gallery :global(.artwork) {

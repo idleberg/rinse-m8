@@ -75,7 +75,7 @@
 		height: 40px;
 		margin: 0 0 0.5rem;
 		font-size: inherit;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	label {

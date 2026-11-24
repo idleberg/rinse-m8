@@ -44,6 +44,6 @@
 	h2 {
 		margin: 0 0 0.5rem;
 		font-size: 1.25rem;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 </style>

@@ -143,7 +143,7 @@
 		padding: 0;
 		background: var(--paper);
 		color: var(--ink);
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	[popover]:popover-open {

@@ -85,7 +85,7 @@
 		aspect-ratio: 1;
 		background: black;
 		color: white;
-		text-transform: uppercase;
+		text-transform: var(--case);
 		text-align: center;
 	}
 

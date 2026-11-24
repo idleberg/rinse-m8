@@ -54,7 +54,7 @@
 		border-top: 1px solid currentColor;
 		padding: 0.5rem 1rem;
 		background: var(--paper);
-		text-transform: uppercase;
+		text-transform: var(--case);
 		font-variant-numeric: tabular-nums;
 	}
 

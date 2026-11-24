@@ -90,7 +90,7 @@
 	h2 {
 		margin: 0;
 		font-size: inherit;
-		text-transform: uppercase;
+		text-transform: var(--case);
 	}
 
 	p {

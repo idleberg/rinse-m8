@@ -1,5 +1,7 @@
 :root {
 	color-scheme: light dark;
+	/* Labels' text-transform. Only on the root: without light-dark() it resolves the same everywhere. */
+	--case: uppercase;
 }
 
 /* Declared again on .inverted, since WebKit resolves light-dark() where a custom property is declared, not where it's used */
@@ -122,7 +124,7 @@ button {
 	border: 1px solid currentColor;
 	padding: 0 0.5ch;
 	background: none;
-	text-transform: uppercase;
+	text-transform: var(--case);
 	cursor: pointer;
 }
 
@@ -165,7 +167,7 @@ select {
 			transparent calc(50% + 0.5px)
 		)
 		calc(100% - 0.5ch) 55% / 0.3em 0.3em no-repeat;
-	text-transform: uppercase;
+	text-transform: var(--case);
 	cursor: pointer;
 }
 
