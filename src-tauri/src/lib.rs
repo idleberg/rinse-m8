@@ -754,17 +754,20 @@ fn clear_image_cache(app: tauri::AppHandle) -> Result<(), String> {
     rinse::clear_image_cache(&image_cache(&app)?)
 }
 
-/// The custom themes, read at launch and whenever Settings opens. The page loads a picked one's stylesheet through the
-/// asset protocol, so the whole themes folder is readable, fonts and images included.
+/// The custom themes, read at launch and whenever Settings opens.
 #[tauri::command]
 fn get_custom_themes(app: tauri::AppHandle) -> Result<rinse::CustomThemes, String> {
+    rinse::read_custom_themes(&app.path().app_config_dir().map_err(|e| e.to_string())?)
+}
+
+/// The page loads a picked custom theme's stylesheet through the asset protocol, so the whole themes folder is
+/// readable, fonts and images included. Granted at setup, since app.html links the stylesheet before the app starts.
+fn allow_custom_themes(app: &tauri::AppHandle) -> Result<(), String> {
     let config = app.path().app_config_dir().map_err(|e| e.to_string())?;
 
     app.asset_protocol_scope()
         .allow_directory(rinse::themes_dir(&config), true)
-        .map_err(|e| e.to_string())?;
-
-    rinse::read_custom_themes(&config)
+        .map_err(|e| e.to_string())
 }
 
 /// The custom themes folder. Created if needed, so Settings can reveal it.
@@ -1305,6 +1308,10 @@ pub fn run() {
         .setup(|app| {
             // Before any store loads, so installs from before the identifier change keep their data
             migrate_store_files(app.handle());
+
+            if let Err(e) = allow_custom_themes(app.handle()) {
+                eprintln!("allowing the custom themes folder failed: {e}");
+            }
 
             let (cancel, cancelled) = tokio::sync::mpsc::unbounded_channel();
 
